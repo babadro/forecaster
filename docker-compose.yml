@@ -1,0 +1,40 @@
+version: "3.5"
+
+services:
+  postgres:
+    image: postgres:15.3-alpine3.17
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+        POSTGRES_DB: forecaster
+        POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - db-data-forecast:/var/lib/postgresql/data
+      - ./migrations/docker/init-local-docker.sql:/docker-entrypoint-initdb.d/0.init.sql
+
+  #migrate:
+  #  build:
+  #    context: .
+  #    dockerfile: Dockerfile-migrate
+  #  volumes:
+  #    - ./migrations:/migrations
+  #  depends_on:
+  #    - postgres
+  #  command: [ "migrate", "-path=/migrations", "-database=postgres://postgres:postgres@postgres:5432/forecaster?sslmode=disable", "up" ]
+
+  service:
+    build: .
+    restart: unless-stopped
+    command: ["/usr/bin/app"]
+    depends_on:
+        - postgres
+        #- migrate
+    ports:
+      - "8080:8000"
+    environment:
+      DB_CONN: 'postgres://postgres@postgres:5432/forecaster?sslmode=disable'
+
+volumes:
+  db-data-forecast:
+    driver: local

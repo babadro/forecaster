@@ -1,0 +1,10 @@
+FROM alpine:3.18
+
+RUN apk add --no-cache curl bash
+
+# Install migrate tool
+ARG MIGRATE_VERSION=v4.16.0
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz
+RUN mv migrate /usr/local/bin/migrate
+
+WORKDIR /migrations
