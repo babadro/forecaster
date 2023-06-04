@@ -14,6 +14,7 @@ import (
 
 var envVars = struct {
 	HTTPAddr string `env:"HTTP_ADDR" envDefault:":8080"`
+	DBConn   string `env:"DB_CONN"`
 }{}
 
 func main() {
@@ -25,10 +26,7 @@ func main() {
 		log.Fatalf("Unable to parse env vars: %v\n", err)
 	}
 
-	// read env vars
-	connString := "postgresql://postgres:postgres@localhost:5432/forecaster"
-
-	dbPool, err := pgxpool.Connect(context.Background(), connString)
+	dbPool, err := pgxpool.Connect(context.Background(), envVars.DBConn)
 	if err != nil {
 		log.Fatalf("Unable to connection to database :%v\n", err)
 	}

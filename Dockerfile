@@ -5,10 +5,10 @@ RUN apk --no-cache add ca-certificates tzdata
 
 RUN addgroup --system app && adduser --system app --ingroup app
 
-COPY release/app /usr/bin/app
+COPY release/app /usr/bin/service
 
-RUN chmod +x /usr/bin/app
+RUN chmod +x /usr/bin/service
 
 USER app
 
-CMD ["/usr/bin/app"]
+CMD ["service"]

@@ -26,7 +26,8 @@ services:
   service:
     build: .
     restart: unless-stopped
-    command: ["/usr/bin/app"]
+    command:
+      - service
     depends_on:
         - postgres
         #- migrate
