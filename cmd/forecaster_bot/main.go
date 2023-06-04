@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	bot "github.com/babadro/forecaster/internal/core/forecaster_bot"
 	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/caarlos0/env"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -34,7 +35,7 @@ func main() {
 
 	forecastDB := postgres.NewForecastDB(dbPool)
 
-	_ = forecastDB
+	botService := bot.NewService(forecastDB)
 
 	// wait for os signal
 	<-c
