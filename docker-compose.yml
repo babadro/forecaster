@@ -6,6 +6,12 @@ services:
     restart: unless-stopped
     ports:
       - '5432:5432'
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 1s
+      timeout: 5s
+      retries: 3
+      start_period: 0s
     environment:
         POSTGRES_DB: forecaster
         POSTGRES_HOST_AUTH_METHOD: trust
@@ -13,15 +19,16 @@ services:
       - db-data-forecast:/var/lib/postgresql/data
       - ./migrations/docker/init-local-docker.sql:/docker-entrypoint-initdb.d/0.init.sql
 
-  #migrate:
-  #  build:
-  #    context: .
-  #    dockerfile: Dockerfile-migrate
-  #  volumes:
-  #    - ./migrations:/migrations
-  #  depends_on:
-  #    - postgres
-  #  command: [ "migrate", "-path=/migrations", "-database=postgres://postgres:postgres@postgres:5432/forecaster?sslmode=disable", "up" ]
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile-migrate
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+        postgres:
+            condition: service_healthy
+    command: [ "migrate", "-source", "file:///migrations", "-database", "postgres://postgres@postgres:5432/forecaster?sslmode=disable", "up" ]
 
   service:
     build: .
@@ -29,8 +36,10 @@ services:
     command:
       - service
     depends_on:
-        - postgres
-        #- migrate
+        postgres:
+          condition: service_healthy
+        migrate:
+          condition: service_completed_successfully
     ports:
       - "8080:8000"
     environment:
