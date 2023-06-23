@@ -35,7 +35,7 @@ func main() {
 
 	forecastDB := postgres.NewForecastDB(dbPool)
 
-	botService := bot.NewService(forecastDB)
+	_ = bot.NewService(forecastDB)
 
 	// wait for os signal
 	<-c
