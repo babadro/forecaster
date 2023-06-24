@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -19,10 +19,10 @@ import (
 )
 
 var envVars = struct {
-	HTTPAddr         string `env:"HTTP_ADDR" envDefault:":8080"`
-	TelegramToken    string `env:"TELEGRAM_TOKEN"`
-	DBConn           string `env:"DB_CONN"`
-	NGROCK_AUTHTOKEN string `env:"NGROCK_AUTHTOKEN"`
+	HTTPAddr       string `env:"HTTP_ADDR" envDefault:":8080"`
+	TelegramToken  string `env:"TELEGRAM_TOKEN"`
+	DBConn         string `env:"DB_CONN"`
+	NgrokAuthtoken string `env:"NGROCK_AUTHTOKEN"`
 }{}
 
 func main() {
@@ -44,69 +44,89 @@ func main() {
 
 	_ = bot.NewService(forecastDB)
 
-	tgbot, err := tgbotapi.NewBotAPI(envVars.TelegramToken)
-	if err != nil {
-		log.Fatalf("Unable to create telegram bot: %v\n", err)
-	}
-
-	log.Printf("Authorized on account %s", tgbot.Self.UserName)
+	tunnel, err := ngrokRun(context.Background())
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
+
+	tgBot, err := initBot(tunnel.URL(), envVars.TelegramToken)
+	if err != nil {
+		log.Fatalf("Unable to init bot: %v\n", err)
+	}
+
+	go func() {
+		err := http.Serve(tunnel, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			update, err := tgBot.HandleUpdate(r)
+			if err != nil {
+				errMsg, _ := json.Marshal(map[string]string{"error": err.Error()})
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(errMsg)
+				return
+			}
+
+			go processUpdate(update, tgBot)
+		}))
+
+		if err != nil {
+			log.Fatalf("Unable to serve: %v\n", err)
+		}
+	}()
 
 	// wait for os signal
 	<-c
 }
 
-func ngrokRun(ctx context.Context) error {
+func processUpdate(upd *tgbotapi.Update, bot *tgbotapi.BotAPI) {
+	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, "hello from bot")
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Unable to send message: %v\n", err)
+	}
+}
+
+func ngrokRun(ctx context.Context) (ngrok.Tunnel, error) {
 	tun, err := ngrok.Listen(ctx,
 		config.HTTPEndpoint(),
-		ngrok.WithAuthtoken(envVars.NGROCK_AUTHTOKEN),
+		ngrok.WithAuthtoken(envVars.NgrokAuthtoken),
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Println("tunnel created:", tun.URL())
 
-	return http.Serve(tun, http.HandlerFunc(handler))
+	return tun, nil
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "<h1>Hello from ngrok-go.</h1>")
-}
-
-func initBot() {
-	bot, err := tgbotapi.NewBotAPI("MyAwesomeBotToken")
+func initBot(link, token string) (*tgbotapi.BotAPI, error) {
+	botAPI, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	bot.Debug = true
+	botAPI.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Printf("Authorized on account %s", botAPI.Self.UserName)
 
-	wh, _ := tgbotapi.NewWebhookWithCert("https://www.example.com:8443/"+bot.Token, "cert.pem")
-
-	_, err = bot.Request(wh)
+	wh, err := tgbotapi.NewWebhook(link)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	info, err := bot.GetWebhookInfo()
+	_, err = botAPI.Request(wh)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
+	}
+
+	info, err := botAPI.GetWebhookInfo()
+	if err != nil {
+		return nil, err
 	}
 
 	if info.LastErrorDate != 0 {
 		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
 
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServeTLS("0.0.0.0:8443", "cert.pem", "key.pem", nil)
-
-	for update := range updates {
-		log.Printf("%+v\n", update)
-	}
+	return botAPI, nil
 }
