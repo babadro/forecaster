@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	bot "github.com/babadro/forecaster/internal/core/forecaster_bot"
 	"github.com/babadro/forecaster/internal/infra/postgres"
@@ -51,11 +52,13 @@ func main() {
 
 	tgBot, err := initBot(tunnel.URL(), envVars.TelegramToken)
 	if err != nil {
-		log.Fatalf("Unable to init bot: %v\n", err)
+		log.Printf("Unable to init bot: %v\n", err)
+		return
 	}
 
-	go func() {
-		err := http.Serve(tunnel, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := &http.Server{
+		Addr: ":8080",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			update, err := tgBot.HandleUpdate(r)
 			if err != nil {
 				errMsg, _ := json.Marshal(map[string]string{"error": err.Error()})
@@ -64,12 +67,16 @@ func main() {
 				_, _ = w.Write(errMsg)
 				return
 			}
-
 			go processUpdate(update, tgBot)
-		}))
+		}),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  15 * time.Second,
+	}
 
-		if err != nil {
-			log.Fatalf("Unable to serve: %v\n", err)
+	go func() {
+		if err := server.Serve(tunnel); err != nil {
+			log.Printf("Unable to serve: %v\n", err)
 		}
 	}()
 
