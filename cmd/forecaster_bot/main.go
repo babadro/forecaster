@@ -19,23 +19,31 @@ import (
 	"golang.ngrok.com/ngrok/config"
 )
 
-var envVars = struct {
+const (
+	readTimeout  = 5 * time.Second
+	writeTimeout = 10 * time.Second
+	idleTimeout  = 15 * time.Second
+)
+
+type envVars1 struct {
 	HTTPAddr       string `env:"HTTP_ADDR" envDefault:":8080"`
 	TelegramToken  string `env:"TELEGRAM_TOKEN"`
 	DBConn         string `env:"DB_CONN"`
 	NgrokAuthtoken string `env:"NGROCK_AUTHTOKEN"`
-}{}
+}
 
 func main() {
+	var envs envVars1
+
 	// listen to os signals
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
-	if err := env.Parse(&envVars); err != nil {
+	if err := env.Parse(&envs); err != nil {
 		log.Fatalf("Unable to parse env vars: %v\n", err)
 	}
 
-	dbPool, err := pgxpool.Connect(context.Background(), envVars.DBConn)
+	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
 	if err != nil {
 		log.Fatalf("Unable to connection to database :%v\n", err)
 	}
@@ -45,12 +53,13 @@ func main() {
 
 	_ = bot.NewService(forecastDB)
 
-	tunnel, err := ngrokRun(context.Background())
+	tunnel, err := ngrokRun(context.Background(), envs.NgrokAuthtoken)
+	if err != nil {
+		log.Printf("Unable to run ngrok: %v\n", err)
+		return
+	}
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	tgBot, err := initBot(tunnel.URL(), envVars.TelegramToken)
+	tgBot, err := initBot(tunnel.URL(), envs.TelegramToken)
 	if err != nil {
 		log.Printf("Unable to init bot: %v\n", err)
 		return
@@ -59,9 +68,9 @@ func main() {
 	server := &http.Server{
 		Addr: ":8080",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			update, err := tgBot.HandleUpdate(r)
-			if err != nil {
-				errMsg, _ := json.Marshal(map[string]string{"error": err.Error()})
+			update, updateErr := tgBot.HandleUpdate(r)
+			if updateErr != nil {
+				errMsg, _ := json.Marshal(map[string]string{"error": updateErr.Error()})
 				w.WriteHeader(http.StatusBadRequest)
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write(errMsg)
@@ -69,14 +78,14 @@ func main() {
 			}
 			go processUpdate(update, tgBot)
 		}),
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  15 * time.Second,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+		IdleTimeout:  idleTimeout,
 	}
 
 	go func() {
-		if err := server.Serve(tunnel); err != nil {
-			log.Printf("Unable to serve: %v\n", err)
+		if serveErr := server.Serve(tunnel); serveErr != nil {
+			log.Printf("Unable to serve: %v\n", serveErr)
 		}
 	}()
 
@@ -86,15 +95,15 @@ func main() {
 
 func processUpdate(upd *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, "hello from bot")
-	if _, err := bot.Send(msg); err != nil {
-		log.Printf("Unable to send message: %v\n", err)
+	if _, sendErr := bot.Send(msg); sendErr != nil {
+		log.Printf("Unable to send message: %v\n", sendErr)
 	}
 }
 
-func ngrokRun(ctx context.Context) (ngrok.Tunnel, error) {
+func ngrokRun(ctx context.Context, token string) (ngrok.Tunnel, error) {
 	tun, err := ngrok.Listen(ctx,
 		config.HTTPEndpoint(),
-		ngrok.WithAuthtoken(envVars.NgrokAuthtoken),
+		ngrok.WithAuthtoken(token),
 	)
 
 	if err != nil {
