@@ -1,4 +1,4 @@
-package forecaster_bot
+package fcasterbot
 
 import "time"
 

@@ -1,6 +1,6 @@
-package forecaster_bot
+package fcasterbot
 
-import bot "github.com/babadro/forecaster/pkg/forecaster_bot"
+import bot "github.com/babadro/forecaster/pkg/fcasterbot"
 
 type Service struct {
 	db DB

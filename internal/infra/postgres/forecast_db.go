@@ -1,11 +1,12 @@
 package postgres
 
 import (
-	"github.com/babadro/forecaster/pkg/forecaster_bot"
+	"github.com/babadro/forecaster/pkg/fcasterbot"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lann/builder"
+
+	sq "github.com/Masterminds/squirrel"
 )
-import sq "github.com/Masterminds/squirrel"
 
 type ForecastDB struct {
 	db *pgxpool.Pool
@@ -19,6 +20,6 @@ func NewForecastDB(db *pgxpool.Pool) *ForecastDB {
 	}
 }
 
-func (db *ForecastDB) GetByID(id int) (forecaster_bot.Poll, error) {
-	return forecaster_bot.Poll{}, nil
+func (db *ForecastDB) GetByID(_ int) (fcasterbot.Poll, error) {
+	return fcasterbot.Poll{}, nil
 }
