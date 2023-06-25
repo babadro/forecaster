@@ -25,15 +25,15 @@ const (
 	idleTimeout  = 15 * time.Second
 )
 
-type envVars1 struct {
-	HTTPAddr       string `env:"HTTP_ADDR" envDefault:":8080"`
+type envVars struct {
+	HTTPAddr       string `env:"HTTP_ADDR"`
 	TelegramToken  string `env:"TELEGRAM_TOKEN"`
 	DBConn         string `env:"DB_CONN"`
 	NgrokAuthtoken string `env:"NGROCK_AUTHTOKEN"`
 }
 
 func main() {
-	var envs envVars1
+	var envs envVars
 
 	// listen to os signals
 	c := make(chan os.Signal, 1)
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr: ":8080",
+		Addr: envs.HTTPAddr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			update, updateErr := tgBot.HandleUpdate(r)
 			if updateErr != nil {
