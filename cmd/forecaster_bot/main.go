@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -20,9 +22,10 @@ import (
 )
 
 const (
-	readTimeout  = 5 * time.Second
-	writeTimeout = 10 * time.Second
-	idleTimeout  = 15 * time.Second
+	readTimeout     = 5 * time.Second
+	writeTimeout    = 10 * time.Second
+	idleTimeout     = 15 * time.Second
+	shutdownTimeout = 5 * time.Second
 )
 
 type envVars struct {
@@ -35,7 +38,6 @@ type envVars struct {
 func main() {
 	var envs envVars
 
-	// listen to os signals
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
@@ -65,6 +67,8 @@ func main() {
 		return
 	}
 
+	var wg sync.WaitGroup
+
 	server := &http.Server{
 		Addr: envs.HTTPAddr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,21 +80,41 @@ func main() {
 				_, _ = w.Write(errMsg)
 				return
 			}
-			go processUpdate(update, tgBot)
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				go processUpdate(update, tgBot)
+			}()
 		}),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 		IdleTimeout:  idleTimeout,
 	}
 
+	errChan := make(chan error)
+
 	go func() {
 		if serveErr := server.Serve(tunnel); serveErr != nil {
-			log.Printf("Unable to serve: %v\n", serveErr)
+			errChan <- fmt.Errorf("unable to serve: %w", serveErr)
 		}
 	}()
 
-	// wait for os signal
-	<-c
+	select {
+	case <-c:
+		log.Println("Shutting down...")
+	case err = <-errChan:
+		log.Printf("Error: %v\n", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err = server.Shutdown(ctx); err != nil {
+		log.Printf("Unable to shutdown: %v\n", err)
+	}
+
+	wg.Wait()
 }
 
 func processUpdate(upd *tgbotapi.Update, bot *tgbotapi.BotAPI) {
