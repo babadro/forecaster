@@ -26,10 +26,10 @@ const (
 )
 
 type envVars struct {
-	HTTPAddr       string `env:"HTTP_ADDR"`
-	TelegramToken  string `env:"TELEGRAM_TOKEN"`
-	DBConn         string `env:"DB_CONN"`
-	NgrokAuthtoken string `env:"NGROCK_AUTHTOKEN"`
+	HTTPAddr       string `env:"HTTP_ADDR,required"`
+	TelegramToken  string `env:"TELEGRAM_TOKEN,required"`
+	DBConn         string `env:"DB_CONN,required"`
+	NgrokAuthToken string `env:"NGROK_AUTH_TOKEN,required"`
 }
 
 func main() {
@@ -53,7 +53,7 @@ func main() {
 
 	_ = bot.NewService(forecastDB)
 
-	tunnel, err := ngrokRun(context.Background(), envs.NgrokAuthtoken)
+	tunnel, err := ngrokRun(context.Background(), envs.NgrokAuthToken)
 	if err != nil {
 		log.Printf("Unable to run ngrok: %v\n", err)
 		return
