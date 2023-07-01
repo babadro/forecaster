@@ -122,6 +122,15 @@ func processUpdate(upd *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	if _, sendErr := bot.Send(msg); sendErr != nil {
 		log.Printf("Unable to send message: %v\n", sendErr)
 	}
+
+	// marshal update to json and output to stdout
+	updJSON, err := json.Marshal(upd)
+	if err != nil {
+		log.Printf("Unable to marshal update: %v\n", err)
+		return
+	}
+
+	log.Printf("Update: %s\n", updJSON)
 }
 
 func ngrokRun(ctx context.Context, token string) (ngrok.Tunnel, error) {

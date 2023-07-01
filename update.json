@@ -1,0 +1,33 @@
+{
+  "update_id": 271136100,
+  "message": {
+    "message_id": 1929,
+    "from": {
+      "id": 475903447,
+      "first_name": "Andrey",
+      "last_name": "Petrovich",
+      "username": "AndreyPetrovich",
+      "language_code": "en"
+    },
+    "date": 1688226162,
+    "chat": {
+      "id": 475903447,
+      "type": "private",
+      "username": "AndreyPetrovich",
+      "first_name": "Andrey",
+      "last_name": "Petrovich",
+      "photo": null,
+      "location": null
+    },
+    "text": "12345",
+    "message_auto_delete_timer_changed": null,
+    "proximity_alert_triggered": null,
+    "voice_chat_scheduled": null,
+    "voice_chat_started": null,
+    "voice_chat_ended": null,
+    "voice_chat_participants_invited": null
+  },
+  "my_chat_member": null,
+  "chat_member": null,
+  "chat_join_request": null
+}
