@@ -1,6 +1,10 @@
 package fcasterbot
 
-import bot "github.com/babadro/forecaster/pkg/fcasterbot"
+import (
+	"context"
+
+	bot "github.com/babadro/forecaster/pkg/fcasterbot"
+)
 
 type Service struct {
 	db DB
@@ -11,9 +15,9 @@ func NewService(db DB) *Service {
 }
 
 type DB interface {
-	GetByID(id int) (bot.Poll, error)
+	GetByID(ctx context.Context, id int32) (bot.Poll, error)
 }
 
-func (s *Service) GetByID(id int) (bot.Poll, error) {
-	return s.db.GetByID(id)
+func (s *Service) GetByID(ctx context.Context, id int32) (bot.Poll, error) {
+	return s.db.GetByID(ctx, id)
 }
