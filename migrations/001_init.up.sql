@@ -4,6 +4,7 @@ CREATE TABLE forecaster.polls (
     description TEXT NOT NULL,
     start timestamp with time zone NOT NULL,
     finish timestamp with time zone NOT NULL,
+    created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL
 );
 

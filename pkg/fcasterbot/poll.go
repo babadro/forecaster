@@ -8,6 +8,7 @@ type Poll struct {
 	Description   string
 	Start, Finish time.Time
 	Options       []Option
+	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
 

@@ -1,4 +1,4 @@
-package fcasterbot
+package forecaster
 
 import (
 	"context"

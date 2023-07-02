@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	bot "github.com/babadro/forecaster/internal/core/forecaster_bot"
+	bot "github.com/babadro/forecaster/internal/core/forecaster"
 	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/caarlos0/env"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -51,7 +51,7 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	forecastDB := postgres.NewForecastDB(dbPool)
+	forecastDB := postgres.NewForecasterDB(dbPool)
 
 	_ = bot.NewService(forecastDB)
 
