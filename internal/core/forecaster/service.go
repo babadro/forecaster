@@ -15,9 +15,9 @@ func NewService(db DB) *Service {
 }
 
 type DB interface {
-	GetByID(ctx context.Context, id int32) (bot.Poll, error)
+	GetPollByID(ctx context.Context, id int32) (bot.Poll, error)
 }
 
-func (s *Service) GetByID(ctx context.Context, id int32) (bot.Poll, error) {
-	return s.db.GetByID(ctx, id)
+func (s *Service) GetPollByID(ctx context.Context, id int32) (bot.Poll, error) {
+	return s.db.GetPollByID(ctx, id)
 }

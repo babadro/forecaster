@@ -12,5 +12,6 @@ CREATE TABLE forecaster.options (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    poll_id INT REFERENCES forecaster.polls(id)
+    poll_id INT,
+    FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE
 );

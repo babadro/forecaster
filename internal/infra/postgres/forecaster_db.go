@@ -24,7 +24,7 @@ func NewForecasterDB(db *pgxpool.Pool) *ForecasterDB {
 	}
 }
 
-func (db *ForecasterDB) GetByID(ctx context.Context, id int32) (fcasterbot.Poll, error) {
+func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (fcasterbot.Poll, error) {
 	pollSQL, _, err := db.q.Select("*").From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
 		return fcasterbot.Poll{}, buildingQueryFailed("select poll", err)
@@ -69,71 +69,43 @@ func (db *ForecasterDB) GetByID(ctx context.Context, id int32) (fcasterbot.Poll,
 }
 
 func (db *ForecasterDB) CreatePoll(ctx context.Context, poll fcasterbot.Poll) (fcasterbot.Poll, error) {
-	tx, err := db.db.Begin(ctx)
-	if err != nil {
-		return fcasterbot.Poll{}, unableToStartTransaction(err)
-	}
-
-	defer func() { _ = tx.Rollback(ctx) }()
-
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
 		Columns("title", "description", "start", "finish", "created_at", "updated_at").
 		Values(poll.Title, poll.Description, poll.Start, poll.Finish).
-		Suffix("RETURNING id").
+		Suffix("RETURNING id, created_at, updated_at").
 		ToSql()
 
 	if err != nil {
 		return fcasterbot.Poll{}, buildingQueryFailed("insert poll", err)
 	}
 
-	var pollID int32
-
-	err = tx.QueryRow(ctx, pollSQL, args...).Scan(&pollID)
+	err = db.db.QueryRow(ctx, pollSQL, args...).Scan(&poll.ID, &poll.CreatedAt, &poll.UpdatedAt)
 	if err != nil {
 		return fcasterbot.Poll{}, scanFailed("insert poll", err)
 	}
 
-	poll.ID = pollID
-
-	q := db.q.Insert("forecaster.options").
-		Columns("title", "description", "poll_id")
-
-	for _, option := range poll.Options {
-		q = q.Values(option.Title, option.Description, pollID)
-	}
-
-	optionSQL, args, err := q.Suffix("RETURNING id").ToSql()
-	if err != nil {
-		return fcasterbot.Poll{}, buildingQueryFailed("insert options", err)
-	}
-
-	rows, err := tx.Query(ctx, optionSQL, args...)
-	if err != nil {
-		return fcasterbot.Poll{}, queryFailed("insert options", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var option fcasterbot.Option
-
-		err = rows.Scan(&option.ID)
-		if err != nil {
-			return fcasterbot.Poll{}, scanFailed("insert options", err)
-		}
-
-		poll.Options = append(poll.Options, option)
-	}
-
-	if err = rows.Err(); err != nil {
-		return fcasterbot.Poll{}, rowsError("insert options", err)
-	}
-
-	if err = tx.Commit(ctx); err != nil {
-		return fcasterbot.Poll{}, unableToCommitTransaction(err)
-	}
-
 	return poll, nil
+}
+
+func (db *ForecasterDB) CreateOption(ctx context.Context, option fcasterbot.Option) (fcasterbot.Option, error) {
+	optionSQL, args, err := db.q.
+		Insert("forecaster.options").
+		Columns("title", "description", "poll_id").
+		Values(option.Title, option.Description, option.PollID).
+		Suffix("RETURNING id").
+		ToSql()
+
+	if err != nil {
+		return fcasterbot.Option{}, buildingQueryFailed("insert option", err)
+	}
+
+	err = db.db.QueryRow(ctx, optionSQL, args...).Scan(&option.ID)
+	if err != nil {
+		return fcasterbot.Option{}, scanFailed("insert option", err)
+	}
+
+	return option, nil
 }
 
 func (db *ForecasterDB) UpdatePoll(ctx context.Context, poll fcasterbot.Poll) (fcasterbot.Poll, error) {
@@ -148,7 +120,7 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, poll fcasterbot.Poll) (f
 		ToSql()
 
 	if err != nil {
-		return fcasterbot.Poll{}, fmt.Errorf("unable to build SQL: %w", err)
+		return fcasterbot.Poll{}, buildingQueryFailed("update poll", err)
 	}
 
 	var updatedAt time.Time
@@ -161,6 +133,63 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, poll fcasterbot.Poll) (f
 	poll.UpdatedAt = updatedAt
 
 	return poll, nil
+}
+
+func (db *ForecasterDB) UpdateOption(ctx context.Context, option fcasterbot.Option) (fcasterbot.Option, error) {
+	optionSQL, args, err := db.q.
+		Update("forecaster.options").
+		Set("title", option.Title).
+		Set("description", option.Description).
+		Where(sq.Eq{"id": option.ID}).
+		Suffix("RETURNING id").
+		ToSql()
+
+	if err != nil {
+		return fcasterbot.Option{}, fmt.Errorf("unable to build SQL: %w", err)
+	}
+
+	err = db.db.QueryRow(ctx, optionSQL, args...).Scan(&option.ID)
+	if err != nil {
+		return fcasterbot.Option{}, fmt.Errorf("unable to update option: %w", err)
+	}
+
+	return option, nil
+}
+
+func (db *ForecasterDB) DeletePoll(ctx context.Context, id int32) error {
+	pollSQL, args, err := db.q.
+		Delete("forecaster.polls").
+		Where(sq.Eq{"id": id}).
+		ToSql()
+
+	if err != nil {
+		return buildingQueryFailed("delete poll", err)
+	}
+
+	_, err = db.db.Exec(ctx, pollSQL, args...)
+	if err != nil {
+		return execFailed("delete poll", err)
+	}
+
+	return nil
+}
+
+func (db *ForecasterDB) DeleteOption(ctx context.Context, id int32) error {
+	optionSQL, args, err := db.q.
+		Delete("forecaster.options").
+		Where(sq.Eq{"id": id}).
+		ToSql()
+
+	if err != nil {
+		return buildingQueryFailed("delete option", err)
+	}
+
+	_, err = db.db.Exec(ctx, optionSQL, args...)
+	if err != nil {
+		return execFailed("delete option", err)
+	}
+
+	return nil
 }
 
 func buildingQueryFailed(queryName string, err error) error {
@@ -180,13 +209,5 @@ func scanFailed(queryName string, err error) error {
 }
 
 func execFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: exec query failed: %w", queryName, err)
-}
-
-func unableToStartTransaction(err error) error {
-	return fmt.Errorf("unable to start transaction: %w", err)
-}
-
-func unableToCommitTransaction(err error) error {
-	return fmt.Errorf("unable to commit transaction: %w", err)
+	return fmt.Errorf("%s: exec failed: %w", queryName, err)
 }
