@@ -1,111 +1,177 @@
 swagger: "2.0"
 info:
-  description: "This is a sample server for a poll management API."
   version: "1.0.0"
   title: "Poll API"
+  description: "API for managing Polls and Options"
 paths:
   /polls:
     post:
-      summary: "Create poll"
-      operationId: "createPoll"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
+      summary: "Create a new Poll"
+      operationId: "CreatePoll"
       parameters:
         - in: "body"
           name: "body"
-          description: "Poll object that needs to be added."
+          description: "Poll object to be created"
           required: true
           schema:
-            $ref: "#/definitions/Poll"
+            $ref: "#/definitions/CreatePoll"
       responses:
-        "201":
-          description: "Poll created"
-        "400":
-          description: "Invalid input"
+        200:
+          description: "Poll created successfully"
+          schema:
+            $ref: "#/definitions/Poll"
   /polls/{pollId}:
     get:
-      summary: "Get poll by ID"
-      operationId: "getPollById"
-      produces:
-        - "application/json"
-      parameters:
-        - name: "pollId"
-          in: "path"
-          description: "ID of poll to return"
-          required: true
-          type: "integer"
-          format: "int32"
-      responses:
-        "200":
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Poll"
-        "400":
-          description: "Invalid ID supplied"
-        "404":
-          description: "Poll not found"
-    put:
-      summary: "Update an existing poll"
-      operationId: "updatePoll"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
+      summary: "Get a Poll by its ID"
+      operationId: "GetPollByID"
       parameters:
         - in: "path"
           name: "pollId"
-          description: "ID of poll that needs to be updated"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        200:
+          description: "Poll found successfully"
+          schema:
+            $ref: "#/definitions/Poll"
+    put:
+      summary: "Update an existing Poll"
+      operationId: "UpdatePoll"
+      parameters:
+        - in: "path"
+          name: "pollId"
           required: true
           type: "integer"
           format: "int32"
         - in: "body"
           name: "body"
-          description: "Updated poll object"
+          description: "Updated Poll object"
           required: true
           schema:
             $ref: "#/definitions/Poll"
       responses:
-        "200":
-          description: "Poll updated"
-        "400":
-          description: "Invalid input"
-        "404":
-          description: "Poll not found"
+        200:
+          description: "Poll updated successfully"
+          schema:
+            $ref: "#/definitions/Poll"
     delete:
-      summary: "Deletes a poll"
-      operationId: "deletePoll"
-      produces:
-        - "application/json"
+      summary: "Delete a Poll by its ID"
+      operationId: "DeletePoll"
       parameters:
-        - name: "pollId"
-          in: "path"
-          description: "Poll id to delete"
+        - in: "path"
+          name: "pollId"
           required: true
           type: "integer"
           format: "int32"
       responses:
-        "400":
-          description: "Invalid ID supplied"
-        "404":
-          description: "Poll not found"
+        200:
+          description: "Poll deleted successfully"
+  /options:
+    post:
+      summary: "Create a new Option"
+      operationId: "CreateOption"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Option object to be created"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateOption"
+      responses:
+        200:
+          description: "Option created successfully"
+          schema:
+            $ref: "#/definitions/Option"
+  /options/{optionId}:
+    put:
+      summary: "Update an existing Option"
+      operationId: "UpdateOption"
+      parameters:
+        - in: "path"
+          name: "optionId"
+          required: true
+          type: "integer"
+          format: "int32"
+        - in: "body"
+          name: "body"
+          description: "Updated Option object"
+          required: true
+          schema:
+            $ref: "#/definitions/Option"
+      responses:
+        200:
+          description: "Option updated successfully"
+          schema:
+            $ref: "#/definitions/Option"
+    delete:
+      summary: "Delete an Option by its ID"
+      operationId: "DeleteOption"
+      parameters:
+        - in: "path"
+          name: "optionId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        200:
+          description: "Option deleted successfully"
 definitions:
+  CreatePoll:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      Start:
+        type: "string"
+        format: "date-time"
+      Finish:
+        type: "string"
+        format: "date-time"
   Poll:
     type: "object"
     properties:
-      id:
+      ID:
         type: "integer"
         format: "int32"
-      title:
+      Title:
         type: "string"
-      description:
+      Description:
         type: "string"
-      start:
-        type: "string"
-        format: "date-time"
-      finish:
+      Start:
         type: "string"
         format: "date-time"
-    xml:
-      name: "Poll"
+      Finish:
+        type: "string"
+        format: "date-time"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
+  CreateOption:
+    type: "object"
+    properties:
+      PollID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+  Option:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      PollID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
