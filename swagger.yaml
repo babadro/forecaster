@@ -4,6 +4,21 @@ info:
   title: "Poll API"
   description: "API for managing Polls and Options"
 paths:
+  /telegram-updates:
+    post:
+      summary: "Receive updates from Telegram"
+      operationId: "ReceiveTelegramUpdates"
+      consumes:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          required: true
+          schema:
+            type: "object"
+      responses:
+        default:
+          description: "A standard response, details will be handled in the application code."
   /polls:
     post:
       summary: "Create a new Poll"
