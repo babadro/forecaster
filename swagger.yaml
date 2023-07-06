@@ -8,6 +8,10 @@ paths:
     post:
       summary: "Create a new Poll"
       operationId: "CreatePoll"
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
         - in: "body"
           name: "body"
@@ -16,14 +20,20 @@ paths:
           schema:
             $ref: "#/definitions/CreatePoll"
       responses:
-        200:
+        201:
           description: "Poll created successfully"
           schema:
             $ref: "#/definitions/Poll"
+        400:
+          description: "Bad request"
+        500:
+          description: "Internal server error"
   /polls/{pollId}:
     get:
       summary: "Get a Poll by its ID"
       operationId: "GetPollByID"
+      produces:
+        - application/json
       parameters:
         - in: "path"
           name: "pollId"
@@ -35,9 +45,17 @@ paths:
           description: "Poll found successfully"
           schema:
             $ref: "#/definitions/Poll"
+        404:
+          description: "Poll not found"
+        500:
+          description: "Internal server error"
     put:
       summary: "Update an existing Poll"
       operationId: "UpdatePoll"
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
         - in: "path"
           name: "pollId"
@@ -55,6 +73,12 @@ paths:
           description: "Poll updated successfully"
           schema:
             $ref: "#/definitions/Poll"
+        400:
+          description: "Bad request"
+        404:
+          description: "Poll not found"
+        500:
+          description: "Internal server error"
     delete:
       summary: "Delete a Poll by its ID"
       operationId: "DeletePoll"
@@ -65,12 +89,20 @@ paths:
           type: "integer"
           format: "int32"
       responses:
-        200:
+        204:
           description: "Poll deleted successfully"
+        404:
+          description: "Poll not found"
+        500:
+          description: "Internal server error"
   /options:
     post:
       summary: "Create a new Option"
       operationId: "CreateOption"
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
         - in: "body"
           name: "body"
@@ -79,14 +111,22 @@ paths:
           schema:
             $ref: "#/definitions/CreateOption"
       responses:
-        200:
+        201:
           description: "Option created successfully"
           schema:
             $ref: "#/definitions/Option"
+        400:
+          description: "Bad request"
+        500:
+          description: "Internal server error"
   /options/{optionId}:
     put:
       summary: "Update an existing Option"
       operationId: "UpdateOption"
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
         - in: "path"
           name: "optionId"
@@ -104,6 +144,12 @@ paths:
           description: "Option updated successfully"
           schema:
             $ref: "#/definitions/Option"
+        400:
+          description: "Bad request"
+        404:
+          description: "Option not found"
+        500:
+          description: "Internal server error"
     delete:
       summary: "Delete an Option by its ID"
       operationId: "DeleteOption"
@@ -114,8 +160,12 @@ paths:
           type: "integer"
           format: "int32"
       responses:
-        200:
+        204:
           description: "Option deleted successfully"
+        404:
+          description: "Option not found"
+        500:
+          description: "Internal server error"
 definitions:
   CreatePoll:
     type: "object"
