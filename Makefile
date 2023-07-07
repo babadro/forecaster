@@ -13,4 +13,4 @@ start-colima:
 	colima start -c 8 -m 8 --arch aarch64 --vm-type=vz --vz-rosetta --mount-type=virtiofs --vz-rosetta
 
 swag:
-	swagger generate server --exclude-main --server-package=internal/infra/restapi --model-package=internal/models -f swagger.yaml
+	swagger generate server --exclude-main --server-package=internal/infra/restapi --model-package=internal/models/swagger -f swagger.yaml
