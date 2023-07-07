@@ -276,6 +276,9 @@ func init() {
         "consumes": [
           "application/json"
         ],
+        "produces": [
+          "application/json"
+        ],
         "summary": "Receive updates from Telegram",
         "operationId": "ReceiveTelegramUpdates",
         "parameters": [
@@ -640,6 +643,9 @@ func init() {
     "/telegram-updates": {
       "post": {
         "consumes": [
+          "application/json"
+        ],
+        "produces": [
           "application/json"
         ],
         "summary": "Receive updates from Telegram",
