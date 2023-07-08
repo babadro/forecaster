@@ -348,19 +348,12 @@ func init() {
     },
     "/telegram-updates": {
       "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
         "summary": "Receive updates from Telegram",
         "operationId": "ReceiveTelegramUpdates",
         "parameters": [
           {
             "name": "body",
             "in": "body",
-            "required": true,
             "schema": {
               "type": "string",
               "format": "binary"
@@ -811,19 +804,12 @@ func init() {
     },
     "/telegram-updates": {
       "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
         "summary": "Receive updates from Telegram",
         "operationId": "ReceiveTelegramUpdates",
         "parameters": [
           {
             "name": "body",
             "in": "body",
-            "required": true,
             "schema": {
               "type": "string",
               "format": "binary"
