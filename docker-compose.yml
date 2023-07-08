@@ -30,6 +30,19 @@ services:
             condition: service_healthy
     command: [ "migrate", "-source", "file:///migrations", "-database", "postgres://postgres@postgres:5432/forecaster?sslmode=disable", "up" ]
 
+  ngrok:
+   image: ngrok/ngrok:alpine
+   env_file: .env.ngrok
+   ports:
+     - "4040:4040"
+   command: [ "http", "service:8080" ]
+   healthcheck:
+     test: ["CMD", "nc", "-z", "-v", "localhost", "4040"]
+     interval: 1s
+     timeout: 5s
+     retries: 10
+     start_period: 0s
+
   service:
     build: .
     #restart: unless-stopped
@@ -37,6 +50,8 @@ services:
       - service
     depends_on:
         postgres:
+          condition: service_healthy
+        ngrok:
           condition: service_healthy
         migrate:
           condition: service_completed_successfully

@@ -5,30 +5,29 @@ package restapi
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"io"
 	"log"
 	"net/http"
 
 	bot "github.com/babadro/forecaster/internal/core/forecaster"
 	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/babadro/forecaster/internal/infra/restapi/handlers"
+	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 	"github.com/caarlos0/env"
-	"github.com/go-openapi/errors"
+	oerrors "github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"golang.ngrok.com/ngrok"
-	"golang.ngrok.com/ngrok/config"
-
-	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 )
 
 //go:generate swagger generate server --target ../../../../forecaster --name PollAPI --spec ../../../swagger.yaml --model-package internal/models/swagger --server-package internal/infra/restapi --principal interface{}
 
 type envVars struct {
-	HTTPAddr       string `env:"HTTP_ADDR,required"`
 	TelegramToken  string `env:"TELEGRAM_TOKEN,required"`
 	DBConn         string `env:"DB_CONN,required"`
-	NgrokAuthToken string `env:"NGROK_AUTH_TOKEN,required"`
+	NgrokAgentAddr string `env:"NGROK_AGENT_ADDR,required"`
 }
 
 func configureFlags(_ *operations.PollAPIAPI) {
@@ -41,6 +40,18 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		log.Fatalf("Unable to parse env vars: %v\n", err)
 	}
 
+	publicUrl, err := getNgrokURL(envs.NgrokAgentAddr)
+	if err != nil {
+		log.Fatalf("Unable to get ngrok url: %v\n", err)
+	}
+
+	tgBot, err := initBot(publicUrl+"/telegram-updates", envs.TelegramToken)
+	if err != nil {
+		log.Fatalf("Unable to init bot: %v\n", err)
+	}
+
+	telegramAPI := handlers.NewTelegram(tgBot)
+
 	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
 	if err != nil {
 		log.Fatalf("Unable to connection to database :%v\n", err)
@@ -51,22 +62,8 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	svc := bot.NewService(forecastDB)
 	pollsAPI := handlers.NewPolls(svc)
 
-	tunnel, err := ngrokRun(context.Background(), envs.NgrokAuthToken)
-	if err != nil {
-		dbPool.Close()
-		log.Fatalf("Unable to run ngrok: %v\n", err)
-	}
-
-	tgBot, err := initBot(tunnel.URL(), envs.TelegramToken)
-	if err != nil {
-		dbPool.Close()
-		log.Fatalf("Unable to init bot: %v\n", err)
-	}
-
-	telegramAPI := handlers.NewTelegram(tgBot)
-
 	// configure the api here
-	api.ServeError = errors.ServeError
+	api.ServeError = oerrors.ServeError
 
 	// Set your custom logger if needed. Default one is log.Printf
 	// Expected interface func(string, ...interface{})
@@ -128,19 +125,35 @@ func setupGlobalMiddleware(handler http.Handler) http.Handler {
 	return handler
 }
 
-func ngrokRun(ctx context.Context, token string) (ngrok.Tunnel, error) {
-	tun, err := ngrok.Listen(ctx,
-		config.HTTPEndpoint(),
-		ngrok.WithAuthtoken(token),
-	)
+type ngrokResp struct {
+	Tunnels []struct {
+		PublicURL string `json:"public_url"`
+	} `json:"tunnels"`
+}
 
+func getNgrokURL(agentAddr string) (string, error) {
+	resp, err := http.Get(agentAddr + "/api/tunnels")
 	if err != nil {
-		return nil, err
+		return "", err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Printf("error while closing response body: %v", err)
+		}
+	}(resp.Body)
+
+	var response ngrokResp
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return "", err
 	}
 
-	log.Println("tunnel created:", tun.URL())
+	if len(response.Tunnels) > 0 {
+		return response.Tunnels[0].PublicURL, nil
+	}
 
-	return tun, nil
+	return "", errors.New("no active ngrok tunnels found")
 }
 
 func initBot(link, token string) (*tgbotapi.BotAPI, error) {
