@@ -19,8 +19,12 @@ paths:
           schema:
             type: "object"
       responses:
-        default:
-          description: "A standard response, details will be handled in the application code."
+        '200':
+          description: "Update received successfully"
+        '400':
+          description: "Bad Request"
+          schema:
+            $ref: "#/definitions/error"
   /polls:
     post:
       summary: "Create a new Poll"
@@ -43,8 +47,16 @@ paths:
             $ref: "#/definitions/Poll"
         400:
           description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
   /polls/{pollId}:
     get:
       summary: "Get a Poll by its ID"
@@ -66,6 +78,12 @@ paths:
           description: "Poll not found"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
     put:
       summary: "Update an existing Poll"
       operationId: "UpdatePoll"
@@ -92,10 +110,18 @@ paths:
             $ref: "#/definitions/Poll"
         400:
           description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
         404:
           description: "Poll not found"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
     delete:
       summary: "Delete a Poll by its ID"
       operationId: "DeletePoll"
@@ -112,6 +138,12 @@ paths:
           description: "Poll not found"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
   /options:
     post:
       summary: "Create a new Option"
@@ -134,8 +166,16 @@ paths:
             $ref: "#/definitions/Option"
         400:
           description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
   /options/{optionId}:
     put:
       summary: "Update an existing Option"
@@ -163,10 +203,18 @@ paths:
             $ref: "#/definitions/Option"
         400:
           description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
         404:
           description: "Option not found"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
     delete:
       summary: "Delete an Option by its ID"
       operationId: "DeleteOption"
@@ -183,7 +231,23 @@ paths:
           description: "Option not found"
         500:
           description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
 definitions:
+  error:
+    type: object
+    required:
+      - message
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
   CreatePoll:
     type: "object"
     properties:
