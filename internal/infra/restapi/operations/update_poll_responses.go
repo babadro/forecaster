@@ -67,6 +67,11 @@ UpdatePollBadRequest Bad request
 swagger:response updatePollBadRequest
 */
 type UpdatePollBadRequest struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewUpdatePollBadRequest creates UpdatePollBadRequest with default headers values
@@ -75,12 +80,27 @@ func NewUpdatePollBadRequest() *UpdatePollBadRequest {
 	return &UpdatePollBadRequest{}
 }
 
+// WithPayload adds the payload to the update poll bad request response
+func (o *UpdatePollBadRequest) WithPayload(payload *swagger.Error) *UpdatePollBadRequest {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the update poll bad request response
+func (o *UpdatePollBadRequest) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *UpdatePollBadRequest) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(400)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }
 
 // UpdatePollNotFoundCode is the HTTP code returned for type UpdatePollNotFound
@@ -117,6 +137,11 @@ UpdatePollInternalServerError Internal server error
 swagger:response updatePollInternalServerError
 */
 type UpdatePollInternalServerError struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewUpdatePollInternalServerError creates UpdatePollInternalServerError with default headers values
@@ -125,10 +150,84 @@ func NewUpdatePollInternalServerError() *UpdatePollInternalServerError {
 	return &UpdatePollInternalServerError{}
 }
 
+// WithPayload adds the payload to the update poll internal server error response
+func (o *UpdatePollInternalServerError) WithPayload(payload *swagger.Error) *UpdatePollInternalServerError {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the update poll internal server error response
+func (o *UpdatePollInternalServerError) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *UpdatePollInternalServerError) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(500)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
+/*
+UpdatePollDefault error
+
+swagger:response updatePollDefault
+*/
+type UpdatePollDefault struct {
+	_statusCode int
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
+}
+
+// NewUpdatePollDefault creates UpdatePollDefault with default headers values
+func NewUpdatePollDefault(code int) *UpdatePollDefault {
+	if code <= 0 {
+		code = 500
+	}
+
+	return &UpdatePollDefault{
+		_statusCode: code,
+	}
+}
+
+// WithStatusCode adds the status to the update poll default response
+func (o *UpdatePollDefault) WithStatusCode(code int) *UpdatePollDefault {
+	o._statusCode = code
+	return o
+}
+
+// SetStatusCode sets the status to the update poll default response
+func (o *UpdatePollDefault) SetStatusCode(code int) {
+	o._statusCode = code
+}
+
+// WithPayload adds the payload to the update poll default response
+func (o *UpdatePollDefault) WithPayload(payload *swagger.Error) *UpdatePollDefault {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the update poll default response
+func (o *UpdatePollDefault) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *UpdatePollDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(o._statusCode)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }

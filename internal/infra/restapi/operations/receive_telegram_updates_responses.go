@@ -9,43 +9,76 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/runtime"
+
+	"github.com/babadro/forecaster/internal/models/swagger"
 )
 
+// ReceiveTelegramUpdatesOKCode is the HTTP code returned for type ReceiveTelegramUpdatesOK
+const ReceiveTelegramUpdatesOKCode int = 200
+
 /*
-ReceiveTelegramUpdatesDefault A standard response, details will be handled in the application code.
+ReceiveTelegramUpdatesOK Update received successfully
 
-swagger:response receiveTelegramUpdatesDefault
+swagger:response receiveTelegramUpdatesOK
 */
-type ReceiveTelegramUpdatesDefault struct {
-	_statusCode int
+type ReceiveTelegramUpdatesOK struct {
 }
 
-// NewReceiveTelegramUpdatesDefault creates ReceiveTelegramUpdatesDefault with default headers values
-func NewReceiveTelegramUpdatesDefault(code int) *ReceiveTelegramUpdatesDefault {
-	if code <= 0 {
-		code = 500
-	}
+// NewReceiveTelegramUpdatesOK creates ReceiveTelegramUpdatesOK with default headers values
+func NewReceiveTelegramUpdatesOK() *ReceiveTelegramUpdatesOK {
 
-	return &ReceiveTelegramUpdatesDefault{
-		_statusCode: code,
-	}
-}
-
-// WithStatusCode adds the status to the receive telegram updates default response
-func (o *ReceiveTelegramUpdatesDefault) WithStatusCode(code int) *ReceiveTelegramUpdatesDefault {
-	o._statusCode = code
-	return o
-}
-
-// SetStatusCode sets the status to the receive telegram updates default response
-func (o *ReceiveTelegramUpdatesDefault) SetStatusCode(code int) {
-	o._statusCode = code
+	return &ReceiveTelegramUpdatesOK{}
 }
 
 // WriteResponse to the client
-func (o *ReceiveTelegramUpdatesDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+func (o *ReceiveTelegramUpdatesOK) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
 	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
 
-	rw.WriteHeader(o._statusCode)
+	rw.WriteHeader(200)
+}
+
+// ReceiveTelegramUpdatesBadRequestCode is the HTTP code returned for type ReceiveTelegramUpdatesBadRequest
+const ReceiveTelegramUpdatesBadRequestCode int = 400
+
+/*
+ReceiveTelegramUpdatesBadRequest Bad Request
+
+swagger:response receiveTelegramUpdatesBadRequest
+*/
+type ReceiveTelegramUpdatesBadRequest struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
+}
+
+// NewReceiveTelegramUpdatesBadRequest creates ReceiveTelegramUpdatesBadRequest with default headers values
+func NewReceiveTelegramUpdatesBadRequest() *ReceiveTelegramUpdatesBadRequest {
+
+	return &ReceiveTelegramUpdatesBadRequest{}
+}
+
+// WithPayload adds the payload to the receive telegram updates bad request response
+func (o *ReceiveTelegramUpdatesBadRequest) WithPayload(payload *swagger.Error) *ReceiveTelegramUpdatesBadRequest {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the receive telegram updates bad request response
+func (o *ReceiveTelegramUpdatesBadRequest) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *ReceiveTelegramUpdatesBadRequest) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(400)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }

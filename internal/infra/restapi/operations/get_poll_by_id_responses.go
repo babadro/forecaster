@@ -92,6 +92,11 @@ GetPollByIDInternalServerError Internal server error
 swagger:response getPollByIdInternalServerError
 */
 type GetPollByIDInternalServerError struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewGetPollByIDInternalServerError creates GetPollByIDInternalServerError with default headers values
@@ -100,10 +105,84 @@ func NewGetPollByIDInternalServerError() *GetPollByIDInternalServerError {
 	return &GetPollByIDInternalServerError{}
 }
 
+// WithPayload adds the payload to the get poll by Id internal server error response
+func (o *GetPollByIDInternalServerError) WithPayload(payload *swagger.Error) *GetPollByIDInternalServerError {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the get poll by Id internal server error response
+func (o *GetPollByIDInternalServerError) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *GetPollByIDInternalServerError) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(500)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
+/*
+GetPollByIDDefault error
+
+swagger:response getPollByIdDefault
+*/
+type GetPollByIDDefault struct {
+	_statusCode int
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
+}
+
+// NewGetPollByIDDefault creates GetPollByIDDefault with default headers values
+func NewGetPollByIDDefault(code int) *GetPollByIDDefault {
+	if code <= 0 {
+		code = 500
+	}
+
+	return &GetPollByIDDefault{
+		_statusCode: code,
+	}
+}
+
+// WithStatusCode adds the status to the get poll by ID default response
+func (o *GetPollByIDDefault) WithStatusCode(code int) *GetPollByIDDefault {
+	o._statusCode = code
+	return o
+}
+
+// SetStatusCode sets the status to the get poll by ID default response
+func (o *GetPollByIDDefault) SetStatusCode(code int) {
+	o._statusCode = code
+}
+
+// WithPayload adds the payload to the get poll by ID default response
+func (o *GetPollByIDDefault) WithPayload(payload *swagger.Error) *GetPollByIDDefault {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the get poll by ID default response
+func (o *GetPollByIDDefault) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *GetPollByIDDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(o._statusCode)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }

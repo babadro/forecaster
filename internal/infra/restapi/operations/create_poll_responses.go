@@ -67,6 +67,11 @@ CreatePollBadRequest Bad request
 swagger:response createPollBadRequest
 */
 type CreatePollBadRequest struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewCreatePollBadRequest creates CreatePollBadRequest with default headers values
@@ -75,12 +80,27 @@ func NewCreatePollBadRequest() *CreatePollBadRequest {
 	return &CreatePollBadRequest{}
 }
 
+// WithPayload adds the payload to the create poll bad request response
+func (o *CreatePollBadRequest) WithPayload(payload *swagger.Error) *CreatePollBadRequest {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the create poll bad request response
+func (o *CreatePollBadRequest) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *CreatePollBadRequest) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(400)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }
 
 // CreatePollInternalServerErrorCode is the HTTP code returned for type CreatePollInternalServerError
@@ -92,6 +112,11 @@ CreatePollInternalServerError Internal server error
 swagger:response createPollInternalServerError
 */
 type CreatePollInternalServerError struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewCreatePollInternalServerError creates CreatePollInternalServerError with default headers values
@@ -100,10 +125,84 @@ func NewCreatePollInternalServerError() *CreatePollInternalServerError {
 	return &CreatePollInternalServerError{}
 }
 
+// WithPayload adds the payload to the create poll internal server error response
+func (o *CreatePollInternalServerError) WithPayload(payload *swagger.Error) *CreatePollInternalServerError {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the create poll internal server error response
+func (o *CreatePollInternalServerError) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *CreatePollInternalServerError) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(500)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
+/*
+CreatePollDefault error
+
+swagger:response createPollDefault
+*/
+type CreatePollDefault struct {
+	_statusCode int
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
+}
+
+// NewCreatePollDefault creates CreatePollDefault with default headers values
+func NewCreatePollDefault(code int) *CreatePollDefault {
+	if code <= 0 {
+		code = 500
+	}
+
+	return &CreatePollDefault{
+		_statusCode: code,
+	}
+}
+
+// WithStatusCode adds the status to the create poll default response
+func (o *CreatePollDefault) WithStatusCode(code int) *CreatePollDefault {
+	o._statusCode = code
+	return o
+}
+
+// SetStatusCode sets the status to the create poll default response
+func (o *CreatePollDefault) SetStatusCode(code int) {
+	o._statusCode = code
+}
+
+// WithPayload adds the payload to the create poll default response
+func (o *CreatePollDefault) WithPayload(payload *swagger.Error) *CreatePollDefault {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the create poll default response
+func (o *CreatePollDefault) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *CreatePollDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(o._statusCode)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }

@@ -67,6 +67,11 @@ UpdateOptionBadRequest Bad request
 swagger:response updateOptionBadRequest
 */
 type UpdateOptionBadRequest struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewUpdateOptionBadRequest creates UpdateOptionBadRequest with default headers values
@@ -75,12 +80,27 @@ func NewUpdateOptionBadRequest() *UpdateOptionBadRequest {
 	return &UpdateOptionBadRequest{}
 }
 
+// WithPayload adds the payload to the update option bad request response
+func (o *UpdateOptionBadRequest) WithPayload(payload *swagger.Error) *UpdateOptionBadRequest {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the update option bad request response
+func (o *UpdateOptionBadRequest) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *UpdateOptionBadRequest) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(400)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }
 
 // UpdateOptionNotFoundCode is the HTTP code returned for type UpdateOptionNotFound
@@ -117,6 +137,11 @@ UpdateOptionInternalServerError Internal server error
 swagger:response updateOptionInternalServerError
 */
 type UpdateOptionInternalServerError struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewUpdateOptionInternalServerError creates UpdateOptionInternalServerError with default headers values
@@ -125,10 +150,84 @@ func NewUpdateOptionInternalServerError() *UpdateOptionInternalServerError {
 	return &UpdateOptionInternalServerError{}
 }
 
+// WithPayload adds the payload to the update option internal server error response
+func (o *UpdateOptionInternalServerError) WithPayload(payload *swagger.Error) *UpdateOptionInternalServerError {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the update option internal server error response
+func (o *UpdateOptionInternalServerError) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *UpdateOptionInternalServerError) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(500)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
+/*
+UpdateOptionDefault error
+
+swagger:response updateOptionDefault
+*/
+type UpdateOptionDefault struct {
+	_statusCode int
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
+}
+
+// NewUpdateOptionDefault creates UpdateOptionDefault with default headers values
+func NewUpdateOptionDefault(code int) *UpdateOptionDefault {
+	if code <= 0 {
+		code = 500
+	}
+
+	return &UpdateOptionDefault{
+		_statusCode: code,
+	}
+}
+
+// WithStatusCode adds the status to the update option default response
+func (o *UpdateOptionDefault) WithStatusCode(code int) *UpdateOptionDefault {
+	o._statusCode = code
+	return o
+}
+
+// SetStatusCode sets the status to the update option default response
+func (o *UpdateOptionDefault) SetStatusCode(code int) {
+	o._statusCode = code
+}
+
+// WithPayload adds the payload to the update option default response
+func (o *UpdateOptionDefault) WithPayload(payload *swagger.Error) *UpdateOptionDefault {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the update option default response
+func (o *UpdateOptionDefault) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *UpdateOptionDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(o._statusCode)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }

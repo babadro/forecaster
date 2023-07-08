@@ -9,6 +9,8 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/runtime"
+
+	"github.com/babadro/forecaster/internal/models/swagger"
 )
 
 // DeletePollNoContentCode is the HTTP code returned for type DeletePollNoContent
@@ -70,6 +72,11 @@ DeletePollInternalServerError Internal server error
 swagger:response deletePollInternalServerError
 */
 type DeletePollInternalServerError struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
 }
 
 // NewDeletePollInternalServerError creates DeletePollInternalServerError with default headers values
@@ -78,10 +85,84 @@ func NewDeletePollInternalServerError() *DeletePollInternalServerError {
 	return &DeletePollInternalServerError{}
 }
 
+// WithPayload adds the payload to the delete poll internal server error response
+func (o *DeletePollInternalServerError) WithPayload(payload *swagger.Error) *DeletePollInternalServerError {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the delete poll internal server error response
+func (o *DeletePollInternalServerError) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *DeletePollInternalServerError) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(500)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
+/*
+DeletePollDefault error
+
+swagger:response deletePollDefault
+*/
+type DeletePollDefault struct {
+	_statusCode int
+
+	/*
+	  In: Body
+	*/
+	Payload *swagger.Error `json:"body,omitempty"`
+}
+
+// NewDeletePollDefault creates DeletePollDefault with default headers values
+func NewDeletePollDefault(code int) *DeletePollDefault {
+	if code <= 0 {
+		code = 500
+	}
+
+	return &DeletePollDefault{
+		_statusCode: code,
+	}
+}
+
+// WithStatusCode adds the status to the delete poll default response
+func (o *DeletePollDefault) WithStatusCode(code int) *DeletePollDefault {
+	o._statusCode = code
+	return o
+}
+
+// SetStatusCode sets the status to the delete poll default response
+func (o *DeletePollDefault) SetStatusCode(code int) {
+	o._statusCode = code
+}
+
+// WithPayload adds the payload to the delete poll default response
+func (o *DeletePollDefault) WithPayload(payload *swagger.Error) *DeletePollDefault {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the delete poll default response
+func (o *DeletePollDefault) SetPayload(payload *swagger.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *DeletePollDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(o._statusCode)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
 }
