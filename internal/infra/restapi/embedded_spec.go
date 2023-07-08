@@ -467,9 +467,6 @@ func init() {
     },
     "error": {
       "type": "object",
-      "required": [
-        "message"
-      ],
       "properties": {
         "code": {
           "type": "integer",
@@ -932,9 +929,6 @@ func init() {
     },
     "error": {
       "type": "object",
-      "required": [
-        "message"
-      ],
       "properties": {
         "code": {
           "type": "integer",
