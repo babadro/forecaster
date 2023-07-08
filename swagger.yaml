@@ -17,7 +17,8 @@ paths:
           name: "body"
           required: true
           schema:
-            type: "object"
+            type: "string"
+            format: "binary"
       responses:
         '200':
           description: "Update received successfully"
@@ -35,7 +36,7 @@ paths:
         - application/json
       parameters:
         - in: "body"
-          name: "body"
+          name: "poll"
           description: "Poll object to be created"
           required: true
           schema:
@@ -98,7 +99,7 @@ paths:
           type: "integer"
           format: "int32"
         - in: "body"
-          name: "body"
+          name: "poll"
           description: "Updated Poll object"
           required: true
           schema:
@@ -154,7 +155,7 @@ paths:
         - application/json
       parameters:
         - in: "body"
-          name: "body"
+          name: "option"
           description: "Option object to be created"
           required: true
           schema:
@@ -191,7 +192,7 @@ paths:
           type: "integer"
           format: "int32"
         - in: "body"
-          name: "body"
+          name: "option"
           description: "Updated Option object"
           required: true
           schema:

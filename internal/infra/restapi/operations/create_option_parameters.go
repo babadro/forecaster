@@ -38,7 +38,7 @@ type CreateOptionParams struct {
 	  Required: true
 	  In: body
 	*/
-	Body *swagger.CreateOption
+	Option *swagger.CreateOption
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -55,9 +55,9 @@ func (o *CreateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 		var body swagger.CreateOption
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("body", "body", ""))
+				res = append(res, errors.Required("option", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("body", "body", "", err))
+				res = append(res, errors.NewParseError("option", "body", "", err))
 			}
 		} else {
 			// validate body object
@@ -71,11 +71,11 @@ func (o *CreateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 			}
 
 			if len(res) == 0 {
-				o.Body = &body
+				o.Option = &body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("body", "body", ""))
+		res = append(res, errors.Required("option", "body", ""))
 	}
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

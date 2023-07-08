@@ -38,7 +38,7 @@ type CreatePollParams struct {
 	  Required: true
 	  In: body
 	*/
-	Body *swagger.CreatePoll
+	Poll *swagger.CreatePoll
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -55,9 +55,9 @@ func (o *CreatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 		var body swagger.CreatePoll
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("body", "body", ""))
+				res = append(res, errors.Required("poll", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("body", "body", "", err))
+				res = append(res, errors.NewParseError("poll", "body", "", err))
 			}
 		} else {
 			// validate body object
@@ -71,11 +71,11 @@ func (o *CreatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 			}
 
 			if len(res) == 0 {
-				o.Body = &body
+				o.Poll = &body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("body", "body", ""))
+		res = append(res, errors.Required("poll", "body", ""))
 	}
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

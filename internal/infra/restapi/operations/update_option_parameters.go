@@ -40,7 +40,7 @@ type UpdateOptionParams struct {
 	  Required: true
 	  In: body
 	*/
-	Body *swagger.Option
+	Option *swagger.Option
 	/*
 	  Required: true
 	  In: path
@@ -62,9 +62,9 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 		var body swagger.Option
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("body", "body", ""))
+				res = append(res, errors.Required("option", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("body", "body", "", err))
+				res = append(res, errors.NewParseError("option", "body", "", err))
 			}
 		} else {
 			// validate body object
@@ -78,11 +78,11 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 			}
 
 			if len(res) == 0 {
-				o.Body = &body
+				o.Option = &body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("body", "body", ""))
+		res = append(res, errors.Required("option", "body", ""))
 	}
 	rOptionID, rhkOptionID, _ := route.Params.GetOK("optionId")
 	if err := o.bindOptionID(rOptionID, rhkOptionID, route.Formats); err != nil {

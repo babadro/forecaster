@@ -40,7 +40,7 @@ type UpdatePollParams struct {
 	  Required: true
 	  In: body
 	*/
-	Body *swagger.Poll
+	Poll *swagger.Poll
 	/*
 	  Required: true
 	  In: path
@@ -62,9 +62,9 @@ func (o *UpdatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 		var body swagger.Poll
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("body", "body", ""))
+				res = append(res, errors.Required("poll", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("body", "body", "", err))
+				res = append(res, errors.NewParseError("poll", "body", "", err))
 			}
 		} else {
 			// validate body object
@@ -78,11 +78,11 @@ func (o *UpdatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 			}
 
 			if len(res) == 0 {
-				o.Body = &body
+				o.Poll = &body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("body", "body", ""))
+		res = append(res, errors.Required("poll", "body", ""))
 	}
 	rPollID, rhkPollID, _ := route.Params.GetOK("pollId")
 	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {

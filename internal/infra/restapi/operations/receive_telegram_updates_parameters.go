@@ -34,7 +34,7 @@ type ReceiveTelegramUpdatesParams struct {
 	  Required: true
 	  In: body
 	*/
-	Body interface{}
+	Body io.ReadCloser
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -47,18 +47,7 @@ func (o *ReceiveTelegramUpdatesParams) BindRequest(r *http.Request, route *middl
 	o.HTTPRequest = r
 
 	if runtime.HasBody(r) {
-		defer r.Body.Close()
-		var body interface{}
-		if err := route.Consumer.Consume(r.Body, &body); err != nil {
-			if err == io.EOF {
-				res = append(res, errors.Required("body", "body", ""))
-			} else {
-				res = append(res, errors.NewParseError("body", "body", "", err))
-			}
-		} else {
-			// no validation on generic interface
-			o.Body = body
-		}
+		o.Body = r.Body
 	} else {
 		res = append(res, errors.Required("body", "body", ""))
 	}
