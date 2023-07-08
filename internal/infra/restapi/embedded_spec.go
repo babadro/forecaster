@@ -38,7 +38,7 @@ func init() {
         "parameters": [
           {
             "description": "Option object to be created",
-            "name": "body",
+            "name": "option",
             "in": "body",
             "required": true,
             "schema": {
@@ -94,7 +94,7 @@ func init() {
           },
           {
             "description": "Updated Option object",
-            "name": "body",
+            "name": "option",
             "in": "body",
             "required": true,
             "schema": {
@@ -179,7 +179,7 @@ func init() {
         "parameters": [
           {
             "description": "Poll object to be created",
-            "name": "body",
+            "name": "poll",
             "in": "body",
             "required": true,
             "schema": {
@@ -274,7 +274,7 @@ func init() {
           },
           {
             "description": "Updated Poll object",
-            "name": "body",
+            "name": "poll",
             "in": "body",
             "required": true,
             "schema": {
@@ -362,7 +362,8 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "type": "object"
+              "type": "string",
+              "format": "binary"
             }
           }
         ],
@@ -500,7 +501,7 @@ func init() {
         "parameters": [
           {
             "description": "Option object to be created",
-            "name": "body",
+            "name": "option",
             "in": "body",
             "required": true,
             "schema": {
@@ -556,7 +557,7 @@ func init() {
           },
           {
             "description": "Updated Option object",
-            "name": "body",
+            "name": "option",
             "in": "body",
             "required": true,
             "schema": {
@@ -641,7 +642,7 @@ func init() {
         "parameters": [
           {
             "description": "Poll object to be created",
-            "name": "body",
+            "name": "poll",
             "in": "body",
             "required": true,
             "schema": {
@@ -736,7 +737,7 @@ func init() {
           },
           {
             "description": "Updated Poll object",
-            "name": "body",
+            "name": "poll",
             "in": "body",
             "required": true,
             "schema": {
@@ -824,7 +825,8 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "type": "object"
+              "type": "string",
+              "format": "binary"
             }
           }
         ],
