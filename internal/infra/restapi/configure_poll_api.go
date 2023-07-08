@@ -3,23 +3,68 @@
 package restapi
 
 import (
+	"context"
 	"crypto/tls"
+	"log"
 	"net/http"
 
+	bot "github.com/babadro/forecaster/internal/core/forecaster"
+	"github.com/babadro/forecaster/internal/infra/postgres"
+	"github.com/babadro/forecaster/internal/infra/restapi/handlers"
+	"github.com/caarlos0/env"
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/runtime/middleware"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"golang.ngrok.com/ngrok"
+	"golang.ngrok.com/ngrok/config"
 
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 )
 
 //go:generate swagger generate server --target ../../../../forecaster --name PollAPI --spec ../../../swagger.yaml --model-package internal/models/swagger --server-package internal/infra/restapi --principal interface{}
 
+type envVars struct {
+	HTTPAddr       string `env:"HTTP_ADDR,required"`
+	TelegramToken  string `env:"TELEGRAM_TOKEN,required"`
+	DBConn         string `env:"DB_CONN,required"`
+	NgrokAuthToken string `env:"NGROK_AUTH_TOKEN,required"`
+}
+
 func configureFlags(_ *operations.PollAPIAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
 }
 
 func configureAPI(api *operations.PollAPIAPI) http.Handler {
+	var envs envVars
+	if err := env.Parse(&envs); err != nil {
+		log.Fatalf("Unable to parse env vars: %v\n", err)
+	}
+
+	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
+	if err != nil {
+		log.Fatalf("Unable to connection to database :%v\n", err)
+	}
+
+	forecastDB := postgres.NewForecasterDB(dbPool)
+
+	svc := bot.NewService(forecastDB)
+	pollsAPI := handlers.NewPolls(svc)
+
+	tunnel, err := ngrokRun(context.Background(), envs.NgrokAuthToken)
+	if err != nil {
+		dbPool.Close()
+		log.Fatalf("Unable to run ngrok: %v\n", err)
+	}
+
+	tgBot, err := initBot(tunnel.URL(), envs.TelegramToken)
+	if err != nil {
+		dbPool.Close()
+		log.Fatalf("Unable to init bot: %v\n", err)
+	}
+
+	telegramAPI := handlers.NewTelegram(tgBot)
+
 	// configure the api here
 	api.ServeError = errors.ServeError
 
@@ -37,65 +82,23 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
-	if api.CreateOptionHandler == nil {
-		api.CreateOptionHandler = operations.CreateOptionHandlerFunc(
-			func(params operations.CreateOptionParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.CreateOption has not yet been implemented")
-			})
-	}
+	api.CreatePollHandler = operations.CreatePollHandlerFunc(pollsAPI.CreatePoll)
+	api.GetPollByIDHandler = operations.GetPollByIDHandlerFunc(pollsAPI.GetPollByID)
+	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
+	api.UpdatePollHandler = operations.UpdatePollHandlerFunc(pollsAPI.UpdatePoll)
 
-	if api.CreatePollHandler == nil {
-		api.CreatePollHandler = operations.CreatePollHandlerFunc(
-			func(params operations.CreatePollParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.CreatePoll has not yet been implemented")
-			})
-	}
+	api.CreateOptionHandler = operations.CreateOptionHandlerFunc(pollsAPI.CreateOption)
+	api.UpdateOptionHandler = operations.UpdateOptionHandlerFunc(pollsAPI.UpdateOption)
+	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
 
-	if api.DeleteOptionHandler == nil {
-		api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(
-			func(params operations.DeleteOptionParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.DeleteOption has not yet been implemented")
-			})
-	}
-
-	if api.DeletePollHandler == nil {
-		api.DeletePollHandler = operations.DeletePollHandlerFunc(
-			func(params operations.DeletePollParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.DeletePoll has not yet been implemented")
-			})
-	}
-
-	if api.GetPollByIDHandler == nil {
-		api.GetPollByIDHandler = operations.GetPollByIDHandlerFunc(
-			func(params operations.GetPollByIDParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.GetPollByID has not yet been implemented")
-			})
-	}
-
-	if api.ReceiveTelegramUpdatesHandler == nil {
-		api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(
-			func(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.ReceiveTelegramUpdates has not yet been implemented")
-			})
-	}
-
-	if api.UpdateOptionHandler == nil {
-		api.UpdateOptionHandler = operations.UpdateOptionHandlerFunc(
-			func(params operations.UpdateOptionParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.UpdateOption has not yet been implemented")
-			})
-	}
-
-	if api.UpdatePollHandler == nil {
-		api.UpdatePollHandler = operations.UpdatePollHandlerFunc(
-			func(params operations.UpdatePollParams) middleware.Responder {
-				return middleware.NotImplemented("operation operations.UpdatePoll has not yet been implemented")
-			})
-	}
+	api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(telegramAPI.ReceiveUpdates)
 
 	api.PreServerShutdown = func() {}
 
-	api.ServerShutdown = func() {}
+	api.ServerShutdown = func() {
+		dbPool.Close()
+		telegramAPI.Wait()
+	}
 
 	return setupGlobalMiddleware(api.Serve(setupMiddlewares))
 }
@@ -123,4 +126,51 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
 	return handler
+}
+
+func ngrokRun(ctx context.Context, token string) (ngrok.Tunnel, error) {
+	tun, err := ngrok.Listen(ctx,
+		config.HTTPEndpoint(),
+		ngrok.WithAuthtoken(token),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("tunnel created:", tun.URL())
+
+	return tun, nil
+}
+
+func initBot(link, token string) (*tgbotapi.BotAPI, error) {
+	botAPI, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		return nil, err
+	}
+
+	botAPI.Debug = true
+
+	log.Printf("Authorized on account %s", botAPI.Self.UserName)
+
+	wh, err := tgbotapi.NewWebhook(link)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = botAPI.Request(wh)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := botAPI.GetWebhookInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	if info.LastErrorDate != 0 {
+		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+	}
+
+	return botAPI, nil
 }
