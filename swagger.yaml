@@ -240,8 +240,6 @@ paths:
 definitions:
   error:
     type: object
-    required:
-      - message
     properties:
       code:
         type: integer
