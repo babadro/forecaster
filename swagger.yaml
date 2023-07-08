@@ -8,14 +8,9 @@ paths:
     post:
       summary: "Receive updates from Telegram"
       operationId: "ReceiveTelegramUpdates"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
       parameters:
         - in: "body"
           name: "body"
-          required: true
           schema:
             type: "string"
             format: "binary"

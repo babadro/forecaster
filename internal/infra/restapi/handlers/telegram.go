@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -22,11 +23,12 @@ func NewTelegram(tgBot *tgbotapi.BotAPI) *Tg {
 }
 
 func (t *Tg) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
-	update, updateErr := t.tgBot.HandleUpdate(params.HTTPRequest)
-	if updateErr != nil {
-		return operations.NewCreateOptionBadRequest().WithPayload(&swagger.Error{
+	var update tgbotapi.Update
+	err := json.NewDecoder(params.HTTPRequest.Body).Decode(&update)
+	if err != nil {
+		return operations.NewReceiveTelegramUpdatesBadRequest().WithPayload(&swagger.Error{
 			Code:    http.StatusBadRequest,
-			Message: updateErr.Error(),
+			Message: fmt.Sprintf("Unable to decode update: %v", err),
 		})
 	}
 
@@ -38,15 +40,15 @@ func (t *Tg) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) midd
 		go processUpdate(update, t.tgBot)
 	}()
 
-	return operations.NewCreatePollBadRequest()
+	return operations.NewReceiveTelegramUpdatesOK()
 }
 
 func (t *Tg) Wait() {
 	t.wg.Wait()
 }
 
-func processUpdate(upd *tgbotapi.Update, bot *tgbotapi.BotAPI) {
-	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, "hello from bot")
+func processUpdate(upd tgbotapi.Update, bot *tgbotapi.BotAPI) {
+	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
 	if _, sendErr := bot.Send(msg); sendErr != nil {
 		log.Printf("Unable to send message: %v\n", sendErr)
 	}

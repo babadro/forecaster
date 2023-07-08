@@ -31,7 +31,6 @@ type ReceiveTelegramUpdatesParams struct {
 	HTTPRequest *http.Request `json:"-"`
 
 	/*
-	  Required: true
 	  In: body
 	*/
 	Body io.ReadCloser
@@ -48,8 +47,6 @@ func (o *ReceiveTelegramUpdatesParams) BindRequest(r *http.Request, route *middl
 
 	if runtime.HasBody(r) {
 		o.Body = r.Body
-	} else {
-		res = append(res, errors.Required("body", "body", ""))
 	}
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
