@@ -346,6 +346,186 @@ func init() {
         }
       }
     },
+    "/series": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Create a new Series",
+        "operationId": "CreateSeries",
+        "parameters": [
+          {
+            "description": "Series object to be created",
+            "name": "series",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateSeries"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Series created successfully",
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/series/{seriesId}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get a Series by its ID",
+        "operationId": "GetSeriesByID",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "seriesId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Series found successfully",
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          },
+          "404": {
+            "description": "Series not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Update an existing Series",
+        "operationId": "UpdateSeries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "seriesId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Updated Series object",
+            "name": "series",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Series updated successfully",
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "404": {
+            "description": "Series not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a Series by its ID",
+        "operationId": "DeleteSeries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "seriesId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Series deleted successfully"
+          },
+          "404": {
+            "description": "Series not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/telegram-updates": {
       "post": {
         "summary": "Receive updates from Telegram",
@@ -824,6 +1004,186 @@ func init() {
           },
           "404": {
             "description": "Poll not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/series": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Create a new Series",
+        "operationId": "CreateSeries",
+        "parameters": [
+          {
+            "description": "Series object to be created",
+            "name": "series",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateSeries"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Series created successfully",
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/series/{seriesId}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get a Series by its ID",
+        "operationId": "GetSeriesByID",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "seriesId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Series found successfully",
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          },
+          "404": {
+            "description": "Series not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Update an existing Series",
+        "operationId": "UpdateSeries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "seriesId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Updated Series object",
+            "name": "series",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Series updated successfully",
+            "schema": {
+              "$ref": "#/definitions/Series"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "404": {
+            "description": "Series not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a Series by its ID",
+        "operationId": "DeleteSeries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "seriesId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Series deleted successfully"
+          },
+          "404": {
+            "description": "Series not found"
           },
           "500": {
             "description": "Internal server error",

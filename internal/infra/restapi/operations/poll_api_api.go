@@ -48,14 +48,23 @@ func NewPollAPIAPI(spec *loads.Document) *PollAPIAPI {
 		CreatePollHandler: CreatePollHandlerFunc(func(params CreatePollParams) middleware.Responder {
 			return middleware.NotImplemented("operation CreatePoll has not yet been implemented")
 		}),
+		CreateSeriesHandler: CreateSeriesHandlerFunc(func(params CreateSeriesParams) middleware.Responder {
+			return middleware.NotImplemented("operation CreateSeries has not yet been implemented")
+		}),
 		DeleteOptionHandler: DeleteOptionHandlerFunc(func(params DeleteOptionParams) middleware.Responder {
 			return middleware.NotImplemented("operation DeleteOption has not yet been implemented")
 		}),
 		DeletePollHandler: DeletePollHandlerFunc(func(params DeletePollParams) middleware.Responder {
 			return middleware.NotImplemented("operation DeletePoll has not yet been implemented")
 		}),
+		DeleteSeriesHandler: DeleteSeriesHandlerFunc(func(params DeleteSeriesParams) middleware.Responder {
+			return middleware.NotImplemented("operation DeleteSeries has not yet been implemented")
+		}),
 		GetPollByIDHandler: GetPollByIDHandlerFunc(func(params GetPollByIDParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetPollByID has not yet been implemented")
+		}),
+		GetSeriesByIDHandler: GetSeriesByIDHandlerFunc(func(params GetSeriesByIDParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetSeriesByID has not yet been implemented")
 		}),
 		ReceiveTelegramUpdatesHandler: ReceiveTelegramUpdatesHandlerFunc(func(params ReceiveTelegramUpdatesParams) middleware.Responder {
 			return middleware.NotImplemented("operation ReceiveTelegramUpdates has not yet been implemented")
@@ -65,6 +74,9 @@ func NewPollAPIAPI(spec *loads.Document) *PollAPIAPI {
 		}),
 		UpdatePollHandler: UpdatePollHandlerFunc(func(params UpdatePollParams) middleware.Responder {
 			return middleware.NotImplemented("operation UpdatePoll has not yet been implemented")
+		}),
+		UpdateSeriesHandler: UpdateSeriesHandlerFunc(func(params UpdateSeriesParams) middleware.Responder {
+			return middleware.NotImplemented("operation UpdateSeries has not yet been implemented")
 		}),
 	}
 }
@@ -106,18 +118,26 @@ type PollAPIAPI struct {
 	CreateOptionHandler CreateOptionHandler
 	// CreatePollHandler sets the operation handler for the create poll operation
 	CreatePollHandler CreatePollHandler
+	// CreateSeriesHandler sets the operation handler for the create series operation
+	CreateSeriesHandler CreateSeriesHandler
 	// DeleteOptionHandler sets the operation handler for the delete option operation
 	DeleteOptionHandler DeleteOptionHandler
 	// DeletePollHandler sets the operation handler for the delete poll operation
 	DeletePollHandler DeletePollHandler
+	// DeleteSeriesHandler sets the operation handler for the delete series operation
+	DeleteSeriesHandler DeleteSeriesHandler
 	// GetPollByIDHandler sets the operation handler for the get poll by ID operation
 	GetPollByIDHandler GetPollByIDHandler
+	// GetSeriesByIDHandler sets the operation handler for the get series by ID operation
+	GetSeriesByIDHandler GetSeriesByIDHandler
 	// ReceiveTelegramUpdatesHandler sets the operation handler for the receive telegram updates operation
 	ReceiveTelegramUpdatesHandler ReceiveTelegramUpdatesHandler
 	// UpdateOptionHandler sets the operation handler for the update option operation
 	UpdateOptionHandler UpdateOptionHandler
 	// UpdatePollHandler sets the operation handler for the update poll operation
 	UpdatePollHandler UpdatePollHandler
+	// UpdateSeriesHandler sets the operation handler for the update series operation
+	UpdateSeriesHandler UpdateSeriesHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -201,14 +221,23 @@ func (o *PollAPIAPI) Validate() error {
 	if o.CreatePollHandler == nil {
 		unregistered = append(unregistered, "CreatePollHandler")
 	}
+	if o.CreateSeriesHandler == nil {
+		unregistered = append(unregistered, "CreateSeriesHandler")
+	}
 	if o.DeleteOptionHandler == nil {
 		unregistered = append(unregistered, "DeleteOptionHandler")
 	}
 	if o.DeletePollHandler == nil {
 		unregistered = append(unregistered, "DeletePollHandler")
 	}
+	if o.DeleteSeriesHandler == nil {
+		unregistered = append(unregistered, "DeleteSeriesHandler")
+	}
 	if o.GetPollByIDHandler == nil {
 		unregistered = append(unregistered, "GetPollByIDHandler")
+	}
+	if o.GetSeriesByIDHandler == nil {
+		unregistered = append(unregistered, "GetSeriesByIDHandler")
 	}
 	if o.ReceiveTelegramUpdatesHandler == nil {
 		unregistered = append(unregistered, "ReceiveTelegramUpdatesHandler")
@@ -218,6 +247,9 @@ func (o *PollAPIAPI) Validate() error {
 	}
 	if o.UpdatePollHandler == nil {
 		unregistered = append(unregistered, "UpdatePollHandler")
+	}
+	if o.UpdateSeriesHandler == nil {
+		unregistered = append(unregistered, "UpdateSeriesHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -315,6 +347,10 @@ func (o *PollAPIAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/polls"] = NewCreatePoll(o.context, o.CreatePollHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/series"] = NewCreateSeries(o.context, o.CreateSeriesHandler)
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
@@ -323,10 +359,18 @@ func (o *PollAPIAPI) initHandlerCache() {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
 	o.handlers["DELETE"]["/polls/{pollId}"] = NewDeletePoll(o.context, o.DeletePollHandler)
+	if o.handlers["DELETE"] == nil {
+		o.handlers["DELETE"] = make(map[string]http.Handler)
+	}
+	o.handlers["DELETE"]["/series/{seriesId}"] = NewDeleteSeries(o.context, o.DeleteSeriesHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/polls/{pollId}"] = NewGetPollByID(o.context, o.GetPollByIDHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/series/{seriesId}"] = NewGetSeriesByID(o.context, o.GetSeriesByIDHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
@@ -339,6 +383,10 @@ func (o *PollAPIAPI) initHandlerCache() {
 		o.handlers["PUT"] = make(map[string]http.Handler)
 	}
 	o.handlers["PUT"]["/polls/{pollId}"] = NewUpdatePoll(o.context, o.UpdatePollHandler)
+	if o.handlers["PUT"] == nil {
+		o.handlers["PUT"] = make(map[string]http.Handler)
+	}
+	o.handlers["PUT"]["/series/{seriesId}"] = NewUpdateSeries(o.context, o.UpdateSeriesHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP
