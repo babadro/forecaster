@@ -16,8 +16,7 @@ import (
 // UpdateOptionOKCode is the HTTP code returned for type UpdateOptionOK
 const UpdateOptionOKCode int = 200
 
-/*
-UpdateOptionOK Option updated successfully
+/*UpdateOptionOK Option updated successfully
 
 swagger:response updateOptionOK
 */
@@ -61,8 +60,7 @@ func (o *UpdateOptionOK) WriteResponse(rw http.ResponseWriter, producer runtime.
 // UpdateOptionBadRequestCode is the HTTP code returned for type UpdateOptionBadRequest
 const UpdateOptionBadRequestCode int = 400
 
-/*
-UpdateOptionBadRequest Bad request
+/*UpdateOptionBadRequest Bad request
 
 swagger:response updateOptionBadRequest
 */
@@ -106,8 +104,7 @@ func (o *UpdateOptionBadRequest) WriteResponse(rw http.ResponseWriter, producer 
 // UpdateOptionNotFoundCode is the HTTP code returned for type UpdateOptionNotFound
 const UpdateOptionNotFoundCode int = 404
 
-/*
-UpdateOptionNotFound Option not found
+/*UpdateOptionNotFound Option not found
 
 swagger:response updateOptionNotFound
 */
@@ -131,8 +128,7 @@ func (o *UpdateOptionNotFound) WriteResponse(rw http.ResponseWriter, producer ru
 // UpdateOptionInternalServerErrorCode is the HTTP code returned for type UpdateOptionInternalServerError
 const UpdateOptionInternalServerErrorCode int = 500
 
-/*
-UpdateOptionInternalServerError Internal server error
+/*UpdateOptionInternalServerError Internal server error
 
 swagger:response updateOptionInternalServerError
 */
@@ -173,8 +169,7 @@ func (o *UpdateOptionInternalServerError) WriteResponse(rw http.ResponseWriter, 
 	}
 }
 
-/*
-UpdateOptionDefault error
+/*UpdateOptionDefault error
 
 swagger:response updateOptionDefault
 */

@@ -16,8 +16,7 @@ import (
 // ReceiveTelegramUpdatesOKCode is the HTTP code returned for type ReceiveTelegramUpdatesOK
 const ReceiveTelegramUpdatesOKCode int = 200
 
-/*
-ReceiveTelegramUpdatesOK Update received successfully
+/*ReceiveTelegramUpdatesOK Update received successfully
 
 swagger:response receiveTelegramUpdatesOK
 */
@@ -41,8 +40,7 @@ func (o *ReceiveTelegramUpdatesOK) WriteResponse(rw http.ResponseWriter, produce
 // ReceiveTelegramUpdatesBadRequestCode is the HTTP code returned for type ReceiveTelegramUpdatesBadRequest
 const ReceiveTelegramUpdatesBadRequestCode int = 400
 
-/*
-ReceiveTelegramUpdatesBadRequest Bad Request
+/*ReceiveTelegramUpdatesBadRequest Bad Request
 
 swagger:response receiveTelegramUpdatesBadRequest
 */

@@ -29,10 +29,10 @@ func NewReceiveTelegramUpdates(ctx *middleware.Context, handler ReceiveTelegramU
 	return &ReceiveTelegramUpdates{Context: ctx, Handler: handler}
 }
 
-/*
-ReceiveTelegramUpdates swagger:route POST /telegram-updates receiveTelegramUpdates
+/*ReceiveTelegramUpdates swagger:route POST /telegram-updates receiveTelegramUpdates
 
 Receive updates from Telegram
+
 */
 type ReceiveTelegramUpdates struct {
 	Context *middleware.Context

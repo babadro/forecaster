@@ -16,8 +16,7 @@ import (
 // DeleteOptionNoContentCode is the HTTP code returned for type DeleteOptionNoContent
 const DeleteOptionNoContentCode int = 204
 
-/*
-DeleteOptionNoContent Option deleted successfully
+/*DeleteOptionNoContent Option deleted successfully
 
 swagger:response deleteOptionNoContent
 */
@@ -41,8 +40,7 @@ func (o *DeleteOptionNoContent) WriteResponse(rw http.ResponseWriter, producer r
 // DeleteOptionNotFoundCode is the HTTP code returned for type DeleteOptionNotFound
 const DeleteOptionNotFoundCode int = 404
 
-/*
-DeleteOptionNotFound Option not found
+/*DeleteOptionNotFound Option not found
 
 swagger:response deleteOptionNotFound
 */
@@ -66,8 +64,7 @@ func (o *DeleteOptionNotFound) WriteResponse(rw http.ResponseWriter, producer ru
 // DeleteOptionInternalServerErrorCode is the HTTP code returned for type DeleteOptionInternalServerError
 const DeleteOptionInternalServerErrorCode int = 500
 
-/*
-DeleteOptionInternalServerError Internal server error
+/*DeleteOptionInternalServerError Internal server error
 
 swagger:response deleteOptionInternalServerError
 */
@@ -108,8 +105,7 @@ func (o *DeleteOptionInternalServerError) WriteResponse(rw http.ResponseWriter, 
 	}
 }
 
-/*
-DeleteOptionDefault error
+/*DeleteOptionDefault error
 
 swagger:response deleteOptionDefault
 */

@@ -29,10 +29,10 @@ func NewUpdatePoll(ctx *middleware.Context, handler UpdatePollHandler) *UpdatePo
 	return &UpdatePoll{Context: ctx, Handler: handler}
 }
 
-/*
-UpdatePoll swagger:route PUT /polls/{pollId} updatePoll
+/*UpdatePoll swagger:route PUT /polls/{pollId} updatePoll
 
 Update an existing Poll
+
 */
 type UpdatePoll struct {
 	Context *middleware.Context

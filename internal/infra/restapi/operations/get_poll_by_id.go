@@ -29,10 +29,10 @@ func NewGetPollByID(ctx *middleware.Context, handler GetPollByIDHandler) *GetPol
 	return &GetPollByID{Context: ctx, Handler: handler}
 }
 
-/*
-GetPollByID swagger:route GET /polls/{pollId} getPollById
+/*GetPollByID swagger:route GET /polls/{pollId} getPollById
 
 Get a Poll by its ID
+
 */
 type GetPollByID struct {
 	Context *middleware.Context

@@ -29,10 +29,10 @@ func NewCreatePoll(ctx *middleware.Context, handler CreatePollHandler) *CreatePo
 	return &CreatePoll{Context: ctx, Handler: handler}
 }
 
-/*
-CreatePoll swagger:route POST /polls createPoll
+/*CreatePoll swagger:route POST /polls createPoll
 
 Create a new Poll
+
 */
 type CreatePoll struct {
 	Context *middleware.Context

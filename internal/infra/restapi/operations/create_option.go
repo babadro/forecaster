@@ -29,10 +29,10 @@ func NewCreateOption(ctx *middleware.Context, handler CreateOptionHandler) *Crea
 	return &CreateOption{Context: ctx, Handler: handler}
 }
 
-/*
-CreateOption swagger:route POST /options createOption
+/*CreateOption swagger:route POST /options createOption
 
 Create a new Option
+
 */
 type CreateOption struct {
 	Context *middleware.Context

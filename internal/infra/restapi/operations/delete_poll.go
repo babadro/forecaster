@@ -29,10 +29,10 @@ func NewDeletePoll(ctx *middleware.Context, handler DeletePollHandler) *DeletePo
 	return &DeletePoll{Context: ctx, Handler: handler}
 }
 
-/*
-DeletePoll swagger:route DELETE /polls/{pollId} deletePoll
+/*DeletePoll swagger:route DELETE /polls/{pollId} deletePoll
 
 Delete a Poll by its ID
+
 */
 type DeletePoll struct {
 	Context *middleware.Context

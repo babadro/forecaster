@@ -16,8 +16,7 @@ import (
 // DeletePollNoContentCode is the HTTP code returned for type DeletePollNoContent
 const DeletePollNoContentCode int = 204
 
-/*
-DeletePollNoContent Poll deleted successfully
+/*DeletePollNoContent Poll deleted successfully
 
 swagger:response deletePollNoContent
 */
@@ -41,8 +40,7 @@ func (o *DeletePollNoContent) WriteResponse(rw http.ResponseWriter, producer run
 // DeletePollNotFoundCode is the HTTP code returned for type DeletePollNotFound
 const DeletePollNotFoundCode int = 404
 
-/*
-DeletePollNotFound Poll not found
+/*DeletePollNotFound Poll not found
 
 swagger:response deletePollNotFound
 */
@@ -66,8 +64,7 @@ func (o *DeletePollNotFound) WriteResponse(rw http.ResponseWriter, producer runt
 // DeletePollInternalServerErrorCode is the HTTP code returned for type DeletePollInternalServerError
 const DeletePollInternalServerErrorCode int = 500
 
-/*
-DeletePollInternalServerError Internal server error
+/*DeletePollInternalServerError Internal server error
 
 swagger:response deletePollInternalServerError
 */
@@ -108,8 +105,7 @@ func (o *DeletePollInternalServerError) WriteResponse(rw http.ResponseWriter, pr
 	}
 }
 
-/*
-DeletePollDefault error
+/*DeletePollDefault error
 
 swagger:response deletePollDefault
 */

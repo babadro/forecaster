@@ -29,10 +29,10 @@ func NewDeleteOption(ctx *middleware.Context, handler DeleteOptionHandler) *Dele
 	return &DeleteOption{Context: ctx, Handler: handler}
 }
 
-/*
-DeleteOption swagger:route DELETE /options/{optionId} deleteOption
+/*DeleteOption swagger:route DELETE /options/{optionId} deleteOption
 
 Delete an Option by its ID
+
 */
 type DeleteOption struct {
 	Context *middleware.Context
