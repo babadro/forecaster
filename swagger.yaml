@@ -21,6 +21,126 @@ paths:
           description: "Bad Request"
           schema:
             $ref: "#/definitions/error"
+  /series:
+    post:
+      summary: "Create a new Series"
+      operationId: "CreateSeries"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "body"
+          name: "series"
+          description: "Series object to be created"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateSeries"
+      responses:
+        201:
+          description: "Series created successfully"
+          schema:
+            $ref: "#/definitions/Series"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+  /series/{seriesId}:
+    get:
+      summary: "Get a Series by its ID"
+      operationId: "GetSeriesByID"
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "seriesId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        200:
+          description: "Series found successfully"
+          schema:
+            $ref: "#/definitions/Series"
+        404:
+          description: "Series not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      summary: "Update an existing Series"
+      operationId: "UpdateSeries"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "seriesId"
+          required: true
+          type: "integer"
+          format: "int32"
+        - in: "body"
+          name: "series"
+          description: "Updated Series object"
+          required: true
+          schema:
+            $ref: "#/definitions/Series"
+      responses:
+        200:
+          description: "Series updated successfully"
+          schema:
+            $ref: "#/definitions/Series"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        404:
+          description: "Series not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    delete:
+      summary: "Delete a Series by its ID"
+      operationId: "DeleteSeries"
+      parameters:
+        - in: "path"
+          name: "seriesId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        204:
+          description: "Series deleted successfully"
+        404:
+          description: "Series not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+
   /polls:
     post:
       summary: "Create a new Poll"
