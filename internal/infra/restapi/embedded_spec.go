@@ -409,6 +409,17 @@ func init() {
         }
       }
     },
+    "CreateSeries": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
     "Option": {
       "type": "object",
       "properties": {
@@ -446,9 +457,36 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "SeriesID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Start": {
           "type": "string",
           "format": "date-time"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Series": {
+      "type": "object",
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
         },
         "Title": {
           "type": "string"
@@ -865,6 +903,17 @@ func init() {
         }
       }
     },
+    "CreateSeries": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
     "Option": {
       "type": "object",
       "properties": {
@@ -902,9 +951,36 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "SeriesID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Start": {
           "type": "string",
           "format": "date-time"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Series": {
+      "type": "object",
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
         },
         "Title": {
           "type": "string"

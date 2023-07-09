@@ -242,6 +242,29 @@ definitions:
         format: int64
       message:
         type: string
+  CreateSeries:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+  Series:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
   CreatePoll:
     type: "object"
     properties:
@@ -259,6 +282,9 @@ definitions:
     type: "object"
     properties:
       ID:
+        type: "integer"
+        format: "int32"
+      SeriesID:
         type: "integer"
         format: "int32"
       Title:

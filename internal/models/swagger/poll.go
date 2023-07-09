@@ -33,6 +33,9 @@ type Poll struct {
 	// ID
 	ID int32 `json:"ID,omitempty"`
 
+	// series ID
+	SeriesID int32 `json:"SeriesID,omitempty"`
+
 	// start
 	// Format: date-time
 	Start strfmt.DateTime `json:"Start,omitempty"`
