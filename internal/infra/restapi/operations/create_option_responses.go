@@ -16,7 +16,8 @@ import (
 // CreateOptionCreatedCode is the HTTP code returned for type CreateOptionCreated
 const CreateOptionCreatedCode int = 201
 
-/*CreateOptionCreated Option created successfully
+/*
+CreateOptionCreated Option created successfully
 
 swagger:response createOptionCreated
 */
@@ -60,7 +61,8 @@ func (o *CreateOptionCreated) WriteResponse(rw http.ResponseWriter, producer run
 // CreateOptionBadRequestCode is the HTTP code returned for type CreateOptionBadRequest
 const CreateOptionBadRequestCode int = 400
 
-/*CreateOptionBadRequest Bad request
+/*
+CreateOptionBadRequest Bad request
 
 swagger:response createOptionBadRequest
 */
@@ -104,7 +106,8 @@ func (o *CreateOptionBadRequest) WriteResponse(rw http.ResponseWriter, producer 
 // CreateOptionInternalServerErrorCode is the HTTP code returned for type CreateOptionInternalServerError
 const CreateOptionInternalServerErrorCode int = 500
 
-/*CreateOptionInternalServerError Internal server error
+/*
+CreateOptionInternalServerError Internal server error
 
 swagger:response createOptionInternalServerError
 */
@@ -145,7 +148,8 @@ func (o *CreateOptionInternalServerError) WriteResponse(rw http.ResponseWriter, 
 	}
 }
 
-/*CreateOptionDefault error
+/*
+CreateOptionDefault error
 
 swagger:response createOptionDefault
 */
