@@ -16,7 +16,8 @@ import (
 // UpdatePollOKCode is the HTTP code returned for type UpdatePollOK
 const UpdatePollOKCode int = 200
 
-/*UpdatePollOK Poll updated successfully
+/*
+UpdatePollOK Poll updated successfully
 
 swagger:response updatePollOK
 */
@@ -60,7 +61,8 @@ func (o *UpdatePollOK) WriteResponse(rw http.ResponseWriter, producer runtime.Pr
 // UpdatePollBadRequestCode is the HTTP code returned for type UpdatePollBadRequest
 const UpdatePollBadRequestCode int = 400
 
-/*UpdatePollBadRequest Bad request
+/*
+UpdatePollBadRequest Bad request
 
 swagger:response updatePollBadRequest
 */
@@ -104,7 +106,8 @@ func (o *UpdatePollBadRequest) WriteResponse(rw http.ResponseWriter, producer ru
 // UpdatePollNotFoundCode is the HTTP code returned for type UpdatePollNotFound
 const UpdatePollNotFoundCode int = 404
 
-/*UpdatePollNotFound Poll not found
+/*
+UpdatePollNotFound Poll not found
 
 swagger:response updatePollNotFound
 */
@@ -128,7 +131,8 @@ func (o *UpdatePollNotFound) WriteResponse(rw http.ResponseWriter, producer runt
 // UpdatePollInternalServerErrorCode is the HTTP code returned for type UpdatePollInternalServerError
 const UpdatePollInternalServerErrorCode int = 500
 
-/*UpdatePollInternalServerError Internal server error
+/*
+UpdatePollInternalServerError Internal server error
 
 swagger:response updatePollInternalServerError
 */
@@ -169,7 +173,8 @@ func (o *UpdatePollInternalServerError) WriteResponse(rw http.ResponseWriter, pr
 	}
 }
 
-/*UpdatePollDefault error
+/*
+UpdatePollDefault error
 
 swagger:response updatePollDefault
 */

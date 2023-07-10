@@ -6,7 +6,6 @@ package operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"io"
 	"net/http"
 
@@ -19,7 +18,8 @@ import (
 )
 
 // NewCreatePollParams creates a new CreatePollParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewCreatePollParams() CreatePollParams {
 
 	return CreatePollParams{}
@@ -65,7 +65,7 @@ func (o *CreatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 				res = append(res, err)
 			}
 
-			ctx := validate.WithOperationRequest(context.Background())
+			ctx := validate.WithOperationRequest(r.Context())
 			if err := body.ContextValidate(ctx, route.Formats); err != nil {
 				res = append(res, err)
 			}

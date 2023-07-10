@@ -16,7 +16,8 @@ import (
 // CreatePollCreatedCode is the HTTP code returned for type CreatePollCreated
 const CreatePollCreatedCode int = 201
 
-/*CreatePollCreated Poll created successfully
+/*
+CreatePollCreated Poll created successfully
 
 swagger:response createPollCreated
 */
@@ -60,7 +61,8 @@ func (o *CreatePollCreated) WriteResponse(rw http.ResponseWriter, producer runti
 // CreatePollBadRequestCode is the HTTP code returned for type CreatePollBadRequest
 const CreatePollBadRequestCode int = 400
 
-/*CreatePollBadRequest Bad request
+/*
+CreatePollBadRequest Bad request
 
 swagger:response createPollBadRequest
 */
@@ -104,7 +106,8 @@ func (o *CreatePollBadRequest) WriteResponse(rw http.ResponseWriter, producer ru
 // CreatePollInternalServerErrorCode is the HTTP code returned for type CreatePollInternalServerError
 const CreatePollInternalServerErrorCode int = 500
 
-/*CreatePollInternalServerError Internal server error
+/*
+CreatePollInternalServerError Internal server error
 
 swagger:response createPollInternalServerError
 */
@@ -145,7 +148,8 @@ func (o *CreatePollInternalServerError) WriteResponse(rw http.ResponseWriter, pr
 	}
 }
 
-/*CreatePollDefault error
+/*
+CreatePollDefault error
 
 swagger:response createPollDefault
 */

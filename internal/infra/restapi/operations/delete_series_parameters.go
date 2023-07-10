@@ -14,19 +14,19 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetPollByIDParams creates a new GetPollByIDParams object
+// NewDeleteSeriesParams creates a new DeleteSeriesParams object
 //
 // There are no default values defined in the spec.
-func NewGetPollByIDParams() GetPollByIDParams {
+func NewDeleteSeriesParams() DeleteSeriesParams {
 
-	return GetPollByIDParams{}
+	return DeleteSeriesParams{}
 }
 
-// GetPollByIDParams contains all the bound params for the get poll by ID operation
+// DeleteSeriesParams contains all the bound params for the delete series operation
 // typically these are obtained from a http.Request
 //
-// swagger:parameters GetPollByID
-type GetPollByIDParams struct {
+// swagger:parameters DeleteSeries
+type DeleteSeriesParams struct {
 
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
@@ -35,20 +35,20 @@ type GetPollByIDParams struct {
 	  Required: true
 	  In: path
 	*/
-	PollID int32
+	SeriesID int32
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
 // for simple values it will use straight method calls.
 //
-// To ensure default values, the struct must have been initialized with NewGetPollByIDParams() beforehand.
-func (o *GetPollByIDParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
+// To ensure default values, the struct must have been initialized with NewDeleteSeriesParams() beforehand.
+func (o *DeleteSeriesParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
 	var res []error
 
 	o.HTTPRequest = r
 
-	rPollID, rhkPollID, _ := route.Params.GetOK("pollId")
-	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
+	rSeriesID, rhkSeriesID, _ := route.Params.GetOK("seriesId")
+	if err := o.bindSeriesID(rSeriesID, rhkSeriesID, route.Formats); err != nil {
 		res = append(res, err)
 	}
 	if len(res) > 0 {
@@ -57,8 +57,8 @@ func (o *GetPollByIDParams) BindRequest(r *http.Request, route *middleware.Match
 	return nil
 }
 
-// bindPollID binds and validates parameter PollID from path.
-func (o *GetPollByIDParams) bindPollID(rawData []string, hasKey bool, formats strfmt.Registry) error {
+// bindSeriesID binds and validates parameter SeriesID from path.
+func (o *DeleteSeriesParams) bindSeriesID(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
@@ -69,9 +69,9 @@ func (o *GetPollByIDParams) bindPollID(rawData []string, hasKey bool, formats st
 
 	value, err := swag.ConvertInt32(raw)
 	if err != nil {
-		return errors.InvalidType("pollId", "path", "int32", raw)
+		return errors.InvalidType("seriesId", "path", "int32", raw)
 	}
-	o.PollID = value
+	o.SeriesID = value
 
 	return nil
 }

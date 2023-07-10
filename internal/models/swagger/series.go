@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// Poll poll
+// Series series
 //
-// swagger:model Poll
-type Poll struct {
+// swagger:model Series
+type Series struct {
 
 	// created at
 	// Format: date-time
@@ -26,19 +26,8 @@ type Poll struct {
 	// description
 	Description string `json:"Description,omitempty"`
 
-	// finish
-	// Format: date-time
-	Finish strfmt.DateTime `json:"Finish,omitempty"`
-
 	// ID
 	ID int32 `json:"ID,omitempty"`
-
-	// series ID
-	SeriesID int32 `json:"SeriesID,omitempty"`
-
-	// start
-	// Format: date-time
-	Start strfmt.DateTime `json:"Start,omitempty"`
 
 	// title
 	Title string `json:"Title,omitempty"`
@@ -48,19 +37,11 @@ type Poll struct {
 	UpdatedAt strfmt.DateTime `json:"UpdatedAt,omitempty"`
 }
 
-// Validate validates this poll
-func (m *Poll) Validate(formats strfmt.Registry) error {
+// Validate validates this series
+func (m *Series) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCreatedAt(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateFinish(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateStart(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -74,7 +55,7 @@ func (m *Poll) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Poll) validateCreatedAt(formats strfmt.Registry) error {
+func (m *Series) validateCreatedAt(formats strfmt.Registry) error {
 	if swag.IsZero(m.CreatedAt) { // not required
 		return nil
 	}
@@ -86,31 +67,7 @@ func (m *Poll) validateCreatedAt(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Poll) validateFinish(formats strfmt.Registry) error {
-	if swag.IsZero(m.Finish) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("Finish", "body", "date-time", m.Finish.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Poll) validateStart(formats strfmt.Registry) error {
-	if swag.IsZero(m.Start) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("Start", "body", "date-time", m.Start.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Poll) validateUpdatedAt(formats strfmt.Registry) error {
+func (m *Series) validateUpdatedAt(formats strfmt.Registry) error {
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
 	}
@@ -122,13 +79,13 @@ func (m *Poll) validateUpdatedAt(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this poll based on context it is used
-func (m *Poll) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this series based on context it is used
+func (m *Series) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *Poll) MarshalBinary() ([]byte, error) {
+func (m *Series) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -136,8 +93,8 @@ func (m *Poll) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *Poll) UnmarshalBinary(b []byte) error {
-	var res Poll
+func (m *Series) UnmarshalBinary(b []byte) error {
+	var res Series
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

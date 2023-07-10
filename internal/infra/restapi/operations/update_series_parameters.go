@@ -19,52 +19,52 @@ import (
 	"github.com/babadro/forecaster/internal/models/swagger"
 )
 
-// NewUpdatePollParams creates a new UpdatePollParams object
+// NewUpdateSeriesParams creates a new UpdateSeriesParams object
 //
 // There are no default values defined in the spec.
-func NewUpdatePollParams() UpdatePollParams {
+func NewUpdateSeriesParams() UpdateSeriesParams {
 
-	return UpdatePollParams{}
+	return UpdateSeriesParams{}
 }
 
-// UpdatePollParams contains all the bound params for the update poll operation
+// UpdateSeriesParams contains all the bound params for the update series operation
 // typically these are obtained from a http.Request
 //
-// swagger:parameters UpdatePoll
-type UpdatePollParams struct {
+// swagger:parameters UpdateSeries
+type UpdateSeriesParams struct {
 
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*Updated Poll object
+	/*Updated Series object
 	  Required: true
 	  In: body
 	*/
-	Poll *swagger.Poll
+	Series *swagger.Series
 	/*
 	  Required: true
 	  In: path
 	*/
-	PollID int32
+	SeriesID int32
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
 // for simple values it will use straight method calls.
 //
-// To ensure default values, the struct must have been initialized with NewUpdatePollParams() beforehand.
-func (o *UpdatePollParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
+// To ensure default values, the struct must have been initialized with NewUpdateSeriesParams() beforehand.
+func (o *UpdateSeriesParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
 	var res []error
 
 	o.HTTPRequest = r
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body swagger.Poll
+		var body swagger.Series
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("poll", "body", ""))
+				res = append(res, errors.Required("series", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("poll", "body", "", err))
+				res = append(res, errors.NewParseError("series", "body", "", err))
 			}
 		} else {
 			// validate body object
@@ -78,15 +78,15 @@ func (o *UpdatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 			}
 
 			if len(res) == 0 {
-				o.Poll = &body
+				o.Series = &body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("poll", "body", ""))
+		res = append(res, errors.Required("series", "body", ""))
 	}
 
-	rPollID, rhkPollID, _ := route.Params.GetOK("pollId")
-	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
+	rSeriesID, rhkSeriesID, _ := route.Params.GetOK("seriesId")
+	if err := o.bindSeriesID(rSeriesID, rhkSeriesID, route.Formats); err != nil {
 		res = append(res, err)
 	}
 	if len(res) > 0 {
@@ -95,8 +95,8 @@ func (o *UpdatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 	return nil
 }
 
-// bindPollID binds and validates parameter PollID from path.
-func (o *UpdatePollParams) bindPollID(rawData []string, hasKey bool, formats strfmt.Registry) error {
+// bindSeriesID binds and validates parameter SeriesID from path.
+func (o *UpdateSeriesParams) bindSeriesID(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
@@ -107,9 +107,9 @@ func (o *UpdatePollParams) bindPollID(rawData []string, hasKey bool, formats str
 
 	value, err := swag.ConvertInt32(raw)
 	if err != nil {
-		return errors.InvalidType("pollId", "path", "int32", raw)
+		return errors.InvalidType("seriesId", "path", "int32", raw)
 	}
-	o.PollID = value
+	o.SeriesID = value
 
 	return nil
 }

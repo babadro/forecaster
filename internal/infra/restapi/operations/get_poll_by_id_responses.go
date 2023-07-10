@@ -16,7 +16,8 @@ import (
 // GetPollByIDOKCode is the HTTP code returned for type GetPollByIDOK
 const GetPollByIDOKCode int = 200
 
-/*GetPollByIDOK Poll found successfully
+/*
+GetPollByIDOK Poll found successfully
 
 swagger:response getPollByIdOK
 */
@@ -60,7 +61,8 @@ func (o *GetPollByIDOK) WriteResponse(rw http.ResponseWriter, producer runtime.P
 // GetPollByIDNotFoundCode is the HTTP code returned for type GetPollByIDNotFound
 const GetPollByIDNotFoundCode int = 404
 
-/*GetPollByIDNotFound Poll not found
+/*
+GetPollByIDNotFound Poll not found
 
 swagger:response getPollByIdNotFound
 */
@@ -84,7 +86,8 @@ func (o *GetPollByIDNotFound) WriteResponse(rw http.ResponseWriter, producer run
 // GetPollByIDInternalServerErrorCode is the HTTP code returned for type GetPollByIDInternalServerError
 const GetPollByIDInternalServerErrorCode int = 500
 
-/*GetPollByIDInternalServerError Internal server error
+/*
+GetPollByIDInternalServerError Internal server error
 
 swagger:response getPollByIdInternalServerError
 */
@@ -125,7 +128,8 @@ func (o *GetPollByIDInternalServerError) WriteResponse(rw http.ResponseWriter, p
 	}
 }
 
-/*GetPollByIDDefault error
+/*
+GetPollByIDDefault error
 
 swagger:response getPollByIdDefault
 */

@@ -17,47 +17,47 @@ import (
 	"github.com/babadro/forecaster/internal/models/swagger"
 )
 
-// NewCreateOptionParams creates a new CreateOptionParams object
+// NewCreateSeriesParams creates a new CreateSeriesParams object
 //
 // There are no default values defined in the spec.
-func NewCreateOptionParams() CreateOptionParams {
+func NewCreateSeriesParams() CreateSeriesParams {
 
-	return CreateOptionParams{}
+	return CreateSeriesParams{}
 }
 
-// CreateOptionParams contains all the bound params for the create option operation
+// CreateSeriesParams contains all the bound params for the create series operation
 // typically these are obtained from a http.Request
 //
-// swagger:parameters CreateOption
-type CreateOptionParams struct {
+// swagger:parameters CreateSeries
+type CreateSeriesParams struct {
 
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*Option object to be created
+	/*Series object to be created
 	  Required: true
 	  In: body
 	*/
-	Option *swagger.CreateOption
+	Series *swagger.CreateSeries
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
 // for simple values it will use straight method calls.
 //
-// To ensure default values, the struct must have been initialized with NewCreateOptionParams() beforehand.
-func (o *CreateOptionParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
+// To ensure default values, the struct must have been initialized with NewCreateSeriesParams() beforehand.
+func (o *CreateSeriesParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
 	var res []error
 
 	o.HTTPRequest = r
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body swagger.CreateOption
+		var body swagger.CreateSeries
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("option", "body", ""))
+				res = append(res, errors.Required("series", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("option", "body", "", err))
+				res = append(res, errors.NewParseError("series", "body", "", err))
 			}
 		} else {
 			// validate body object
@@ -71,11 +71,11 @@ func (o *CreateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 			}
 
 			if len(res) == 0 {
-				o.Option = &body
+				o.Series = &body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("option", "body", ""))
+		res = append(res, errors.Required("series", "body", ""))
 	}
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
