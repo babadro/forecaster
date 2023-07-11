@@ -189,7 +189,7 @@ paths:
         200:
           description: "Poll found successfully"
           schema:
-            $ref: "#/definitions/Poll"
+            $ref: "#/definitions/PollWithOptions"
         404:
           description: "Poll not found"
         500:
@@ -443,6 +443,35 @@ definitions:
       UpdatedAt:
         type: "string"
         format: "date-time"
+  PollWithOptions:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      SeriesID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      Start:
+        type: "string"
+        format: "date-time"
+      Finish:
+        type: "string"
+        format: "date-time"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
+      Options:
+        type: "array"
+        items:
+          $ref: "#/definitions/Option"
   CreateOption:
     type: "object"
     properties:

@@ -26,7 +26,7 @@ type GetPollByIDOK struct {
 	/*
 	  In: Body
 	*/
-	Payload *swagger.Poll `json:"body,omitempty"`
+	Payload *swagger.PollWithOptions `json:"body,omitempty"`
 }
 
 // NewGetPollByIDOK creates GetPollByIDOK with default headers values
@@ -36,13 +36,13 @@ func NewGetPollByIDOK() *GetPollByIDOK {
 }
 
 // WithPayload adds the payload to the get poll by Id o k response
-func (o *GetPollByIDOK) WithPayload(payload *swagger.Poll) *GetPollByIDOK {
+func (o *GetPollByIDOK) WithPayload(payload *swagger.PollWithOptions) *GetPollByIDOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the get poll by Id o k response
-func (o *GetPollByIDOK) SetPayload(payload *swagger.Poll) {
+func (o *GetPollByIDOK) SetPayload(payload *swagger.PollWithOptions) {
 	o.Payload = payload
 }
 

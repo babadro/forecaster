@@ -235,7 +235,7 @@ func init() {
           "200": {
             "description": "Poll found successfully",
             "schema": {
-              "$ref": "#/definitions/Poll"
+              "$ref": "#/definitions/PollWithOptions"
             }
           },
           "404": {
@@ -654,6 +654,47 @@ func init() {
         }
       }
     },
+    "PollWithOptions": {
+      "type": "object",
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Finish": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Option"
+          }
+        },
+        "SeriesID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "Series": {
       "type": "object",
       "properties": {
@@ -950,7 +991,7 @@ func init() {
           "200": {
             "description": "Poll found successfully",
             "schema": {
-              "$ref": "#/definitions/Poll"
+              "$ref": "#/definitions/PollWithOptions"
             }
           },
           "404": {
@@ -1351,6 +1392,47 @@ func init() {
         "ID": {
           "type": "integer",
           "format": "int32"
+        },
+        "SeriesID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "PollWithOptions": {
+      "type": "object",
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Finish": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Option"
+          }
         },
         "SeriesID": {
           "type": "integer",
