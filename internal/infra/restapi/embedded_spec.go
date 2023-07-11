@@ -720,28 +720,38 @@ func init() {
     },
     "UpdateOption": {
       "type": "object",
+      "required": [
+        "ID"
+      ],
       "properties": {
         "Description": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         },
         "ID": {
           "type": "integer",
           "format": "int32"
         },
         "Title": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         }
       }
     },
     "UpdatePoll": {
       "type": "object",
+      "required": [
+        "ID"
+      ],
       "properties": {
         "Description": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         },
         "Finish": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "x-nullable": true
         },
         "ID": {
           "type": "integer",
@@ -749,29 +759,37 @@ func init() {
         },
         "SeriesID": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "x-nullable": true
         },
         "Start": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "x-nullable": true
         },
         "Title": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         }
       }
     },
     "UpdateSeries": {
       "type": "object",
+      "required": [
+        "ID"
+      ],
       "properties": {
         "Description": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         },
         "ID": {
           "type": "integer",
           "format": "int32"
         },
         "Title": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         }
       }
     },
@@ -1492,28 +1510,38 @@ func init() {
     },
     "UpdateOption": {
       "type": "object",
+      "required": [
+        "ID"
+      ],
       "properties": {
         "Description": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         },
         "ID": {
           "type": "integer",
           "format": "int32"
         },
         "Title": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         }
       }
     },
     "UpdatePoll": {
       "type": "object",
+      "required": [
+        "ID"
+      ],
       "properties": {
         "Description": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         },
         "Finish": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "x-nullable": true
         },
         "ID": {
           "type": "integer",
@@ -1521,29 +1549,37 @@ func init() {
         },
         "SeriesID": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "x-nullable": true
         },
         "Start": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "x-nullable": true
         },
         "Title": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         }
       }
     },
     "UpdateSeries": {
       "type": "object",
+      "required": [
+        "ID"
+      ],
       "properties": {
         "Description": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         },
         "ID": {
           "type": "integer",
           "format": "int32"
         },
         "Title": {
-          "type": "string"
+          "type": "string",
+          "x-nullable": true
         }
       }
     },

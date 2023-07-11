@@ -20,24 +20,25 @@ import (
 type UpdatePoll struct {
 
 	// description
-	Description string `json:"Description,omitempty"`
+	Description *string `json:"Description,omitempty"`
 
 	// finish
 	// Format: date-time
-	Finish strfmt.DateTime `json:"Finish,omitempty"`
+	Finish *strfmt.DateTime `json:"Finish,omitempty"`
 
 	// ID
-	ID int32 `json:"ID,omitempty"`
+	// Required: true
+	ID *int32 `json:"ID"`
 
 	// series ID
-	SeriesID int32 `json:"SeriesID,omitempty"`
+	SeriesID *int32 `json:"SeriesID,omitempty"`
 
 	// start
 	// Format: date-time
-	Start strfmt.DateTime `json:"Start,omitempty"`
+	Start *strfmt.DateTime `json:"Start,omitempty"`
 
 	// title
-	Title string `json:"Title,omitempty"`
+	Title *string `json:"Title,omitempty"`
 }
 
 // Validate validates this update poll
@@ -45,6 +46,10 @@ func (m *UpdatePoll) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateFinish(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -64,6 +69,15 @@ func (m *UpdatePoll) validateFinish(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("Finish", "body", "date-time", m.Finish.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *UpdatePoll) validateID(formats strfmt.Registry) error {
+
+	if err := validate.Required("ID", "body", m.ID); err != nil {
 		return err
 	}
 

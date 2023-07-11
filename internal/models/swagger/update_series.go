@@ -8,8 +8,10 @@ package swagger
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // UpdateSeries update series
@@ -18,17 +20,36 @@ import (
 type UpdateSeries struct {
 
 	// description
-	Description string `json:"Description,omitempty"`
+	Description *string `json:"Description,omitempty"`
 
 	// ID
-	ID int32 `json:"ID,omitempty"`
+	// Required: true
+	ID *int32 `json:"ID"`
 
 	// title
-	Title string `json:"Title,omitempty"`
+	Title *string `json:"Title,omitempty"`
 }
 
 // Validate validates this update series
 func (m *UpdateSeries) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *UpdateSeries) validateID(formats strfmt.Registry) error {
+
+	if err := validate.Required("ID", "body", m.ID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
