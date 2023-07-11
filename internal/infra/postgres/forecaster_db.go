@@ -206,25 +206,52 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, in models.UpdatePoll) (r
 	return res, nil
 }
 
-func (db *ForecasterDB) UpdateOption(ctx context.Context, option models.Option) (models.Option, error) {
-	optionSQL, args, err := db.q.
+func (db *ForecasterDB) UpdateOption(ctx context.Context, in models.UpdateOption) (res models.Option, err error) {
+	b := db.q.
 		Update("forecaster.options").
-		Set("title", option.Title).
-		Set("description", option.Description).
-		Where(sq.Eq{"id": option.ID}).
-		Suffix("RETURNING id").
-		ToSql()
+		Set("updated_at", time.Now()).
+		Where(sq.Eq{"id": in.ID}).
+		Suffix("RETURNING id")
+
+	if in.Title != nil {
+		b.Set("title", in.Title)
+	}
+
+	if in.Description != nil {
+		b.Set("description", in.Description)
+	}
+
+	optionSQL, args, err := b.ToSql()
 
 	if err != nil {
 		return models.Option{}, fmt.Errorf("unable to build SQL: %w", err)
 	}
 
-	err = db.db.QueryRow(ctx, optionSQL, args...).Scan(&option.ID)
+	err = db.db.QueryRow(ctx, optionSQL, args...).
+		Scan(&res.ID, &res.Title, &res.Description)
 	if err != nil {
 		return models.Option{}, fmt.Errorf("unable to update option: %w", err)
 	}
 
-	return option, nil
+	return res, nil
+}
+
+func (db *ForecasterDB) DeleteSeries(ctx context.Context, id int32) error {
+	seriesSQL, args, err := db.q.
+		Delete("forecaster.series").
+		Where(sq.Eq{"id": id}).
+		ToSql()
+
+	if err != nil {
+		return buildingQueryFailed("delete series", err)
+	}
+
+	_, err = db.db.Exec(ctx, seriesSQL, args...)
+	if err != nil {
+		return execFailed("delete series", err)
+	}
+
+	return nil
 }
 
 func (db *ForecasterDB) DeletePoll(ctx context.Context, id int32) error {
