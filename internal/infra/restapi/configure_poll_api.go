@@ -79,13 +79,18 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
-	api.CreatePollHandler = operations.CreatePollHandlerFunc(pollsAPI.CreatePoll)
 	api.GetPollByIDHandler = operations.GetPollByIDHandlerFunc(pollsAPI.GetPollByID)
-	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
-	api.UpdatePollHandler = operations.UpdatePollHandlerFunc(pollsAPI.UpdatePoll)
 
+	api.CreateSeriesHandler = operations.CreateSeriesHandlerFunc(pollsAPI.CreateSeries)
+	api.CreatePollHandler = operations.CreatePollHandlerFunc(pollsAPI.CreatePoll)
 	api.CreateOptionHandler = operations.CreateOptionHandlerFunc(pollsAPI.CreateOption)
+
+	api.UpdateSeriesHandler = operations.UpdateSeriesHandlerFunc(pollsAPI.UpdateSeries)
+	api.UpdatePollHandler = operations.UpdatePollHandlerFunc(pollsAPI.UpdatePoll)
 	api.UpdateOptionHandler = operations.UpdateOptionHandlerFunc(pollsAPI.UpdateOption)
+
+	api.UpdateSeriesHandler = operations.UpdateSeriesHandlerFunc(pollsAPI.UpdateSeries)
+	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
 	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
 
 	api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(telegramAPI.ReceiveUpdates)
