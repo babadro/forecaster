@@ -68,6 +68,25 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (fcasterbot.P
 	return poll, nil
 }
 
+func (db *ForecasterDB) CreateSeries(ctx context.Context, s fcasterbot.Series) (fcasterbot.Series, error) {
+	seriesSQL, args, err := db.q.
+		Insert("forecaster").Columns("title", "description").
+		Values(s.Title, s.Description).
+		Suffix("RETURNING id").
+		ToSql()
+
+	if err != nil {
+		return fcasterbot.Series{}, buildingQueryFailed("insert series", err)
+	}
+
+	err = db.db.QueryRow(ctx, seriesSQL, args...).Scan(&s.ID, &s.Title, &s.Description)
+	if err != nil {
+		return fcasterbot.Series{}, scanFailed("insert series", err)
+	}
+
+	return s, nil
+}
+
 func (db *ForecasterDB) CreatePoll(ctx context.Context, poll fcasterbot.Poll) (fcasterbot.Poll, error) {
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
@@ -106,6 +125,31 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option fcasterbot.Opti
 	}
 
 	return option, nil
+}
+
+func (db *ForecasterDB) UpdateSeries(ctx context.Context, s fcasterbot.Series) (fcasterbot.Series, error) {
+	seriesSQL, args, err := db.q.
+		Update("forecaster.series").
+		Set("title", s.Title).
+		Set("description", s.Description).
+		Where(sq.Eq{"id": s.ID}).
+		Suffix("RETURNING updated_at").
+		ToSql()
+
+	if err != nil {
+		return fcasterbot.Series{}, buildingQueryFailed("update series", err)
+	}
+
+	var updatedAt time.Time
+
+	err = db.db.QueryRow(ctx, seriesSQL, args...).Scan(&updatedAt)
+	if err != nil {
+		return fcasterbot.Series{}, scanFailed("update series", err)
+	}
+
+	s.UpdatedAt = updatedAt
+
+	return s, nil
 }
 
 func (db *ForecasterDB) UpdatePoll(ctx context.Context, poll fcasterbot.Poll) (fcasterbot.Poll, error) {

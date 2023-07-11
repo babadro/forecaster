@@ -2,6 +2,14 @@ package fcasterbot
 
 import "time"
 
+type Series struct {
+	ID          int32
+	Title       string
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type Poll struct {
 	ID            int32
 	Title         string
