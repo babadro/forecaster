@@ -40,7 +40,7 @@ type UpdatePollParams struct {
 	  Required: true
 	  In: body
 	*/
-	Poll *swagger.Poll
+	Poll *swagger.UpdatePoll
 	/*
 	  Required: true
 	  In: path
@@ -59,7 +59,7 @@ func (o *UpdatePollParams) BindRequest(r *http.Request, route *middleware.Matche
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body swagger.Poll
+		var body swagger.UpdatePoll
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
 				res = append(res, errors.Required("poll", "body", ""))

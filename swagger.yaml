@@ -98,7 +98,7 @@ paths:
           description: "Updated Series object"
           required: true
           schema:
-            $ref: "#/definitions/Series"
+            $ref: "#/definitions/UpdateSeries"
       responses:
         200:
           description: "Series updated successfully"
@@ -218,7 +218,7 @@ paths:
           description: "Updated Poll object"
           required: true
           schema:
-            $ref: "#/definitions/Poll"
+            $ref: "#/definitions/UpdatePoll"
       responses:
         200:
           description: "Poll updated successfully"
@@ -311,7 +311,7 @@ paths:
           description: "Updated Option object"
           required: true
           schema:
-            $ref: "#/definitions/Option"
+            $ref: "#/definitions/UpdateOption"
       responses:
         200:
           description: "Option updated successfully"
@@ -369,6 +369,13 @@ definitions:
         type: "string"
       Description:
         type: "string"
+  UpdateSeries:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+      Description:
+        type: "string"
   Series:
     type: "object"
     properties:
@@ -386,6 +393,19 @@ definitions:
         type: "string"
         format: "date-time"
   CreatePoll:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      Start:
+        type: "string"
+        format: "date-time"
+      Finish:
+        type: "string"
+        format: "date-time"
+  UpdatePoll:
     type: "object"
     properties:
       Title:
@@ -429,6 +449,13 @@ definitions:
       PollID:
         type: "integer"
         format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+  UpdateOption:
+    type: "object"
+    properties:
       Title:
         type: "string"
       Description:

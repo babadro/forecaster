@@ -98,7 +98,7 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Option"
+              "$ref": "#/definitions/UpdateOption"
             }
           }
         ],
@@ -278,7 +278,7 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Poll"
+              "$ref": "#/definitions/UpdatePoll"
             }
           }
         ],
@@ -458,7 +458,7 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Series"
+              "$ref": "#/definitions/UpdateSeries"
             }
           }
         ],
@@ -674,6 +674,47 @@ func init() {
         "UpdatedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "UpdateOption": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
+    "UpdatePoll": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Finish": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
+    "UpdateSeries": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
         }
       }
     },
@@ -772,7 +813,7 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Option"
+              "$ref": "#/definitions/UpdateOption"
             }
           }
         ],
@@ -952,7 +993,7 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Poll"
+              "$ref": "#/definitions/UpdatePoll"
             }
           }
         ],
@@ -1132,7 +1173,7 @@ func init() {
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Series"
+              "$ref": "#/definitions/UpdateSeries"
             }
           }
         ],
@@ -1348,6 +1389,47 @@ func init() {
         "UpdatedAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "UpdateOption": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
+    "UpdatePoll": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Finish": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
+    "UpdateSeries": {
+      "type": "object",
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
         }
       }
     },

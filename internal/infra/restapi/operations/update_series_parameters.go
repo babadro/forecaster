@@ -40,7 +40,7 @@ type UpdateSeriesParams struct {
 	  Required: true
 	  In: body
 	*/
-	Series *swagger.Series
+	Series *swagger.UpdateSeries
 	/*
 	  Required: true
 	  In: path
@@ -59,7 +59,7 @@ func (o *UpdateSeriesParams) BindRequest(r *http.Request, route *middleware.Matc
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body swagger.Series
+		var body swagger.UpdateSeries
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
 				res = append(res, errors.Required("series", "body", ""))

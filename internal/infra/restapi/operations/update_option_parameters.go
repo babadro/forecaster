@@ -40,7 +40,7 @@ type UpdateOptionParams struct {
 	  Required: true
 	  In: body
 	*/
-	Option *swagger.Option
+	Option *swagger.UpdateOption
 	/*
 	  Required: true
 	  In: path
@@ -59,7 +59,7 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body swagger.Option
+		var body swagger.UpdateOption
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
 				res = append(res, errors.Required("option", "body", ""))
