@@ -20,6 +20,9 @@ type UpdateOption struct {
 	// description
 	Description string `json:"Description,omitempty"`
 
+	// ID
+	ID int32 `json:"ID,omitempty"`
+
 	// title
 	Title string `json:"Title,omitempty"`
 }

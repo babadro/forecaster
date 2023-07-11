@@ -372,6 +372,9 @@ definitions:
   UpdateSeries:
     type: "object"
     properties:
+      ID:
+        type: "integer"
+        format: "int32"
       Title:
         type: "string"
       Description:
@@ -408,6 +411,9 @@ definitions:
   UpdatePoll:
     type: "object"
     properties:
+      ID:
+        type: "integer"
+        format: "int32"
       Title:
         type: "string"
       Description:
@@ -485,6 +491,9 @@ definitions:
   UpdateOption:
     type: "object"
     properties:
+      ID:
+        type: "integer"
+        format: "int32"
       Title:
         type: "string"
       Description:

@@ -26,6 +26,9 @@ type UpdatePoll struct {
 	// Format: date-time
 	Finish strfmt.DateTime `json:"Finish,omitempty"`
 
+	// ID
+	ID int32 `json:"ID,omitempty"`
+
 	// start
 	// Format: date-time
 	Start strfmt.DateTime `json:"Start,omitempty"`

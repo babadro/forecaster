@@ -724,6 +724,10 @@ func init() {
         "Description": {
           "type": "string"
         },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Title": {
           "type": "string"
         }
@@ -739,6 +743,10 @@ func init() {
           "type": "string",
           "format": "date-time"
         },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Start": {
           "type": "string",
           "format": "date-time"
@@ -753,6 +761,10 @@ func init() {
       "properties": {
         "Description": {
           "type": "string"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
         },
         "Title": {
           "type": "string"
@@ -1480,6 +1492,10 @@ func init() {
         "Description": {
           "type": "string"
         },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Title": {
           "type": "string"
         }
@@ -1495,6 +1511,10 @@ func init() {
           "type": "string",
           "format": "date-time"
         },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Start": {
           "type": "string",
           "format": "date-time"
@@ -1509,6 +1529,10 @@ func init() {
       "properties": {
         "Description": {
           "type": "string"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
         },
         "Title": {
           "type": "string"
