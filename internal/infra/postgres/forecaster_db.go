@@ -69,17 +69,19 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (fcasterbot.P
 }
 
 func (db *ForecasterDB) CreateSeries(ctx context.Context, s fcasterbot.Series) (fcasterbot.Series, error) {
+	now := time.Now()
+
 	seriesSQL, args, err := db.q.
-		Insert("forecaster").Columns("title", "description").
-		Values(s.Title, s.Description).
-		Suffix("RETURNING id").
+		Insert("forecaster").Columns("title", "description", "updated_at", "created_at").
+		Values(s.Title, s.Description, now, now).
+		Suffix("RETURNING id, created_at, updated_at").
 		ToSql()
 
 	if err != nil {
 		return fcasterbot.Series{}, buildingQueryFailed("insert series", err)
 	}
 
-	err = db.db.QueryRow(ctx, seriesSQL, args...).Scan(&s.ID, &s.Title, &s.Description)
+	err = db.db.QueryRow(ctx, seriesSQL, args...).Scan(&s.ID, &s.Title, &s.Description, &s.UpdatedAt, &s.CreatedAt)
 	if err != nil {
 		return fcasterbot.Series{}, scanFailed("insert series", err)
 	}
@@ -88,10 +90,12 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s fcasterbot.Series) (
 }
 
 func (db *ForecasterDB) CreatePoll(ctx context.Context, poll fcasterbot.Poll) (fcasterbot.Poll, error) {
+	now := time.Now()
+
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
 		Columns("title", "description", "start", "finish", "created_at", "updated_at").
-		Values(poll.Title, poll.Description, poll.Start, poll.Finish).
+		Values(poll.Title, poll.Description, poll.Start, poll.Finish, now, now).
 		Suffix("RETURNING id, created_at, updated_at").
 		ToSql()
 
@@ -132,6 +136,7 @@ func (db *ForecasterDB) UpdateSeries(ctx context.Context, s fcasterbot.Series) (
 		Update("forecaster.series").
 		Set("title", s.Title).
 		Set("description", s.Description).
+		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": s.ID}).
 		Suffix("RETURNING updated_at").
 		ToSql()
