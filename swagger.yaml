@@ -414,6 +414,9 @@ definitions:
       ID:
         type: "integer"
         format: "int32"
+      SeriesID:
+        type: "integer"
+        format: "int32"
       Title:
         type: "string"
       Description:

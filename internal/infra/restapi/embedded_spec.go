@@ -747,6 +747,10 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "SeriesID": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Start": {
           "type": "string",
           "format": "date-time"
@@ -1512,6 +1516,10 @@ func init() {
           "format": "date-time"
         },
         "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "SeriesID": {
           "type": "integer",
           "format": "int32"
         },
