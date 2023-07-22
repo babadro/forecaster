@@ -1,11 +1,10 @@
-package tests
+package polls_tests
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/babadro/forecaster/internal/infra/postgres"
+	"github.com/babadro/forecaster/tests/db"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"net/http"
@@ -30,7 +29,8 @@ var (
 // APITestSuite defines the suite
 type APITestSuite struct {
 	suite.Suite
-	db *postgres.ForecasterDB
+	forecasterDB *postgres.ForecasterDB
+	testDB       *db.TestDB
 
 	client *http.Client
 }
@@ -50,8 +50,8 @@ func (s *APITestSuite) SetupSuite() {
 		log.Fatalf("Unable to connection to database :%v\n", err)
 	}
 
-	s.db = postgres.NewForecasterDB(dbPool)
-
+	s.forecasterDB = postgres.NewForecasterDB(dbPool)
+	s.testDB = db.NewTestDB(dbPool)
 }
 
 func (s *APITestSuite) TearDownSuite() {
@@ -67,21 +67,15 @@ func (s *APITestSuite) TearDownTest() {
 }
 
 func (s *APITestSuite) CreateDefaultSeries() {
-	s.db.CreatePoll()
-
-	series := models.CreateSeries{
-		Description: "test desc",
-		Title:       "test title",
+	s.T().Helper()
+	series := models.Series{
+		ID:          0,
+		Description: "default series desc",
+		Title:       "default series title",
 	}
 
-	b, err := json.Marshal(series)
+	_, err := s.testDB.CreateSeries(context.Background(), series)
 	s.Require().NoError(err)
-
-	body := bytes.NewReader(b)
-
-	resp, err := s.client.Post(apiAddr+"/series", "application/json", body)
-	s.Require().NoError(err)
-
 }
 
 func TestAPI(t *testing.T) {

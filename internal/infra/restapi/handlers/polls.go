@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 	models "github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/runtime/middleware"

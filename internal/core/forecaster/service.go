@@ -2,6 +2,7 @@ package forecaster
 
 import (
 	"context"
+
 	models "github.com/babadro/forecaster/internal/models/swagger"
 )
 

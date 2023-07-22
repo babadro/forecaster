@@ -1,1 +1,1 @@
-package tests
+package polls_tests
