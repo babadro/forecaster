@@ -25,9 +25,10 @@ import (
 //go:generate swagger generate server --target ../../../../forecaster --name PollAPI --spec ../../../swagger.yaml --model-package internal/models/swagger --server-package internal/infra/restapi --principal interface{}
 
 type envVars struct {
-	TelegramToken  string `env:"TELEGRAM_TOKEN,required"`
-	DBConn         string `env:"DB_CONN,required"`
-	NgrokAgentAddr string `env:"NGROK_AGENT_ADDR,required"`
+	TelegramToken    string `env:"TELEGRAM_TOKEN,required"`
+	DBConn           string `env:"DB_CONN,required"`
+	NgrokAgentAddr   string `env:"NGROK_AGENT_ADDR,required"`
+	StartTelegramBot bool   `env:"START_TELEGRAM_BOT" envDefault:"true"`
 }
 
 func configureFlags(_ *operations.PollAPIAPI) {
@@ -40,17 +41,20 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		log.Fatalf("Unable to parse env vars: %v\n", err)
 	}
 
-	publicUrl, err := getNgrokURL(envs.NgrokAgentAddr)
-	if err != nil {
-		log.Fatalf("Unable to get ngrok url: %v\n", err)
-	}
+	var telegramAPI *handlers.Tg
+	if envs.StartTelegramBot {
+		publicUrl, err := getNgrokURL(envs.NgrokAgentAddr)
+		if err != nil {
+			log.Fatalf("Unable to get ngrok url: %v\n", err)
+		}
 
-	tgBot, err := initBot(publicUrl+"/telegram-updates", envs.TelegramToken)
-	if err != nil {
-		log.Fatalf("Unable to init bot: %v\n", err)
-	}
+		tgBot, err := initBot(publicUrl+"/telegram-updates", envs.TelegramToken)
+		if err != nil {
+			log.Fatalf("Unable to init bot: %v\n", err)
+		}
 
-	telegramAPI := handlers.NewTelegram(tgBot)
+		telegramAPI = handlers.NewTelegram(tgBot)
+	}
 
 	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
 	if err != nil {
@@ -99,7 +103,9 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	api.ServerShutdown = func() {
 		dbPool.Close()
-		telegramAPI.Wait()
+		if envs.StartTelegramBot {
+			telegramAPI.Wait()
+		}
 	}
 
 	return setupGlobalMiddleware(api.Serve(setupMiddlewares))

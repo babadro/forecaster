@@ -59,14 +59,14 @@ func (s *APITestSuite) TearDownSuite() {
 }
 
 func (s *APITestSuite) SetupTest() {
-
+	s.createDefaultSeries()
 }
 
 func (s *APITestSuite) TearDownTest() {
-
+	s.cleanAllTables()
 }
 
-func (s *APITestSuite) CreateDefaultSeries() {
+func (s *APITestSuite) createDefaultSeries() {
 	s.T().Helper()
 	series := models.Series{
 		ID:          0,
@@ -76,6 +76,19 @@ func (s *APITestSuite) CreateDefaultSeries() {
 
 	_, err := s.testDB.CreateSeries(context.Background(), series)
 	s.Require().NoError(err)
+}
+
+func (s *APITestSuite) cleanAllTables() {
+	s.T().Helper()
+
+	for _, tableName := range []string{
+		"forecaster.series",
+		"forecaster.polls",
+		"forecaster.options",
+	} {
+		_, err := s.testDB.DB.Exec(context.Background(), "TRUNCATE TABLE "+tableName+" CASCADE")
+		s.Require().NoError(err)
+	}
 }
 
 func TestAPI(t *testing.T) {

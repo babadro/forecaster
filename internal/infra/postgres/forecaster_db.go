@@ -72,7 +72,7 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries)
 	now := time.Now()
 
 	seriesSQL, args, err := db.q.
-		Insert("forecaster").Columns("title", "description", "updated_at", "created_at").
+		Insert("forecaster.series").Columns("title", "description", "updated_at", "created_at").
 		Values(s.Title, s.Description, now, now).
 		Suffix("RETURNING id, title, description, created_at, updated_at").
 		ToSql()

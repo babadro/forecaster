@@ -6,6 +6,12 @@ build:
 run: build
 	docker-compose down -v && docker-compose build service && docker-compose up
 
+run-test-env: build
+	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=false docker-compose up
+
+test:
+	 (source .env.tests && go test ./... -v)
+
 down:
 	docker-compose down -v
 

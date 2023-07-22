@@ -11,13 +11,13 @@ import (
 )
 
 type TestDB struct {
-	db *pgxpool.Pool
+	DB *pgxpool.Pool
 	q  sq.StatementBuilderType
 }
 
 func NewTestDB(db *pgxpool.Pool) *TestDB {
 	return &TestDB{
-		db: db,
+		DB: db,
 		q:  sq.StatementBuilderType(builder.EmptyBuilder).PlaceholderFormat(sq.Dollar),
 	}
 }
@@ -26,7 +26,7 @@ func (db *TestDB) CreateSeries(ctx context.Context, s models.Series) (res models
 	now := time.Now()
 
 	seriesSQL, args, err := db.q.
-		Insert("forecaster").Columns("id", "title", "description", "updated_at", "created_at").
+		Insert("forecaster.series").Columns("id", "title", "description", "updated_at", "created_at").
 		Values(s.ID, s.Title, s.Description, now, now).
 		Suffix("RETURNING id, title, description, created_at, updated_at").
 		ToSql()
@@ -35,7 +35,7 @@ func (db *TestDB) CreateSeries(ctx context.Context, s models.Series) (res models
 		return models.Series{}, buildingQueryFailed("insert series", err)
 	}
 
-	err = db.db.QueryRow(ctx, seriesSQL, args...).
+	err = db.DB.QueryRow(ctx, seriesSQL, args...).
 		Scan(&res.ID, &res.Title, &res.Description, &res.UpdatedAt, &res.CreatedAt)
 	if err != nil {
 		return models.Series{}, scanFailed("insert series", err)

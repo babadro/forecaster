@@ -60,6 +60,8 @@ services:
     env_file:
       - .env
       - .env.secrets
+    environment:
+      - START_TELEGRAM_BOT=${START_TELEGRAM_BOT}
 
 volumes:
   db-data-forecast:
