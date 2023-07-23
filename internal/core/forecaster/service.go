@@ -15,6 +15,7 @@ func NewService(db DB) *Service {
 }
 
 type DB interface {
+	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
 	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
 
 	CreateSeries(ctx context.Context, s models.CreateSeries) (models.Series, error)
@@ -28,6 +29,10 @@ type DB interface {
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
 	DeleteOption(ctx context.Context, id int32) error
+}
+
+func (s *Service) GetSeriesByID(ctx context.Context, id int32) (models.Series, error) {
+	return s.db.GetSeriesByID(ctx, id)
 }
 
 func (s *Service) GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error) {

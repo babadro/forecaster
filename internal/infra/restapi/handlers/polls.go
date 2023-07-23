@@ -9,6 +9,7 @@ import (
 )
 
 type service interface {
+	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
 	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
 
 	CreateSeries(ctx context.Context, s models.CreateSeries) (models.Series, error)
@@ -30,6 +31,15 @@ type Polls struct {
 
 func NewPolls(svc service) *Polls {
 	return &Polls{svc: svc}
+}
+
+func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.Responder {
+	series, err := p.svc.GetSeriesByID(params.HTTPRequest.Context(), params.SeriesID)
+	if err != nil {
+		return operations.NewGetSeriesByIDInternalServerError()
+	}
+
+	return operations.NewGetSeriesByIDOK().WithPayload(&series)
 }
 
 func (p *Polls) GetPollByID(params operations.GetPollByIDParams) middleware.Responder {

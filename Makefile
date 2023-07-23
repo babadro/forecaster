@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 .PHONY: build run down start-colima swag
 
 build:

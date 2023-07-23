@@ -1,31 +1,52 @@
 package polls_tests
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
+	"testing"
+
+	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
-	"net/http"
+	"github.com/stretchr/testify/require"
 )
 
 func (s *APITestSuite) TestSeries() {
-	// create series
-	cs := swagger.CreateSeries{
+	createInput := swagger.CreateSeries{
 		Description: "test desc",
 		Title:       "test title",
 	}
 
-	b, err := json.Marshal(cs)
-	s.Require().NoError(err)
+	checkReadRes := func(t *testing.T, got swagger.Series) {
+		require.NotZero(t, got.ID)
 
-	s.Require().NoError(err)
+		require.Equal(t, createInput.Description, got.Description)
+		require.Equal(t, createInput.Title, got.Title)
 
-	resp, err := http.Post(
-		fmt.Sprintf("http://localhost:%d/series", envs.AppPort),
-		"application/json",
-		bytes.NewReader(b))
+		timeRoundEqualNow(t, got.CreatedAt)
+		timeRoundEqualNow(t, got.UpdatedAt)
+	}
 
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	updateInput := swagger.UpdateSeries{
+		Description: helpers.Ptr("updated desc"),
+		Title:       helpers.Ptr("updated title"),
+	}
 
+	checkUpdateRes := func(t *testing.T, id int32, got swagger.Series) {
+		require.Equal(t, id, got.ID)
+
+		require.Equal(t, *updateInput.Description, got.Description)
+		require.Equal(t, *updateInput.Title, got.Title)
+
+		require.NotZero(t, got.CreatedAt)
+		timeRoundEqualNow(t, got.UpdatedAt)
+	}
+
+	testInput := crudEndpointTestInput[swagger.CreateSeries, swagger.Series, swagger.UpdateSeries]{
+		createInput:    createInput,
+		updateInput:    updateInput,
+		checkCreateRes: checkReadRes,
+		checkReadRes:   checkReadRes,
+		checkUpdateRes: checkUpdateRes,
+		path:           "series",
+	}
+
+	testCRUDEndpoints[swagger.CreateSeries, swagger.Series](s.T(), testInput)
 }

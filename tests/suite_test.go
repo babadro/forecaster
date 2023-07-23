@@ -5,13 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/babadro/forecaster/internal/infra/postgres"
-	"github.com/babadro/forecaster/tests/db"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/babadro/forecaster/internal/infra/postgres"
+	"github.com/babadro/forecaster/tests/db"
+	"github.com/go-openapi/strfmt"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/require"
 
 	models "github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/caarlos0/env"
@@ -93,25 +96,106 @@ func (s *APITestSuite) cleanAllTables() {
 	}
 }
 
-func (s *APITestSuite) CrudEndpointTest[T any](create T) {
-	// create series
-	cs := swagger.CreateSeries{
-		Description: "test desc",
-		Title:       "test title",
-	}
+type crudEndpointTestInput[C, R, U any] struct {
+	createInput    C
+	updateInput    U
+	checkCreateRes func(t *testing.T, got R)
+	checkReadRes   func(t *testing.T, got R)
+	checkUpdateRes func(t *testing.T, expectedID int32, got R)
+	path           string
+}
 
-	b, err := json.Marshal(cs)
-	s.Require().NoError(err)
+func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R, U]) {
+	// create
+	b, err := json.Marshal(in.createInput)
+	require.NoError(t, err)
 
-	s.Require().NoError(err)
-
-	resp, err := http.Post(
-		fmt.Sprintf("http://localhost:%d/series", envs.AppPort),
+	createResp, err := http.Post(
+		fmt.Sprintf("http://localhost:%d/%s", envs.AppPort, in.path),
 		"application/json",
 		bytes.NewReader(b))
+	require.NoError(t, err)
 
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+	defer func() { _ = createResp.Body.Close() }()
+
+	require.Equal(t, http.StatusCreated, createResp.StatusCode)
+
+	var gotCreateResult R
+	err = json.NewDecoder(createResp.Body).Decode(&gotCreateResult)
+	require.NoError(t, err)
+
+	in.checkCreateRes(t, gotCreateResult)
+
+	itemID := id(gotCreateResult)
+
+	// read
+	readResp, err := http.Get(
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
+	)
+	require.NoError(t, err)
+	defer func() { _ = readResp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, readResp.StatusCode)
+	in.checkReadRes(t, gotCreateResult)
+
+	// update
+	b, err = json.Marshal(in.updateInput)
+	require.NoError(t, err)
+
+	updateReq, err := http.NewRequest(http.MethodPut,
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
+		bytes.NewReader(b))
+	require.NoError(t, err)
+	updateReq.Header.Set("Content-Type", "application/json")
+
+	updateResp, err := http.DefaultClient.Do(updateReq)
+	require.NoError(t, err)
+	defer func() { _ = updateResp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, updateResp.StatusCode)
+
+	var gotUpdateResult R
+	err = json.NewDecoder(updateResp.Body).Decode(&gotUpdateResult)
+	require.NoError(t, err)
+
+	in.checkUpdateRes(t, itemID, gotUpdateResult)
+
+	// delete
+	deleteReq, err := http.NewRequest(http.MethodDelete,
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
+		nil)
+	require.NoError(t, err)
+
+	deleteResp, err := http.DefaultClient.Do(deleteReq)
+	require.NoError(t, err)
+	defer func() { _ = deleteResp.Body.Close() }()
+
+	require.Equal(t, http.StatusNoContent, deleteResp.StatusCode)
+
+	// read deleted
+	readResp, err = http.Get(
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
+	)
+	require.NoError(t, err)
+	defer func() { _ = readResp.Body.Close() }()
+	require.Equal(t, http.StatusNotFound, readResp.StatusCode)
+}
+
+func timeRoundEqualNow(t *testing.T, got strfmt.DateTime) {
+	require.True(t, time.Now().Round(time.Second).Equal(time.Time(got).Round(time.Second)))
+}
+
+func id(entity interface{}) int32 {
+	switch v := entity.(type) {
+	case models.Series:
+		return v.ID
+	case models.Poll:
+		return v.ID
+	case models.Option:
+		return v.ID
+	default:
+		panic(fmt.Sprintf("unknown type %T", entity))
+	}
 }
 
 func TestAPI(t *testing.T) {

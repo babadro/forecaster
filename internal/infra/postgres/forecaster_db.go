@@ -24,6 +24,24 @@ func NewForecasterDB(db *pgxpool.Pool) *ForecasterDB {
 	}
 }
 
+func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Series, error) {
+	seriesSQL, _, err := db.q.Select("*").From("forecaster.series").Where(sq.Eq{"id": id}).ToSql()
+	if err != nil {
+		return models.Series{}, buildingQueryFailed("select series", err)
+	}
+
+	var series models.Series
+	err = db.db.
+		QueryRow(ctx, seriesSQL, id).
+		Scan(&series.ID, &series.Title, &series.Description, &series.CreatedAt, &series.UpdatedAt)
+
+	if err != nil {
+		return models.Series{}, scanFailed("select series", err)
+	}
+
+	return series, nil
+}
+
 func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error) {
 	pollSQL, _, err := db.q.Select("*").From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {

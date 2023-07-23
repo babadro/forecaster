@@ -83,6 +83,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
+	api.GetSeriesByIDHandler = operations.GetSeriesByIDHandlerFunc(pollsAPI.GetSeriesByID)
 	api.GetPollByIDHandler = operations.GetPollByIDHandlerFunc(pollsAPI.GetPollByID)
 
 	api.CreateSeriesHandler = operations.CreateSeriesHandlerFunc(pollsAPI.CreateSeries)
