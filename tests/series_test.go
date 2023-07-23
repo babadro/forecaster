@@ -1,5 +1,31 @@
 package polls_tests
 
-func (s *APITestSuite) Test1() {
-	s.T().Log("Test1 is running")
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/babadro/forecaster/internal/models/swagger"
+	"net/http"
+)
+
+func (s *APITestSuite) TestSeries() {
+	// create series
+	cs := swagger.CreateSeries{
+		Description: "test desc",
+		Title:       "test title",
+	}
+
+	b, err := json.Marshal(cs)
+	s.Require().NoError(err)
+
+	s.Require().NoError(err)
+
+	resp, err := http.Post(
+		fmt.Sprintf("http://localhost:%d/series", envs.AppPort),
+		"application/json",
+		bytes.NewReader(b))
+
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
 }

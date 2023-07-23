@@ -1,7 +1,9 @@
 package polls_tests
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/babadro/forecaster/tests/db"
@@ -89,6 +91,27 @@ func (s *APITestSuite) cleanAllTables() {
 		_, err := s.testDB.DB.Exec(context.Background(), "TRUNCATE TABLE "+tableName+" CASCADE")
 		s.Require().NoError(err)
 	}
+}
+
+func (s *APITestSuite) CrudEndpointTest[T any](create T) {
+	// create series
+	cs := swagger.CreateSeries{
+		Description: "test desc",
+		Title:       "test title",
+	}
+
+	b, err := json.Marshal(cs)
+	s.Require().NoError(err)
+
+	s.Require().NoError(err)
+
+	resp, err := http.Post(
+		fmt.Sprintf("http://localhost:%d/series", envs.AppPort),
+		"application/json",
+		bytes.NewReader(b))
+
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, resp.StatusCode)
 }
 
 func TestAPI(t *testing.T) {
