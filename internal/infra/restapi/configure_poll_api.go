@@ -94,7 +94,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	api.UpdatePollHandler = operations.UpdatePollHandlerFunc(pollsAPI.UpdatePoll)
 	api.UpdateOptionHandler = operations.UpdateOptionHandlerFunc(pollsAPI.UpdateOption)
 
-	api.UpdateSeriesHandler = operations.UpdateSeriesHandlerFunc(pollsAPI.UpdateSeries)
+	api.DeleteSeriesHandler = operations.DeleteSeriesHandlerFunc(pollsAPI.DeleteSeries)
 	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
 	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
 

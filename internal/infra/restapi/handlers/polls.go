@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
+	"github.com/babadro/forecaster/internal/domain"
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 	models "github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/runtime/middleware"
@@ -16,7 +18,7 @@ type service interface {
 	CreatePoll(ctx context.Context, poll models.CreatePoll) (models.Poll, error)
 	CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error)
 
-	UpdateSeries(ctx context.Context, s models.UpdateSeries) (models.Series, error)
+	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
 	UpdatePoll(ctx context.Context, poll models.UpdatePoll) (models.Poll, error)
 	UpdateOption(ctx context.Context, option models.UpdateOption) (models.Option, error)
 
@@ -36,6 +38,10 @@ func NewPolls(svc service) *Polls {
 func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.Responder {
 	series, err := p.svc.GetSeriesByID(params.HTTPRequest.Context(), params.SeriesID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return operations.NewGetSeriesByIDNotFound()
+		}
+
 		return operations.NewGetSeriesByIDInternalServerError()
 	}
 
@@ -45,6 +51,10 @@ func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.
 func (p *Polls) GetPollByID(params operations.GetPollByIDParams) middleware.Responder {
 	poll, err := p.svc.GetPollByID(params.HTTPRequest.Context(), params.PollID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return operations.NewGetPollByIDNotFound()
+		}
+
 		return operations.NewGetPollByIDInternalServerError()
 	}
 	return operations.NewGetPollByIDOK().WithPayload(&poll)
@@ -78,7 +88,7 @@ func (p *Polls) CreateOption(params operations.CreateOptionParams) middleware.Re
 }
 
 func (p *Polls) UpdateSeries(params operations.UpdateSeriesParams) middleware.Responder {
-	s, err := p.svc.UpdateSeries(params.HTTPRequest.Context(), *params.Series)
+	s, err := p.svc.UpdateSeries(params.HTTPRequest.Context(), params.SeriesID, *params.Series)
 	if err != nil {
 		return operations.NewUpdateSeriesInternalServerError()
 	}

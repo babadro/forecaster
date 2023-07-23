@@ -2,10 +2,13 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/babadro/forecaster/internal/domain"
 	models "github.com/babadro/forecaster/internal/models/swagger"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lann/builder"
 
@@ -36,6 +39,10 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 		Scan(&series.ID, &series.Title, &series.Description, &series.CreatedAt, &series.UpdatedAt)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Series{}, domain.ErrNotFound
+		}
+
 		return models.Series{}, scanFailed("select series", err)
 	}
 
@@ -54,6 +61,10 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 		Scan(&poll.ID, &poll.Title, &poll.Description, &poll.Start, &poll.Finish, &poll.UpdatedAt)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.PollWithOptions{}, domain.ErrNotFound
+		}
+
 		return models.PollWithOptions{}, scanFailed("select poll", err)
 	}
 
@@ -152,10 +163,10 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOp
 	return res, nil
 }
 
-func (db *ForecasterDB) UpdateSeries(ctx context.Context, s models.UpdateSeries) (res models.Series, err error) {
+func (db *ForecasterDB) UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (res models.Series, err error) {
 	b := db.q.Update("forecaster.series").
 		Set("updated_at", time.Now()).
-		Where(sq.Eq{"id": s.ID}).
+		Where(sq.Eq{"id": id}).
 		Suffix("RETURNING id, title, description, updated_at, created_at")
 
 	if s.Title != nil {

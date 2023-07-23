@@ -22,7 +22,7 @@ type DB interface {
 	CreatePoll(ctx context.Context, poll models.CreatePoll) (models.Poll, error)
 	CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error)
 
-	UpdateSeries(ctx context.Context, s models.UpdateSeries) (models.Series, error)
+	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
 	UpdatePoll(ctx context.Context, poll models.UpdatePoll) (models.Poll, error)
 	UpdateOption(ctx context.Context, option models.UpdateOption) (models.Option, error)
 
@@ -51,8 +51,8 @@ func (s *Service) CreateOption(ctx context.Context, option models.CreateOption) 
 	return s.db.CreateOption(ctx, option)
 }
 
-func (s *Service) UpdateSeries(ctx context.Context, series models.UpdateSeries) (models.Series, error) {
-	return s.db.UpdateSeries(ctx, series)
+func (s *Service) UpdateSeries(ctx context.Context, id int32, series models.UpdateSeries) (models.Series, error) {
+	return s.db.UpdateSeries(ctx, id, series)
 }
 
 func (s *Service) UpdatePoll(ctx context.Context, poll models.UpdatePoll) (models.Poll, error) {
