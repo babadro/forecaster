@@ -371,12 +371,7 @@ definitions:
         type: "string"
   UpdateSeries:
     type: "object"
-    required:
-      - ID
     properties:
-      ID:
-        type: "integer"
-        format: "int32"
       Title:
         type: "string"
         x-nullable: true

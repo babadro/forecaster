@@ -15,8 +15,7 @@ import (
 )
 
 // NewDeleteSeriesParams creates a new DeleteSeriesParams object
-//
-// There are no default values defined in the spec.
+// no default values defined in spec.
 func NewDeleteSeriesParams() DeleteSeriesParams {
 
 	return DeleteSeriesParams{}
@@ -51,6 +50,7 @@ func (o *DeleteSeriesParams) BindRequest(r *http.Request, route *middleware.Matc
 	if err := o.bindSeriesID(rSeriesID, rhkSeriesID, route.Formats); err != nil {
 		res = append(res, err)
 	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}

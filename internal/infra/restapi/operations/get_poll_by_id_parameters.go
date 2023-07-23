@@ -15,8 +15,7 @@ import (
 )
 
 // NewGetPollByIDParams creates a new GetPollByIDParams object
-//
-// There are no default values defined in the spec.
+// no default values defined in spec.
 func NewGetPollByIDParams() GetPollByIDParams {
 
 	return GetPollByIDParams{}
@@ -51,6 +50,7 @@ func (o *GetPollByIDParams) BindRequest(r *http.Request, route *middleware.Match
 	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
 		res = append(res, err)
 	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}

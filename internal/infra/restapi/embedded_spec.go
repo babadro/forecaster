@@ -775,17 +775,10 @@ func init() {
     },
     "UpdateSeries": {
       "type": "object",
-      "required": [
-        "ID"
-      ],
       "properties": {
         "Description": {
           "type": "string",
           "x-nullable": true
-        },
-        "ID": {
-          "type": "integer",
-          "format": "int32"
         },
         "Title": {
           "type": "string",
@@ -1565,17 +1558,10 @@ func init() {
     },
     "UpdateSeries": {
       "type": "object",
-      "required": [
-        "ID"
-      ],
       "properties": {
         "Description": {
           "type": "string",
           "x-nullable": true
-        },
-        "ID": {
-          "type": "integer",
-          "format": "int32"
         },
         "Title": {
           "type": "string",
