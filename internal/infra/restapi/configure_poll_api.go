@@ -7,9 +7,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/rs/zerolog"
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	bot "github.com/babadro/forecaster/internal/core/forecaster"
 	"github.com/babadro/forecaster/internal/infra/postgres"
@@ -36,6 +39,10 @@ func configureFlags(_ *operations.PollAPIAPI) {
 }
 
 func configureAPI(api *operations.PollAPIAPI) http.Handler {
+	log := zerolog.New(os.Stdout).With().
+		Timestamp().
+		Logger()
+
 	var envs envVars
 	if err := env.Parse(&envs); err != nil {
 		log.Fatalf("Unable to parse env vars: %v\n", err)
@@ -109,7 +116,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		}
 	}
 
-	return setupGlobalMiddleware(api.Serve(setupMiddlewares))
+	return setupGlobalMiddleware(api.Serve(setupMiddlewares(log)))
 }
 
 // The TLS configuration before HTTPS server starts.
@@ -126,8 +133,10 @@ func configureServer(s *http.Server, scheme, addr string) {
 
 // The middleware configuration is for the handler executors. These do not apply to the swagger.json document.
 // The middleware executes after routing but before authentication, binding and validation.
-func setupMiddlewares(handler http.Handler) http.Handler {
-	return handler
+func setupMiddlewares(l zerolog.Logger) middleware.Builder {
+	return func(handler http.Handler) http.Handler {
+		return handler
+	}
 }
 
 // The middleware configuration happens before anything,
