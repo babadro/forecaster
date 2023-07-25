@@ -38,12 +38,13 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 		QueryRow(ctx, seriesSQL, id).
 		Scan(&series.ID, &series.Title, &series.Description, &series.CreatedAt, &series.UpdatedAt)
 
+	selectSeries := "select series"
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.Series{}, domain.ErrNotFound
+			return models.Series{}, errNotFound(selectSeries, err)
 		}
 
-		return models.Series{}, scanFailed("select series", err)
+		return models.Series{}, scanFailed(selectSeries, err)
 	}
 
 	return series, nil
@@ -60,12 +61,13 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 		QueryRow(ctx, pollSQL, id).
 		Scan(&poll.ID, &poll.Title, &poll.Description, &poll.Start, &poll.Finish, &poll.UpdatedAt)
 
+	selectPoll := "select poll"
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.PollWithOptions{}, domain.ErrNotFound
+			return models.PollWithOptions{}, errNotFound(selectPoll, err)
 		}
 
-		return models.PollWithOptions{}, scanFailed("select poll", err)
+		return models.PollWithOptions{}, scanFailed(selectPoll, err)
 	}
 
 	optionsSQL, _, err := db.q.Select("*").From("forecaster.options").Where(sq.Eq{"poll_id": id}).ToSql()
@@ -320,21 +322,25 @@ func (db *ForecasterDB) DeleteOption(ctx context.Context, id int32) error {
 }
 
 func buildingQueryFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: building query failed: %w", queryName, err)
+	return fmt.Errorf("%s: building query failed: %v", queryName, err)
 }
 
 func queryFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: query failed: %w", queryName, err)
+	return fmt.Errorf("%s: query failed: %v", queryName, err)
 }
 
 func rowsError(queryName string, err error) error {
-	return fmt.Errorf("%s: rows error: %w", queryName, err)
+	return fmt.Errorf("%s: rows error: %v", queryName, err)
 }
 
 func scanFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: scan rows failed: %w", queryName, err)
+	return fmt.Errorf("%s: scan rows failed: %v", queryName, err)
 }
 
 func execFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: exec failed: %w", queryName, err)
+	return fmt.Errorf("%s: exec failed: %v", queryName, err)
+}
+
+func errNotFound(queryName string, err error) error {
+	return fmt.Errorf("%w: %s", domain.ErrNotFound, err)
 }

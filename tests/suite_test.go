@@ -185,6 +185,10 @@ func timeRoundEqualNow(t *testing.T, got strfmt.DateTime) {
 	require.True(t, time.Now().Round(time.Second).Equal(time.Time(got).Round(time.Second)))
 }
 
+func timeRoundEqual(t *testing.T, expected, got strfmt.DateTime) {
+	require.True(t, time.Time(expected).Round(time.Second).Equal(time.Time(got).Round(time.Second)))
+}
+
 func id(entity interface{}) int32 {
 	switch v := entity.(type) {
 	case models.Series:
