@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/babadro/forecaster/internal/infra/restapi/middlewares"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/justinas/alice"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	bot "github.com/babadro/forecaster/internal/core/forecaster"
 	"github.com/babadro/forecaster/internal/infra/postgres"
@@ -41,25 +42,25 @@ func configureFlags(_ *operations.PollAPIAPI) {
 }
 
 func configureAPI(api *operations.PollAPIAPI) http.Handler {
-	log := zerolog.New(os.Stdout).With().
+	l := zerolog.New(os.Stdout).With().
 		Timestamp().
 		Logger()
 
 	var envs envVars
 	if err := env.Parse(&envs); err != nil {
-		log.Fatalf("Unable to parse env vars: %v\n", err)
+		l.Fatal().Msgf("Unable to parse env vars: %v\n", err)
 	}
 
 	var telegramAPI *handlers.Tg
 	if envs.StartTelegramBot {
 		publicUrl, err := getNgrokURL(envs.NgrokAgentAddr)
 		if err != nil {
-			log.Fatalf("Unable to get ngrok url: %v\n", err)
+			l.Fatal().Msgf("Unable to get ngrok url: %v\n", err)
 		}
 
 		tgBot, err := initBot(publicUrl+"/telegram-updates", envs.TelegramToken)
 		if err != nil {
-			log.Fatalf("Unable to init bot: %v\n", err)
+			l.Fatal().Msgf("Unable to init bot: %v\n", err)
 		}
 
 		telegramAPI = handlers.NewTelegram(tgBot)
@@ -67,7 +68,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
 	if err != nil {
-		log.Fatalf("Unable to connection to database :%v\n", err)
+		l.Fatal().Msgf("Unable to connection to database :%v\n", err)
 	}
 
 	forecastDB := postgres.NewForecasterDB(dbPool)
@@ -118,7 +119,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		}
 	}
 
-	return setupGlobalMiddleware(api.Serve(setupMiddlewares(log)))
+	return setupGlobalMiddleware(api.Serve(setupMiddlewares(l)))
 }
 
 // The TLS configuration before HTTPS server starts.
@@ -136,7 +137,9 @@ func configureServer(s *http.Server, scheme, addr string) {
 // The middleware configuration is for the handler executors. These do not apply to the swagger.json document.
 // The middleware executes after routing but before authentication, binding and validation.
 func setupMiddlewares(l zerolog.Logger) middleware.Builder {
-	return middlewares.Logging(l)
+	return alice.New(
+		middlewares.Logging(l),
+	).Then
 }
 
 // The middleware configuration happens before anything,

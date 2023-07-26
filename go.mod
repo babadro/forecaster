@@ -16,7 +16,6 @@ require (
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/justinas/alice v1.2.0
-	github.com/justinas/nosurf v1.1.1
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.8.2
@@ -51,6 +50,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/xid v1.2.1 // indirect
+	github.com/zenazn/goji v0.9.0 // indirect
 	go.mongodb.org/mongo-driver v1.12.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect

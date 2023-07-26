@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"github.com/rs/zerolog/hlog"
 
 	"github.com/babadro/forecaster/internal/domain"
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
@@ -42,6 +43,7 @@ func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.
 			return operations.NewGetSeriesByIDNotFound()
 		}
 
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to get series by id")
 		return operations.NewGetSeriesByIDInternalServerError()
 	}
 
@@ -54,6 +56,8 @@ func (p *Polls) GetPollByID(params operations.GetPollByIDParams) middleware.Resp
 		if errors.Is(err, domain.ErrNotFound) {
 			return operations.NewGetPollByIDNotFound()
 		}
+
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to get poll by id")
 
 		return operations.NewGetPollByIDInternalServerError()
 	}

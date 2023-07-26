@@ -28,7 +28,9 @@ func NewForecasterDB(db *pgxpool.Pool) *ForecasterDB {
 }
 
 func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Series, error) {
-	seriesSQL, _, err := db.q.Select("*").From("forecaster.series").Where(sq.Eq{"id": id}).ToSql()
+	seriesSQL, _, err := db.q.Select(
+		"id", "title", "description", "created_at", "updated_at",
+	).From("forecaster.series").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
 		return models.Series{}, buildingQueryFailed("select series", err)
 	}
@@ -51,15 +53,19 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 }
 
 func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error) {
-	pollSQL, _, err := db.q.Select("*").From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
+	pollSQL, args, err := db.q.Select(
+		"id", "series_id", "title", "description", "start", "finish", "created_at", "updated_at",
+	).From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select poll", err)
 	}
 
 	var poll models.PollWithOptions
 	err = db.db.
-		QueryRow(ctx, pollSQL, id).
-		Scan(&poll.ID, &poll.Title, &poll.Description, &poll.Start, &poll.Finish, &poll.UpdatedAt)
+		QueryRow(ctx, pollSQL, args...).
+		Scan(
+			&poll.ID, &poll.SeriesID, &poll.Title, &poll.Description, &poll.Start, &poll.Finish, &poll.CreatedAt, &poll.UpdatedAt,
+		)
 
 	selectPoll := "select poll"
 	if err != nil {
@@ -70,12 +76,14 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 		return models.PollWithOptions{}, scanFailed(selectPoll, err)
 	}
 
-	optionsSQL, _, err := db.q.Select("*").From("forecaster.options").Where(sq.Eq{"poll_id": id}).ToSql()
+	optionsSQL, args, err := db.q.Select(
+		"id", "poll_id", "title", "description",
+	).From("forecaster.options").Where(sq.Eq{"poll_id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select options", err)
 	}
 
-	rows, err := db.db.Query(ctx, optionsSQL)
+	rows, err := db.db.Query(ctx, optionsSQL, args...)
 	if err != nil {
 		return models.PollWithOptions{}, queryFailed("select options", err)
 	}
