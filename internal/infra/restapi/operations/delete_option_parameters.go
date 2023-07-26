@@ -15,7 +15,8 @@ import (
 )
 
 // NewDeleteOptionParams creates a new DeleteOptionParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewDeleteOptionParams() DeleteOptionParams {
 
 	return DeleteOptionParams{}
@@ -50,7 +51,6 @@ func (o *DeleteOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 	if err := o.bindOptionID(rOptionID, rhkOptionID, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}

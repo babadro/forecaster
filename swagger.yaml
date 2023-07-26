@@ -409,12 +409,7 @@ definitions:
         format: "date-time"
   UpdatePoll:
     type: "object"
-    required:
-      - ID
     properties:
-      ID:
-        type: "integer"
-        format: "int32"
       SeriesID:
         type: "integer"
         format: "int32"
@@ -499,12 +494,7 @@ definitions:
         type: "string"
   UpdateOption:
     type: "object"
-    required:
-      - ID
     properties:
-      ID:
-        type: "integer"
-        format: "int32"
       Title:
         type: "string"
         x-nullable: true
