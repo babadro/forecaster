@@ -20,8 +20,8 @@ type service interface {
 	CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error)
 
 	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
-	UpdatePoll(ctx context.Context, poll models.UpdatePoll) (models.Poll, error)
-	UpdateOption(ctx context.Context, option models.UpdateOption) (models.Option, error)
+	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll) (models.Poll, error)
+	UpdateOption(ctx context.Context, id int32, option models.UpdateOption) (models.Option, error)
 
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
@@ -101,7 +101,7 @@ func (p *Polls) UpdateSeries(params operations.UpdateSeriesParams) middleware.Re
 }
 
 func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Responder {
-	poll, err := p.svc.UpdatePoll(params.HTTPRequest.Context(), *params.Poll)
+	poll, err := p.svc.UpdatePoll(params.HTTPRequest.Context(), params.PollID, *params.Poll)
 	if err != nil {
 		return operations.NewUpdatePollInternalServerError()
 	}
@@ -110,7 +110,7 @@ func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Respon
 }
 
 func (p *Polls) UpdateOption(params operations.UpdateOptionParams) middleware.Responder {
-	option, err := p.svc.UpdateOption(params.HTTPRequest.Context(), *params.Option)
+	option, err := p.svc.UpdateOption(params.HTTPRequest.Context(), params.OptionID, *params.Option)
 	if err != nil {
 		return operations.NewUpdateOptionInternalServerError()
 	}

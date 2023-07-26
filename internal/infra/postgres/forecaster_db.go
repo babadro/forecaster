@@ -202,10 +202,10 @@ func (db *ForecasterDB) UpdateSeries(ctx context.Context, id int32, s models.Upd
 	return res, err
 }
 
-func (db *ForecasterDB) UpdatePoll(ctx context.Context, in models.UpdatePoll) (res models.Poll, err error) {
+func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.UpdatePoll) (res models.Poll, err error) {
 	b := db.q.Update("forecaster.polls").
 		Set("updated_at", time.Now()).
-		Where(sq.Eq{"id": in.ID}).
+		Where(sq.Eq{"id": id}).
 		Suffix("RETURNING id, series_id, title, description, start, finish, updated_at, created_at")
 
 	if in.SeriesID != nil {
@@ -245,11 +245,11 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, in models.UpdatePoll) (r
 	return res, nil
 }
 
-func (db *ForecasterDB) UpdateOption(ctx context.Context, in models.UpdateOption) (res models.Option, err error) {
+func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.UpdateOption) (res models.Option, err error) {
 	b := db.q.
 		Update("forecaster.options").
 		Set("updated_at", time.Now()).
-		Where(sq.Eq{"id": in.ID}).
+		Where(sq.Eq{"id": id}).
 		Suffix("RETURNING id")
 
 	if in.Title != nil {

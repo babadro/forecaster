@@ -23,8 +23,8 @@ type DB interface {
 	CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error)
 
 	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
-	UpdatePoll(ctx context.Context, poll models.UpdatePoll) (models.Poll, error)
-	UpdateOption(ctx context.Context, option models.UpdateOption) (models.Option, error)
+	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll) (models.Poll, error)
+	UpdateOption(ctx context.Context, id int32, option models.UpdateOption) (models.Option, error)
 
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
@@ -55,12 +55,12 @@ func (s *Service) UpdateSeries(ctx context.Context, id int32, series models.Upda
 	return s.db.UpdateSeries(ctx, id, series)
 }
 
-func (s *Service) UpdatePoll(ctx context.Context, poll models.UpdatePoll) (models.Poll, error) {
-	return s.db.UpdatePoll(ctx, poll)
+func (s *Service) UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll) (models.Poll, error) {
+	return s.db.UpdatePoll(ctx, id, poll)
 }
 
-func (s *Service) UpdateOption(ctx context.Context, option models.UpdateOption) (models.Option, error) {
-	return s.db.UpdateOption(ctx, option)
+func (s *Service) UpdateOption(ctx context.Context, id int32, option models.UpdateOption) (models.Option, error) {
+	return s.db.UpdateOption(ctx, id, option)
 }
 
 func (s *Service) DeleteSeries(ctx context.Context, id int32) error {
