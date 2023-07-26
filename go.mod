@@ -15,6 +15,8 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/justinas/alice v1.2.0
+	github.com/justinas/nosurf v1.1.1
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.8.2
