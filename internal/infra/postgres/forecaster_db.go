@@ -209,23 +209,23 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 		Suffix("RETURNING id, series_id, title, description, start, finish, updated_at, created_at")
 
 	if in.SeriesID != nil {
-		b.Set("series_id", in.SeriesID)
+		b = b.Set("series_id", in.SeriesID)
 	}
 
 	if in.Title != nil {
-		b.Set("title", in.Title)
+		b = b.Set("title", *in.Title)
 	}
 
 	if in.Description != nil {
-		b.Set("description", in.Description)
+		b = b.Set("description", *in.Description)
 	}
 
 	if in.Start != nil {
-		b.Set("start", in.Start)
+		b = b.Set("start", in.Start)
 	}
 
 	if in.Finish != nil {
-		b.Set("finish", in.Finish)
+		b = b.Set("finish", in.Finish)
 	}
 
 	pollSQL, args, err := b.ToSql()

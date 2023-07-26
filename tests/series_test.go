@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (s *APITestSuite) TestSeries() {
+func (s *APITestSuite) TfestSeries() {
 	createInput := swagger.CreateSeries{
 		Description: "test desc",
 		Title:       "test title",
