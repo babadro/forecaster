@@ -3,16 +3,12 @@ package polls_tests
 import (
 	"testing"
 
-	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/stretchr/testify/require"
 )
 
-func (s *APITestSuite) TfestSeries() {
-	createInput := swagger.CreateSeries{
-		Description: "test desc",
-		Title:       "test title",
-	}
+func (s *APITestSuite) TestSeries() {
+	createInput := randomModel[swagger.CreateSeries](s.T())
 
 	checkReadRes := func(t *testing.T, got swagger.Series) {
 		require.NotZero(t, got.ID)
@@ -24,10 +20,7 @@ func (s *APITestSuite) TfestSeries() {
 		timeRoundEqualNow(t, got.UpdatedAt)
 	}
 
-	updateInput := swagger.UpdateSeries{
-		Description: helpers.Ptr("updated desc"),
-		Title:       helpers.Ptr("updated title"),
-	}
+	updateInput := randomModel[swagger.UpdateSeries](s.T())
 
 	checkUpdateRes := func(t *testing.T, id int32, got swagger.Series) {
 		require.Equal(t, id, got.ID)

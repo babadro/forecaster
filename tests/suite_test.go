@@ -12,6 +12,7 @@ import (
 
 	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/babadro/forecaster/tests/db"
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/strfmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/require"
@@ -107,23 +108,7 @@ type crudEndpointTestInput[C, R, U any] struct {
 
 func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R, U]) {
 	// create
-	b, err := json.Marshal(in.createInput)
-	require.NoError(t, err)
-
-	createResp, err := http.Post(
-		fmt.Sprintf("http://localhost:%d/%s", envs.AppPort, in.path),
-		"application/json",
-		bytes.NewReader(b))
-	require.NoError(t, err)
-
-	defer func() { _ = createResp.Body.Close() }()
-
-	require.Equal(t, http.StatusCreated, createResp.StatusCode)
-
-	var gotCreateResult R
-	err = json.NewDecoder(createResp.Body).Decode(&gotCreateResult)
-	require.NoError(t, err)
-
+	gotCreateResult := create[C, R](t, in.createInput, in.path)
 	in.checkCreateRes(t, gotCreateResult)
 
 	itemID := id(gotCreateResult)
@@ -139,7 +124,7 @@ func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R,
 	in.checkReadRes(t, gotCreateResult)
 
 	// update
-	b, err = json.Marshal(in.updateInput)
+	b, err := json.Marshal(in.updateInput)
 	require.NoError(t, err)
 
 	updateReq, err := http.NewRequest(http.MethodPut,
@@ -202,6 +187,34 @@ func id(entity interface{}) int32 {
 	default:
 		panic(fmt.Sprintf("unknown type %T", entity))
 	}
+}
+
+func create[IN any, OUT any](t *testing.T, in IN, path string) OUT {
+	b, err := json.Marshal(in)
+	require.NoError(t, err)
+
+	createResp, err := http.Post(
+		fmt.Sprintf("http://localhost:%d/%s", envs.AppPort, path),
+		"application/json",
+		bytes.NewReader(b))
+	require.NoError(t, err)
+
+	defer func() { _ = createResp.Body.Close() }()
+
+	require.Equal(t, http.StatusCreated, createResp.StatusCode)
+
+	var gotCreateResult OUT
+	err = json.NewDecoder(createResp.Body).Decode(&gotCreateResult)
+	require.NoError(t, err)
+
+	return gotCreateResult
+}
+
+func randomModel[T any](t *testing.T) T {
+	var model T
+	require.NoError(t, gofakeit.Struct(&model))
+
+	return model
 }
 
 func TestAPI(t *testing.T) {

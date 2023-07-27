@@ -2,21 +2,14 @@ package polls_tests
 
 import (
 	"testing"
-	"time"
 
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
-	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/require"
 )
 
 func (s *APITestSuite) TestPolls() {
-	createInput := swagger.CreatePoll{
-		Description: "test desc",
-		Title:       "test title",
-		Start:       strfmt.DateTime(time.Now().Add(time.Hour)),
-		Finish:      strfmt.DateTime(time.Now().Add(time.Hour * 2)),
-	}
+	createInput := randomModel[swagger.CreatePoll](s.T())
 
 	checkReadRes := func(t *testing.T, got swagger.Poll) {
 		require.NotZero(t, got.ID)
@@ -31,12 +24,8 @@ func (s *APITestSuite) TestPolls() {
 		timeRoundEqual(t, createInput.Finish, got.Finish)
 	}
 
-	updateInput := swagger.UpdatePoll{
-		Description: helpers.Ptr("updated desc"),
-		Title:       helpers.Ptr("updated title"),
-		Start:       helpers.Ptr(strfmt.DateTime(time.Now().Add(time.Hour * 3))),
-		Finish:      helpers.Ptr(strfmt.DateTime(time.Now().Add(time.Hour * 4))),
-	}
+	updateInput := randomModel[swagger.UpdatePoll](s.T())
+	updateInput.SeriesID = helpers.Ptr[int32](0)
 
 	checkUpdateRes := func(t *testing.T, id int32, got swagger.Poll) {
 		require.Equal(t, id, got.ID)
