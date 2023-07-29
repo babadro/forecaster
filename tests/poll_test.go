@@ -87,3 +87,16 @@ func (s *APITestSuite) TestPolls_Options() {
 
 	NewGomegaWithT(s.T()).Expect(gotPollOptions).To(ConsistOf(createdOptions))
 }
+
+func (s *APITestSuite) TestPolls_Series() {
+	series := create[swagger.CreateSeries, swagger.Series](
+		s.T(), randomModel[swagger.CreateSeries](s.T()), "series",
+	)
+
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = series.ID
+
+	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, "polls")
+
+	require.Equal(s.T(), series.ID, poll.SeriesID)
+}
