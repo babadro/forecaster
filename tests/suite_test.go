@@ -114,7 +114,7 @@ func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R,
 	itemID := id(gotCreateResult)
 
 	// read
-	gotReadResult := read[R](t, in.path, itemID, http.StatusOK)
+	gotReadResult := read[R](t, in.path, itemID)
 	in.checkReadRes(t, gotReadResult)
 
 	// update
@@ -172,14 +172,14 @@ func create[IN any, OUT any](t *testing.T, in IN, path string) OUT {
 	return gotCreateResult
 }
 
-func read[OUT any](t *testing.T, path string, id int32, expectedStatus int) OUT {
+func read[OUT any](t *testing.T, path string, id int32) OUT {
 	readResp, err := http.Get(
 		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
 	)
 	require.NoError(t, err)
 	defer func() { _ = readResp.Body.Close() }()
 
-	require.Equal(t, expectedStatus, readResp.StatusCode)
+	require.Equal(t, http.StatusOK, readResp.StatusCode)
 
 	var got OUT
 	err = json.NewDecoder(readResp.Body).Decode(&got)
