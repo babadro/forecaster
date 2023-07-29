@@ -6,6 +6,8 @@ import (
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/stretchr/testify/require"
+
+	. "github.com/onsi/gomega"
 )
 
 func (s *APITestSuite) TestPolls() {
@@ -64,4 +66,24 @@ func (s *APITestSuite) TestPolls() {
 	}
 
 	testCRUDEndpoints[swagger.CreatePoll, swagger.Poll](s.T(), testInput)
+}
+
+func (s *APITestSuite) TestPolls_Options() {
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = 0
+
+	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, "polls")
+
+	createdOptions := make([]*swagger.Option, 3)
+	for i := range createdOptions {
+		optionInput := randomModel[swagger.CreateOption](s.T())
+		optionInput.PollID = poll.ID
+
+		createdOption := create[swagger.CreateOption, swagger.Option](s.T(), optionInput, "options")
+		createdOptions[i] = &createdOption
+	}
+
+	gotPollOptions := read[swagger.PollWithOptions](s.T(), "polls", poll.ID).Options
+
+	NewGomegaWithT(s.T()).Expect(gotPollOptions).To(ConsistOf(createdOptions))
 }

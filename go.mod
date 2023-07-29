@@ -18,10 +18,11 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/justinas/alice v1.2.0
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
+	github.com/onsi/gomega v1.27.10
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.8.2
 	golang.ngrok.com/ngrok v1.2.0
-	golang.org/x/net v0.11.0
+	golang.org/x/net v0.12.0
 )
 
 require (
@@ -32,6 +33,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/inconshreveable/log15 v3.0.0-testing.3+incompatible // indirect
 	github.com/inconshreveable/log15/v3 v3.0.0-testing.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -55,10 +57,10 @@ require (
 	github.com/zenazn/goji v0.9.0 // indirect
 	go.mongodb.org/mongo-driver v1.12.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/term v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/term v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

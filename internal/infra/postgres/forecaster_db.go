@@ -77,7 +77,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	}
 
 	optionsSQL, args, err := db.q.Select(
-		"id", "poll_id", "title", "description",
+		"id", "poll_id", "title", "description", "updated_at",
 	).From("forecaster.options").Where(sq.Eq{"poll_id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select options", err)
@@ -92,7 +92,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	for rows.Next() {
 		var option models.Option
 
-		err = rows.Scan(&option.ID, &option.Title, &option.Description, &option.PollID)
+		err = rows.Scan(&option.ID, &option.PollID, &option.Title, &option.Description, &option.UpdatedAt)
 		if err != nil {
 			return models.PollWithOptions{}, scanFailed("select options", err)
 		}
@@ -350,5 +350,5 @@ func execFailed(queryName string, err error) error {
 }
 
 func errNotFound(queryName string, err error) error {
-	return fmt.Errorf("%w: %s", domain.ErrNotFound, err)
+	return fmt.Errorf("%s: %w: %s", queryName, domain.ErrNotFound, err)
 }
