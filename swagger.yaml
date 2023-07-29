@@ -397,6 +397,9 @@ definitions:
   CreatePoll:
     type: "object"
     properties:
+      SeriesID:
+        type: "integer"
+        format: "int32"
       Title:
         type: "string"
       Description:
