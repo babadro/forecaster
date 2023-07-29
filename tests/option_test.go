@@ -23,6 +23,8 @@ func (s *APITestSuite) TestOptions() {
 
 		require.Equal(t, createInput.Description, got.Description)
 		require.Equal(t, createInput.Title, got.Title)
+
+		timeRoundEqualNow(t, got.UpdatedAt)
 	}
 
 	checkCreateRes(s.T(), gotCreateResult)
@@ -39,6 +41,8 @@ func (s *APITestSuite) TestOptions() {
 
 		require.Equal(t, *updateInput.Description, got.Description)
 		require.Equal(t, *updateInput.Title, got.Title)
+
+		timeRoundEqualNow(t, got.UpdatedAt)
 	}
 
 	checkUpdateRes(s.T(), gotCreateResult.ID, gotUpdateResult)

@@ -155,9 +155,9 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) 
 func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOption) (res models.Option, err error) {
 	optionSQL, args, err := db.q.
 		Insert("forecaster.options").
-		Columns("poll_id", "title", "description").
-		Values(option.PollID, option.Title, option.Description).
-		Suffix("RETURNING id, poll_id, title, description").
+		Columns("poll_id", "title", "description", "updated_at").
+		Values(option.PollID, option.Title, option.Description, time.Now()).
+		Suffix("RETURNING id, poll_id, title, description, updated_at").
 		ToSql()
 
 	if err != nil {
@@ -165,7 +165,7 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOp
 	}
 
 	err = db.db.QueryRow(ctx, optionSQL, args...).
-		Scan(&res.ID, &res.PollID, &res.Title, &res.Description)
+		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.UpdatedAt)
 	if err != nil {
 		return models.Option{}, scanFailed("insert option", err)
 	}
@@ -248,15 +248,16 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.UpdateOption) (res models.Option, err error) {
 	b := db.q.
 		Update("forecaster.options").
+		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": id}).
-		Suffix("RETURNING id")
+		Suffix("RETURNING id, title, description, updated_at")
 
 	if in.Title != nil {
-		b.Set("title", in.Title)
+		b = b.Set("title", in.Title)
 	}
 
 	if in.Description != nil {
-		b.Set("description", in.Description)
+		b = b.Set("description", in.Description)
 	}
 
 	optionSQL, args, err := b.ToSql()
@@ -266,7 +267,7 @@ func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.Up
 	}
 
 	err = db.db.QueryRow(ctx, optionSQL, args...).
-		Scan(&res.ID, &res.Title, &res.Description)
+		Scan(&res.ID, &res.Title, &res.Description, &res.UpdatedAt)
 	if err != nil {
 		return models.Option{}, fmt.Errorf("unable to update option: %w", err)
 	}
