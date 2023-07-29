@@ -8,8 +8,11 @@ import (
 )
 
 func (s *APITestSuite) TestOptions() {
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = 0
+
 	poll := create[swagger.CreatePoll, swagger.Poll](
-		s.T(), randomModel[swagger.CreatePoll](s.T()), "polls",
+		s.T(), pollInput, "polls",
 	)
 
 	createInput := randomModel[swagger.CreateOption](s.T())

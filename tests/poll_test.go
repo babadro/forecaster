@@ -10,6 +10,7 @@ import (
 
 func (s *APITestSuite) TestPolls() {
 	createInput := randomModel[swagger.CreatePoll](s.T())
+	createInput.SeriesID = 0
 
 	checkCreateRes := func(t *testing.T, got swagger.Poll) {
 		require.NotZero(t, got.ID)

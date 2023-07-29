@@ -11,8 +11,9 @@ run: build
 run-test-env: build
 	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=false docker-compose up
 
+# example: make test filter=TestPolls
 test:
-	 (source .env.tests && go test ./... -v)
+	 (source .env.tests && go test ./... -testify.m=$(filter) -v)
 
 down:
 	docker-compose down -v

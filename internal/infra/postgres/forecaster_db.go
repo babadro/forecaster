@@ -134,9 +134,9 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) 
 
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
-		Columns("title", "description", "start", "finish", "created_at", "updated_at").
-		Values(poll.Title, poll.Description, poll.Start, poll.Finish, now, now).
-		Suffix("RETURNING id, title, description, start, finish, created_at, updated_at").
+		Columns("series_id", "title", "description", "start", "finish", "created_at", "updated_at").
+		Values(poll.SeriesID, poll.Title, poll.Description, poll.Start, poll.Finish, now, now).
+		Suffix("RETURNING id, series_id, title, description, start, finish, created_at, updated_at").
 		ToSql()
 
 	if err != nil {
@@ -144,7 +144,7 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) 
 	}
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
-		Scan(&res.ID, &res.Title, &res.Description, &res.Start, &res.Finish, &res.CreatedAt, &res.UpdatedAt)
+		Scan(&res.ID, &res.SeriesID, &res.Title, &res.Description, &res.Start, &res.Finish, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
 		return models.Poll{}, scanFailed("insert poll", err)
 	}
