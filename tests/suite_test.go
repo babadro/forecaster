@@ -114,56 +114,18 @@ func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R,
 	itemID := id(gotCreateResult)
 
 	// read
-	readResp, err := http.Get(
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
-	)
-	require.NoError(t, err)
-	defer func() { _ = readResp.Body.Close() }()
-
-	require.Equal(t, http.StatusOK, readResp.StatusCode)
-	in.checkReadRes(t, gotCreateResult)
+	gotReadResult := read[R](t, in.path, itemID, http.StatusOK)
+	in.checkReadRes(t, gotReadResult)
 
 	// update
-	b, err := json.Marshal(in.updateInput)
-	require.NoError(t, err)
-
-	updateReq, err := http.NewRequest(http.MethodPut,
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
-		bytes.NewReader(b))
-	require.NoError(t, err)
-	updateReq.Header.Set("Content-Type", "application/json")
-
-	updateResp, err := http.DefaultClient.Do(updateReq)
-	require.NoError(t, err)
-	defer func() { _ = updateResp.Body.Close() }()
-
-	require.Equal(t, http.StatusOK, updateResp.StatusCode)
-
-	var gotUpdateResult R
-	err = json.NewDecoder(updateResp.Body).Decode(&gotUpdateResult)
-	require.NoError(t, err)
-
+	gotUpdateResult := update[U, R](t, in.updateInput, in.path, itemID)
 	in.checkUpdateRes(t, itemID, gotUpdateResult)
 
 	// delete
-	deleteReq, err := http.NewRequest(http.MethodDelete,
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
-		nil)
-	require.NoError(t, err)
-
-	deleteResp, err := http.DefaultClient.Do(deleteReq)
-	require.NoError(t, err)
-	defer func() { _ = deleteResp.Body.Close() }()
-
-	require.Equal(t, http.StatusNoContent, deleteResp.StatusCode)
+	deleteOp(t, in.path, itemID)
 
 	// read deleted
-	readResp, err = http.Get(
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, in.path, itemID),
-	)
-	require.NoError(t, err)
-	defer func() { _ = readResp.Body.Close() }()
-	require.Equal(t, http.StatusNotFound, readResp.StatusCode)
+	readShouldNotFound(t, in.path, itemID)
 }
 
 func timeRoundEqualNow(t *testing.T, got strfmt.DateTime) {
@@ -208,6 +170,68 @@ func create[IN any, OUT any](t *testing.T, in IN, path string) OUT {
 	require.NoError(t, err)
 
 	return gotCreateResult
+}
+
+func read[OUT any](t *testing.T, path string, id int32, expectedStatus int) OUT {
+	readResp, err := http.Get(
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
+	)
+	require.NoError(t, err)
+	defer func() { _ = readResp.Body.Close() }()
+
+	require.Equal(t, expectedStatus, readResp.StatusCode)
+
+	var got OUT
+	err = json.NewDecoder(readResp.Body).Decode(&got)
+	require.NoError(t, err)
+
+	return got
+}
+
+func readShouldNotFound(t *testing.T, path string, id int32) {
+	readResp, err := http.Get(
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
+	)
+	require.NoError(t, err)
+	defer func() { _ = readResp.Body.Close() }()
+
+	require.Equal(t, http.StatusNotFound, readResp.StatusCode)
+}
+
+func update[IN any, OUT any](t *testing.T, in IN, path string, id int32) OUT {
+	b, err := json.Marshal(in)
+	require.NoError(t, err)
+
+	updateReq, err := http.NewRequest(http.MethodPut,
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
+		bytes.NewReader(b))
+	require.NoError(t, err)
+	updateReq.Header.Set("Content-Type", "application/json")
+
+	updateResp, err := http.DefaultClient.Do(updateReq)
+	require.NoError(t, err)
+	defer func() { _ = updateResp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, updateResp.StatusCode)
+
+	var got OUT
+	err = json.NewDecoder(updateResp.Body).Decode(&got)
+	require.NoError(t, err)
+
+	return got
+}
+
+func deleteOp(t *testing.T, path string, id int32) {
+	deleteReq, err := http.NewRequest(http.MethodDelete,
+		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
+		nil)
+	require.NoError(t, err)
+
+	deleteResp, err := http.DefaultClient.Do(deleteReq)
+	require.NoError(t, err)
+	defer func() { _ = deleteResp.Body.Close() }()
+
+	require.Equal(t, http.StatusNoContent, deleteResp.StatusCode)
 }
 
 func randomModel[T any](t *testing.T) T {

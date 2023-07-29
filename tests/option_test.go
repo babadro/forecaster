@@ -15,7 +15,9 @@ func (s *APITestSuite) TestOptions() {
 	createInput := randomModel[swagger.CreateOption](s.T())
 	createInput.PollID = poll.ID
 
-	checkReadRes := func(t *testing.T, got swagger.Option) {
+	gotCreateResult := create[swagger.CreateOption, swagger.Option](s.T(), createInput, "options")
+
+	checkCreateRes := func(t *testing.T, got swagger.Option) {
 		require.NotZero(t, got.ID)
 		require.Equal(t, poll.ID, got.PollID)
 
@@ -23,7 +25,13 @@ func (s *APITestSuite) TestOptions() {
 		require.Equal(t, createInput.Title, got.Title)
 	}
 
+	checkCreateRes(s.T(), gotCreateResult)
+
 	updateInput := randomModel[swagger.UpdateOption](s.T())
+
+	gotUpdateResult := update[swagger.UpdateOption, swagger.Option](
+		s.T(), updateInput, "options", gotCreateResult.ID,
+	)
 
 	checkUpdateRes := func(t *testing.T, id int32, got swagger.Option) {
 		require.Equal(t, id, got.ID)
@@ -33,14 +41,7 @@ func (s *APITestSuite) TestOptions() {
 		require.Equal(t, *updateInput.Title, got.Title)
 	}
 
-	testInput := crudEndpointTestInput[swagger.CreateOption, swagger.Option, swagger.UpdateOption]{
-		createInput:    createInput,
-		updateInput:    updateInput,
-		checkCreateRes: checkReadRes,
-		checkReadRes:   checkReadRes,
-		checkUpdateRes: checkUpdateRes,
-		path:           "options",
-	}
+	checkUpdateRes(s.T(), gotCreateResult.ID, gotUpdateResult)
 
-	testCRUDEndpoints[swagger.CreateOption, swagger.Option](s.T(), testInput)
+	deleteOp(s.T(), "options", gotCreateResult.ID)
 }

@@ -248,7 +248,6 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.UpdateOption) (res models.Option, err error) {
 	b := db.q.
 		Update("forecaster.options").
-		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": id}).
 		Suffix("RETURNING id")
 

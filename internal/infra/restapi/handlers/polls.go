@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+
 	"github.com/rs/zerolog/hlog"
 
 	"github.com/babadro/forecaster/internal/domain"
@@ -67,6 +68,8 @@ func (p *Polls) GetPollByID(params operations.GetPollByIDParams) middleware.Resp
 func (p *Polls) CreateSeries(params operations.CreateSeriesParams) middleware.Responder {
 	s, err := p.svc.CreateSeries(params.HTTPRequest.Context(), *params.Series)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to create series")
+
 		return operations.NewCreateSeriesInternalServerError()
 	}
 
@@ -76,6 +79,8 @@ func (p *Polls) CreateSeries(params operations.CreateSeriesParams) middleware.Re
 func (p *Polls) CreatePoll(params operations.CreatePollParams) middleware.Responder {
 	poll, err := p.svc.CreatePoll(params.HTTPRequest.Context(), *params.Poll)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to create poll")
+
 		return operations.NewCreatePollInternalServerError()
 	}
 
@@ -85,6 +90,8 @@ func (p *Polls) CreatePoll(params operations.CreatePollParams) middleware.Respon
 func (p *Polls) CreateOption(params operations.CreateOptionParams) middleware.Responder {
 	option, err := p.svc.CreateOption(params.HTTPRequest.Context(), *params.Option)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to create option")
+
 		return operations.NewCreateOptionInternalServerError()
 	}
 
@@ -94,6 +101,8 @@ func (p *Polls) CreateOption(params operations.CreateOptionParams) middleware.Re
 func (p *Polls) UpdateSeries(params operations.UpdateSeriesParams) middleware.Responder {
 	s, err := p.svc.UpdateSeries(params.HTTPRequest.Context(), params.SeriesID, *params.Series)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to update series")
+
 		return operations.NewUpdateSeriesInternalServerError()
 	}
 
@@ -103,6 +112,8 @@ func (p *Polls) UpdateSeries(params operations.UpdateSeriesParams) middleware.Re
 func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Responder {
 	poll, err := p.svc.UpdatePoll(params.HTTPRequest.Context(), params.PollID, *params.Poll)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to update poll")
+
 		return operations.NewUpdatePollInternalServerError()
 	}
 
@@ -112,6 +123,8 @@ func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Respon
 func (p *Polls) UpdateOption(params operations.UpdateOptionParams) middleware.Responder {
 	option, err := p.svc.UpdateOption(params.HTTPRequest.Context(), params.OptionID, *params.Option)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to update option")
+
 		return operations.NewUpdateOptionInternalServerError()
 	}
 
@@ -121,6 +134,8 @@ func (p *Polls) UpdateOption(params operations.UpdateOptionParams) middleware.Re
 func (p *Polls) DeletePoll(params operations.DeletePollParams) middleware.Responder {
 	err := p.svc.DeletePoll(params.HTTPRequest.Context(), params.PollID)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to delete poll")
+
 		return operations.NewDeletePollInternalServerError()
 	}
 
@@ -130,6 +145,8 @@ func (p *Polls) DeletePoll(params operations.DeletePollParams) middleware.Respon
 func (p *Polls) DeleteOption(params operations.DeleteOptionParams) middleware.Responder {
 	err := p.svc.DeleteOption(params.HTTPRequest.Context(), params.OptionID)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to delete option")
+
 		return operations.NewDeleteOptionInternalServerError()
 	}
 
@@ -139,6 +156,8 @@ func (p *Polls) DeleteOption(params operations.DeleteOptionParams) middleware.Re
 func (p *Polls) DeleteSeries(params operations.DeleteSeriesParams) middleware.Responder {
 	err := p.svc.DeleteSeries(params.HTTPRequest.Context(), params.SeriesID)
 	if err != nil {
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to delete series")
+
 		return operations.NewDeleteSeriesInternalServerError()
 	}
 
