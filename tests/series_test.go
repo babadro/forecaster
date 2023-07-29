@@ -32,7 +32,7 @@ func (s *APITestSuite) TestSeries() {
 		timeRoundEqualNow(t, got.UpdatedAt)
 	}
 
-	testInput := crudEndpointTestInput[swagger.CreateSeries, swagger.Series, swagger.UpdateSeries]{
+	testInput := crudEndpointTestInput[swagger.CreateSeries, swagger.Series, swagger.Series, swagger.UpdateSeries, swagger.Series]{
 		createInput:    createInput,
 		updateInput:    updateInput,
 		checkCreateRes: checkReadRes,

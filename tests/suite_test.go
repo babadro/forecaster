@@ -97,18 +97,18 @@ func (s *APITestSuite) cleanAllTables() {
 	}
 }
 
-type crudEndpointTestInput[C, R, U any] struct {
-	createInput    C
-	updateInput    U
-	checkCreateRes func(t *testing.T, got R)
+type crudEndpointTestInput[CIn, COut, R, UIn, UOut any] struct {
+	createInput    CIn
+	updateInput    UIn
+	checkCreateRes func(t *testing.T, got COut)
 	checkReadRes   func(t *testing.T, got R)
-	checkUpdateRes func(t *testing.T, expectedID int32, got R)
+	checkUpdateRes func(t *testing.T, expectedID int32, got UOut)
 	path           string
 }
 
-func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R, U]) {
+func testCRUDEndpoints[CIn, COut, R, UIn, UOut any](t *testing.T, in crudEndpointTestInput[CIn, COut, R, UIn, UOut]) {
 	// create
-	gotCreateResult := create[C, R](t, in.createInput, in.path)
+	gotCreateResult := create[CIn, COut](t, in.createInput, in.path)
 	in.checkCreateRes(t, gotCreateResult)
 
 	itemID := id(gotCreateResult)
@@ -118,7 +118,7 @@ func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R,
 	in.checkReadRes(t, gotReadResult)
 
 	// update
-	gotUpdateResult := update[U, R](t, in.updateInput, in.path, itemID)
+	gotUpdateResult := update[UIn, UOut](t, in.updateInput, in.path, itemID)
 	in.checkUpdateRes(t, itemID, gotUpdateResult)
 
 	// delete

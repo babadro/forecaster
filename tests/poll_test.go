@@ -11,7 +11,20 @@ import (
 func (s *APITestSuite) TestPolls() {
 	createInput := randomModel[swagger.CreatePoll](s.T())
 
-	checkReadRes := func(t *testing.T, got swagger.Poll) {
+	checkCreateRes := func(t *testing.T, got swagger.Poll) {
+		require.NotZero(t, got.ID)
+
+		require.Equal(t, createInput.Description, got.Description)
+		require.Equal(t, createInput.Title, got.Title)
+
+		timeRoundEqualNow(t, got.CreatedAt)
+		timeRoundEqualNow(t, got.UpdatedAt)
+
+		timeRoundEqual(t, createInput.Start, got.Start)
+		timeRoundEqual(t, createInput.Finish, got.Finish)
+	}
+
+	checkReadRes := func(t *testing.T, got swagger.PollWithOptions) {
 		require.NotZero(t, got.ID)
 
 		require.Equal(t, createInput.Description, got.Description)
@@ -40,10 +53,10 @@ func (s *APITestSuite) TestPolls() {
 		timeRoundEqual(t, *updateInput.Finish, got.Finish)
 	}
 
-	testInput := crudEndpointTestInput[swagger.CreatePoll, swagger.Poll, swagger.UpdatePoll]{
+	testInput := crudEndpointTestInput[swagger.CreatePoll, swagger.Poll, swagger.PollWithOptions, swagger.UpdatePoll, swagger.Poll]{
 		createInput:    createInput,
 		updateInput:    updateInput,
-		checkCreateRes: checkReadRes,
+		checkCreateRes: checkCreateRes,
 		checkReadRes:   checkReadRes,
 		checkUpdateRes: checkUpdateRes,
 		path:           "polls",
