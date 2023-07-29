@@ -616,6 +616,10 @@ func init() {
         },
         "Title": {
           "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -1385,6 +1389,10 @@ func init() {
         },
         "Title": {
           "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

@@ -15,8 +15,7 @@ import (
 )
 
 // NewDeletePollParams creates a new DeletePollParams object
-//
-// There are no default values defined in the spec.
+// no default values defined in spec.
 func NewDeletePollParams() DeletePollParams {
 
 	return DeletePollParams{}
@@ -51,6 +50,7 @@ func (o *DeletePollParams) BindRequest(r *http.Request, route *middleware.Matche
 	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
 		res = append(res, err)
 	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}

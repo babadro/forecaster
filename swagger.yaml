@@ -514,3 +514,6 @@ definitions:
         type: "string"
       Description:
         type: "string"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"

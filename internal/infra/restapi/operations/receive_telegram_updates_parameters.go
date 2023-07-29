@@ -15,8 +15,7 @@ import (
 )
 
 // NewReceiveTelegramUpdatesParams creates a new ReceiveTelegramUpdatesParams object
-//
-// There are no default values defined in the spec.
+// no default values defined in spec.
 func NewReceiveTelegramUpdatesParams() ReceiveTelegramUpdatesParams {
 
 	return ReceiveTelegramUpdatesParams{}

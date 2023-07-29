@@ -6,6 +6,7 @@ package operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"io"
 	"net/http"
 
@@ -18,8 +19,7 @@ import (
 )
 
 // NewCreateOptionParams creates a new CreateOptionParams object
-//
-// There are no default values defined in the spec.
+// no default values defined in spec.
 func NewCreateOptionParams() CreateOptionParams {
 
 	return CreateOptionParams{}
@@ -65,7 +65,7 @@ func (o *CreateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 				res = append(res, err)
 			}
 
-			ctx := validate.WithOperationRequest(r.Context())
+			ctx := validate.WithOperationRequest(context.Background())
 			if err := body.ContextValidate(ctx, route.Formats); err != nil {
 				res = append(res, err)
 			}

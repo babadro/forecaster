@@ -6,6 +6,7 @@ package operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"io"
 	"net/http"
 
@@ -20,8 +21,7 @@ import (
 )
 
 // NewUpdateSeriesParams creates a new UpdateSeriesParams object
-//
-// There are no default values defined in the spec.
+// no default values defined in spec.
 func NewUpdateSeriesParams() UpdateSeriesParams {
 
 	return UpdateSeriesParams{}
@@ -72,7 +72,7 @@ func (o *UpdateSeriesParams) BindRequest(r *http.Request, route *middleware.Matc
 				res = append(res, err)
 			}
 
-			ctx := validate.WithOperationRequest(r.Context())
+			ctx := validate.WithOperationRequest(context.Background())
 			if err := body.ContextValidate(ctx, route.Formats); err != nil {
 				res = append(res, err)
 			}
@@ -84,11 +84,11 @@ func (o *UpdateSeriesParams) BindRequest(r *http.Request, route *middleware.Matc
 	} else {
 		res = append(res, errors.Required("series", "body", ""))
 	}
-
 	rSeriesID, rhkSeriesID, _ := route.Params.GetOK("seriesId")
 	if err := o.bindSeriesID(rSeriesID, rhkSeriesID, route.Formats); err != nil {
 		res = append(res, err)
 	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
