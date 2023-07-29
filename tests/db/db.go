@@ -3,11 +3,12 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	models "github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lann/builder"
-	"time"
 )
 
 type TestDB struct {

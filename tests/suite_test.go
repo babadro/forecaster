@@ -32,7 +32,7 @@ var (
 	apiAddr string
 )
 
-// APITestSuite defines the suite
+// APITestSuite defines the suite.
 type APITestSuite struct {
 	suite.Suite
 	forecasterDB *postgres.ForecasterDB
