@@ -17,6 +17,8 @@ func (s *APITestSuite) TestOptions() {
 
 	gotCreateResult := create[swagger.CreateOption, swagger.Option](s.T(), createInput, "options")
 
+	optionID := gotCreateResult.ID
+
 	checkCreateRes := func(t *testing.T, got swagger.Option) {
 		require.NotZero(t, got.ID)
 		require.Equal(t, poll.ID, got.PollID)
@@ -32,11 +34,11 @@ func (s *APITestSuite) TestOptions() {
 	updateInput := randomModel[swagger.UpdateOption](s.T())
 
 	gotUpdateResult := update[swagger.UpdateOption, swagger.Option](
-		s.T(), updateInput, "options", gotCreateResult.ID,
+		s.T(), updateInput, "options", optionID,
 	)
 
-	checkUpdateRes := func(t *testing.T, id int32, got swagger.Option) {
-		require.Equal(t, id, got.ID)
+	checkUpdateRes := func(t *testing.T, got swagger.Option) {
+		require.Equal(t, optionID, got.ID)
 		require.Equal(t, poll.ID, got.PollID)
 
 		require.Equal(t, *updateInput.Description, got.Description)
@@ -45,7 +47,7 @@ func (s *APITestSuite) TestOptions() {
 		timeRoundEqualNow(t, got.UpdatedAt)
 	}
 
-	checkUpdateRes(s.T(), gotCreateResult.ID, gotUpdateResult)
+	checkUpdateRes(s.T(), gotUpdateResult)
 
 	deleteOp(s.T(), "options", gotCreateResult.ID)
 }

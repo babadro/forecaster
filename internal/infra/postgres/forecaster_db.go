@@ -250,7 +250,7 @@ func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.Up
 		Update("forecaster.options").
 		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": id}).
-		Suffix("RETURNING id, title, description, updated_at")
+		Suffix("RETURNING id, poll_id, title, description, updated_at")
 
 	if in.Title != nil {
 		b = b.Set("title", in.Title)
@@ -267,7 +267,7 @@ func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.Up
 	}
 
 	err = db.db.QueryRow(ctx, optionSQL, args...).
-		Scan(&res.ID, &res.Title, &res.Description, &res.UpdatedAt)
+		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.UpdatedAt)
 	if err != nil {
 		return models.Option{}, fmt.Errorf("unable to update option: %w", err)
 	}
