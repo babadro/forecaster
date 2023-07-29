@@ -130,12 +130,12 @@ func testCRUDEndpoints[C, R, U any](t *testing.T, in crudEndpointTestInput[C, R,
 
 func timeRoundEqualNow(t *testing.T, got strfmt.DateTime) {
 	now := time.Now()
-	require.True(t, now.Sub(time.Time(got)).Abs() < time.Second, "expected %v, got %v", now, got)
+	require.True(t, now.Sub(time.Time(got)).Abs() < time.Second, "now: %v, got: %v", now, got)
 }
 
 func timeRoundEqual(t *testing.T, expected, got strfmt.DateTime) {
 	require.True(t, time.Time(expected).Sub(time.Time(got)).Abs() < time.Second,
-		"expected %v, got %v", expected, got)
+		"now: %v, got: %v", expected, got)
 }
 
 func id(entity interface{}) int32 {
