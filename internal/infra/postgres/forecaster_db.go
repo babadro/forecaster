@@ -41,6 +41,7 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 		Scan(&series.ID, &series.Title, &series.Description, &series.CreatedAt, &series.UpdatedAt)
 
 	selectSeries := "select series"
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.Series{}, errNotFound(selectSeries, err)
@@ -64,10 +65,12 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	err = db.db.
 		QueryRow(ctx, pollSQL, args...).
 		Scan(
-			&poll.ID, &poll.SeriesID, &poll.Title, &poll.Description, &poll.Start, &poll.Finish, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.ID, &poll.SeriesID, &poll.Title, &poll.Description,
+			&poll.Start, &poll.Finish, &poll.CreatedAt, &poll.UpdatedAt,
 		)
 
 	selectPoll := "select poll"
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.PollWithOptions{}, errNotFound(selectPoll, err)
@@ -173,7 +176,8 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOp
 	return res, nil
 }
 
-func (db *ForecasterDB) UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (res models.Series, err error) {
+func (db *ForecasterDB) UpdateSeries(
+	ctx context.Context, id int32, s models.UpdateSeries) (res models.Series, err error) {
 	b := db.q.Update("forecaster.series").
 		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": id}).
@@ -245,7 +249,8 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 	return res, nil
 }
 
-func (db *ForecasterDB) UpdateOption(ctx context.Context, id int32, in models.UpdateOption) (res models.Option, err error) {
+func (db *ForecasterDB) UpdateOption(
+	ctx context.Context, id int32, in models.UpdateOption) (res models.Option, err error) {
 	b := db.q.
 		Update("forecaster.options").
 		Set("updated_at", time.Now()).
@@ -330,25 +335,25 @@ func (db *ForecasterDB) DeleteOption(ctx context.Context, id int32) error {
 }
 
 func buildingQueryFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: building query failed: %v", queryName, err)
+	return fmt.Errorf("%s: building query failed: %s", queryName, err.Error())
 }
 
 func queryFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: query failed: %v", queryName, err)
+	return fmt.Errorf("%s: query failed: %s", queryName, err.Error())
 }
 
 func rowsError(queryName string, err error) error {
-	return fmt.Errorf("%s: rows error: %v", queryName, err)
+	return fmt.Errorf("%s: rows error: %s", queryName, err.Error())
 }
 
 func scanFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: scan rows failed: %v", queryName, err)
+	return fmt.Errorf("%s: scan rows failed: %s", queryName, err.Error())
 }
 
 func execFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: exec failed: %v", queryName, err)
+	return fmt.Errorf("%s: exec failed: %s", queryName, err.Error())
 }
 
 func errNotFound(queryName string, err error) error {
-	return fmt.Errorf("%s: %w: %s", queryName, domain.ErrNotFound, err)
+	return fmt.Errorf("%s: %w: %s", queryName, domain.ErrNotFound, err.Error())
 }

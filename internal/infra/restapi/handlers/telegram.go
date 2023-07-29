@@ -24,6 +24,7 @@ func NewTelegram(tgBot *tgbotapi.BotAPI) *Tg {
 
 func (t *Tg) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
 	var update tgbotapi.Update
+
 	err := json.NewDecoder(params.HTTPRequest.Body).Decode(&update)
 	if err != nil {
 		return operations.NewReceiveTelegramUpdatesBadRequest().WithPayload(&swagger.Error{

@@ -1,4 +1,4 @@
-package polls_tests
+package pollstests
 
 import (
 	"testing"

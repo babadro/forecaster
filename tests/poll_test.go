@@ -1,4 +1,4 @@
-package polls_tests
+package pollstests
 
 import (
 	"testing"
@@ -56,7 +56,9 @@ func (s *APITestSuite) TestPolls() {
 		timeRoundEqual(t, *updateInput.Finish, got.Finish)
 	}
 
-	testInput := crudEndpointTestInput[swagger.CreatePoll, swagger.Poll, swagger.PollWithOptions, swagger.UpdatePoll, swagger.Poll]{
+	testInput := crudEndpointTestInput[
+		swagger.CreatePoll, swagger.Poll, swagger.PollWithOptions, swagger.UpdatePoll, swagger.Poll,
+	]{
 		createInput:    createInput,
 		updateInput:    updateInput,
 		checkCreateRes: checkCreateRes,

@@ -45,6 +45,7 @@ func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.
 		}
 
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to get series by id")
+
 		return operations.NewGetSeriesByIDInternalServerError()
 	}
 
@@ -62,6 +63,7 @@ func (p *Polls) GetPollByID(params operations.GetPollByIDParams) middleware.Resp
 
 		return operations.NewGetPollByIDInternalServerError()
 	}
+
 	return operations.NewGetPollByIDOK().WithPayload(&poll)
 }
 

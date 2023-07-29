@@ -52,13 +52,14 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	}
 
 	var telegramAPI *handlers.Tg
+
 	if envs.StartTelegramBot {
-		publicUrl, err := getNgrokURL(envs.NgrokAgentAddr)
+		publicURL, err := getNgrokURL(envs.NgrokAgentAddr)
 		if err != nil {
 			l.Fatal().Msgf("Unable to get ngrok url: %v\n", err)
 		}
 
-		tgBot, err := initBot(publicUrl+"/telegram-updates", envs.TelegramToken)
+		tgBot, err := initBot(publicURL+"/telegram-updates", envs.TelegramToken)
 		if err != nil {
 			l.Fatal().Msgf("Unable to init bot: %v\n", err)
 		}
@@ -114,6 +115,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	api.ServerShutdown = func() {
 		dbPool.Close()
+
 		if envs.StartTelegramBot {
 			telegramAPI.Wait()
 		}
@@ -132,6 +134,7 @@ func configureTLS(_ *tls.Config) {
 // This function can be called multiple times, depending on the number of serving schemes.
 // scheme value will be set accordingly: "http", "https" or "unix".
 func configureServer(s *http.Server, scheme, addr string) {
+	_, _, _ = s, scheme, addr
 }
 
 // The middleware configuration is for the handler executors. These do not apply to the swagger.json document.
@@ -160,6 +163,7 @@ func getNgrokURL(agentAddr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {

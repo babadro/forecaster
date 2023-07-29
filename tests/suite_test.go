@@ -1,4 +1,4 @@
-package polls_tests
+package pollstests
 
 import (
 	"bytes"
@@ -32,7 +32,7 @@ var (
 	apiAddr string
 )
 
-// APITestSuite defines the suite.
+// APITestSuite defines the suite...
 type APITestSuite struct {
 	suite.Suite
 	forecasterDB *postgres.ForecasterDB
@@ -74,6 +74,7 @@ func (s *APITestSuite) TearDownTest() {
 
 func (s *APITestSuite) createDefaultSeries() {
 	s.T().Helper()
+
 	series := models.Series{
 		ID:          0,
 		Description: "default series desc",
@@ -177,6 +178,7 @@ func read[OUT any](t *testing.T, path string, id int32) OUT {
 		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
 	)
 	require.NoError(t, err)
+
 	defer func() { _ = readResp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, readResp.StatusCode)
@@ -193,6 +195,7 @@ func readShouldNotFound(t *testing.T, path string, id int32) {
 		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
 	)
 	require.NoError(t, err)
+
 	defer func() { _ = readResp.Body.Close() }()
 
 	require.Equal(t, http.StatusNotFound, readResp.StatusCode)
@@ -229,6 +232,7 @@ func deleteOp(t *testing.T, path string, id int32) {
 
 	deleteResp, err := http.DefaultClient.Do(deleteReq)
 	require.NoError(t, err)
+
 	defer func() { _ = deleteResp.Body.Close() }()
 
 	require.Equal(t, http.StatusNoContent, deleteResp.StatusCode)

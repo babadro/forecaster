@@ -23,7 +23,7 @@ func NewTestDB(db *pgxpool.Pool) *TestDB {
 	}
 }
 
-func (db *TestDB) CreateSeries(ctx context.Context, s models.Series) (res models.Series, err error) {
+func (db *TestDB) CreateSeries(ctx context.Context, s models.Series) (models.Series, error) {
 	now := time.Now()
 
 	seriesSQL, args, err := db.q.
@@ -35,6 +35,8 @@ func (db *TestDB) CreateSeries(ctx context.Context, s models.Series) (res models
 	if err != nil {
 		return models.Series{}, buildingQueryFailed("insert series", err)
 	}
+
+	var res models.Series
 
 	err = db.DB.QueryRow(ctx, seriesSQL, args...).
 		Scan(&res.ID, &res.Title, &res.Description, &res.UpdatedAt, &res.CreatedAt)
@@ -49,18 +51,6 @@ func buildingQueryFailed(queryName string, err error) error {
 	return fmt.Errorf("%s: building query failed: %w", queryName, err)
 }
 
-func queryFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: query failed: %w", queryName, err)
-}
-
-func rowsError(queryName string, err error) error {
-	return fmt.Errorf("%s: rows error: %w", queryName, err)
-}
-
 func scanFailed(queryName string, err error) error {
 	return fmt.Errorf("%s: scan rows failed: %w", queryName, err)
-}
-
-func execFailed(queryName string, err error) error {
-	return fmt.Errorf("%s: exec failed: %w", queryName, err)
 }
