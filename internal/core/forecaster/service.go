@@ -8,6 +8,7 @@ import (
 
 	models "github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog"
 )
 
 type Service struct {
@@ -85,7 +86,7 @@ func (s *Service) DeleteOption(ctx context.Context, id int32) error {
 	return s.db.DeleteOption(ctx, id)
 }
 
-func (s *Service) ProcessTelegramUpdate(upd tgbotapi.Update) error {
+func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
 	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
 	if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
 		return fmt.Errorf("Unable to send message: %v\n", sendErr)
@@ -97,7 +98,7 @@ func (s *Service) ProcessTelegramUpdate(upd tgbotapi.Update) error {
 		return fmt.Errorf("Unable to marshal update: %v\n", err)
 	}
 
-	fmt.Printf("Update: %s\n", updJSON)
+	logger.Debug().Msgf("Update: %s\n", updJSON)
 
 	return nil
 }

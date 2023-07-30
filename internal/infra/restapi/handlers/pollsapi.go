@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 
 	"github.com/babadro/forecaster/internal/domain"
@@ -29,6 +30,8 @@ type service interface {
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
 	DeleteOption(ctx context.Context, id int32) error
+
+	ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error
 }
 
 type Polls struct {

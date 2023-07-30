@@ -15,9 +15,12 @@ import (
 
 func (p *Polls) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
 	var update tgbotapi.Update
+	logger := hlog.FromRequest(params.HTTPRequest)
 
 	err := json.NewDecoder(params.HTTPRequest.Body).Decode(&update)
 	if err != nil {
+		logger.Error().Err(err).Msg("Unable to decode update")
+
 		return operations.NewReceiveTelegramUpdatesBadRequest().WithPayload(&swagger.Error{
 			Code:    http.StatusBadRequest,
 			Message: fmt.Sprintf("Unable to decode update: %v", err),
@@ -28,8 +31,12 @@ func (p *Polls) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) m
 
 	go func() {
 		defer p.wg.Done()
-		logger := hlog.FromRequest(params.HTTPRequest)
-		go p.svc.ProcessTelegramUpdate(logger, update)
+
+		if err = p.svc.ProcessTelegramUpdate(logger, update); err != nil {
+			logger.Error().Err(err).
+				// todo: reread request body and log it as is with Bytes method of logger
+				Msg("Unable to process telegram update")
+		}
 	}()
 
 	return operations.NewReceiveTelegramUpdatesOK()
