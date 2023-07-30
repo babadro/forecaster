@@ -52,8 +52,10 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	var telegramAPI *handlers.Tg
 
+	ctx := context.Background()
+
 	if envs.StartTelegramBot {
-		publicURL, err := getNgrokURL(envs.NgrokAgentAddr)
+		publicURL, err := getNgrokURL(ctx, envs.NgrokAgentAddr)
 		if err != nil {
 			l.Fatal().Msgf("Unable to get ngrok url: %v\n", err)
 		}
@@ -66,7 +68,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		telegramAPI = handlers.NewTelegram(tgBot)
 	}
 
-	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
+	dbPool, err := pgxpool.Connect(ctx, envs.DBConn)
 	if err != nil {
 		l.Fatal().Msgf("Unable to connection to database :%v\n", err)
 	}
@@ -157,8 +159,13 @@ type ngrokResp struct {
 	} `json:"tunnels"`
 }
 
-func getNgrokURL(agentAddr string) (string, error) {
-	resp, err := http.Get(agentAddr + "/api/tunnels")
+func getNgrokURL(ctx context.Context, agentAddr string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, agentAddr+"/api/tunnels", nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}

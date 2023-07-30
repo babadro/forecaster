@@ -1,4 +1,4 @@
-package pollstests
+package polls_test
 
 import (
 	"bytes"
@@ -41,6 +41,7 @@ type APITestSuite struct {
 // SetupSuite function will be run by testify before any tests or test suites are run.
 func (s *APITestSuite) SetupSuite() {
 	var envs envVars
+
 	s.Require().NoError(env.Parse(&envs))
 
 	s.apiAddr = fmt.Sprintf("http://localhost:%d", envs.AppPort)
@@ -109,7 +110,9 @@ type crudEndpointTestInput[CIn, COut, R, UIn, UOut any] struct {
 	path           string
 }
 
-func testCRUDEndpoints[CIn, COut, R, UIn, UOut any](t *testing.T, in crudEndpointTestInput[CIn, COut, R, UIn, UOut], apiAddr string) {
+func testCRUDEndpoints[CIn, COut, R, UIn, UOut any](
+	t *testing.T, in crudEndpointTestInput[CIn, COut, R, UIn, UOut], apiAddr string,
+) {
 	// create
 	gotCreateResult := create[CIn, COut](t, in.createInput, apiAddr+"/"+in.path)
 	in.checkCreateRes(t, gotCreateResult)
