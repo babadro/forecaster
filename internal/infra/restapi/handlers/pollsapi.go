@@ -3,7 +3,9 @@ package handlers
 import (
 	"context"
 	"errors"
+	"sync"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/hlog"
 
 	"github.com/babadro/forecaster/internal/domain"
@@ -31,10 +33,11 @@ type service interface {
 
 type Polls struct {
 	svc service
+	wg  *sync.WaitGroup
 }
 
-func NewPolls(svc service) *Polls {
-	return &Polls{svc: svc}
+func NewPolls(svc service, tgBot *tgbotapi.BotAPI) *Polls {
+	return &Polls{svc: svc, wg: &sync.WaitGroup{}}
 }
 
 func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.Responder {

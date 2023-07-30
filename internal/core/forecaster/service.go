@@ -2,16 +2,26 @@ package forecaster
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
 
 	models "github.com/babadro/forecaster/internal/models/swagger"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Service struct {
-	db DB
+	db    DB
+	tgBot *tgbotapi.BotAPI
 }
 
-func NewService(db DB) *Service {
-	return &Service{db: db}
+func NewService(db DB, tgBot *tgbotapi.BotAPI) *Service {
+	return &Service{db: db, tgBot: tgBot}
+}
+
+type Tg struct {
+	tgBot *tgbotapi.BotAPI
+	wg    *sync.WaitGroup
 }
 
 type DB interface {
@@ -73,4 +83,21 @@ func (s *Service) DeletePoll(ctx context.Context, id int32) error {
 
 func (s *Service) DeleteOption(ctx context.Context, id int32) error {
 	return s.db.DeleteOption(ctx, id)
+}
+
+func (s *Service) ProcessTelegramUpdate(upd tgbotapi.Update) error {
+	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
+	if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
+		return fmt.Errorf("Unable to send message: %v\n", sendErr)
+	}
+
+	// marshal update to json and output to stdout
+	updJSON, err := json.Marshal(upd)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal update: %v\n", err)
+	}
+
+	fmt.Printf("Update: %s\n", updJSON)
+
+	return nil
 }

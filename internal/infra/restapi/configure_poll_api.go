@@ -118,7 +118,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		dbPool.Close()
 
 		if envs.StartTelegramBot {
-			telegramAPI.Wait()
+			telegramAPI.WaitTelegram()
 		}
 	}
 
