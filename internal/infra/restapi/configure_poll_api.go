@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"os"
 
@@ -164,14 +163,10 @@ func getNgrokURL(agentAddr string) (string, error) {
 		return "", err
 	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("error while closing response body: %v", err)
-		}
-	}(resp.Body)
+	defer func() { _ = resp.Body.Close() }()
 
 	var response ngrokResp
+
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return "", err

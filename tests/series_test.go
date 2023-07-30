@@ -43,5 +43,5 @@ func (s *APITestSuite) TestSeries() {
 		path:           "series",
 	}
 
-	testCRUDEndpoints[swagger.CreateSeries, swagger.Series](s.T(), testInput)
+	testCRUDEndpoints[swagger.CreateSeries, swagger.Series](s.T(), testInput, s.apiAddr)
 }

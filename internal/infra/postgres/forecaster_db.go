@@ -110,7 +110,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	return poll, nil
 }
 
-func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries) (res models.Series, err error) {
+func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries) (models.Series, error) {
 	now := time.Now()
 
 	seriesSQL, args, err := db.q.
@@ -123,6 +123,8 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries)
 		return models.Series{}, buildingQueryFailed("insert series", err)
 	}
 
+	var res models.Series
+
 	err = db.db.QueryRow(ctx, seriesSQL, args...).
 		Scan(&res.ID, &res.Title, &res.Description, &res.UpdatedAt, &res.CreatedAt)
 	if err != nil {
@@ -132,7 +134,7 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries)
 	return res, nil
 }
 
-func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) (res models.Poll, err error) {
+func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) (models.Poll, error) {
 	now := time.Now()
 
 	pollSQL, args, err := db.q.
@@ -146,6 +148,8 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) 
 		return models.Poll{}, buildingQueryFailed("insert poll", err)
 	}
 
+	var res models.Poll
+
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(&res.ID, &res.SeriesID, &res.Title, &res.Description, &res.Start, &res.Finish, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
@@ -155,7 +159,7 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) 
 	return res, nil
 }
 
-func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOption) (res models.Option, err error) {
+func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error) {
 	optionSQL, args, err := db.q.
 		Insert("forecaster.options").
 		Columns("poll_id", "title", "description", "updated_at").
@@ -167,6 +171,8 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOp
 		return models.Option{}, buildingQueryFailed("insert option", err)
 	}
 
+	var res models.Option
+
 	err = db.db.QueryRow(ctx, optionSQL, args...).
 		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.UpdatedAt)
 	if err != nil {
@@ -177,7 +183,7 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOp
 }
 
 func (db *ForecasterDB) UpdateSeries(
-	ctx context.Context, id int32, s models.UpdateSeries) (res models.Series, err error) {
+	ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error) {
 	b := db.q.Update("forecaster.series").
 		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": id}).
@@ -197,6 +203,8 @@ func (db *ForecasterDB) UpdateSeries(
 		return models.Series{}, buildingQueryFailed("update series", err)
 	}
 
+	var res models.Series
+
 	err = db.db.QueryRow(ctx, seriesSQL, args...).
 		Scan(&res.ID, &res.Title, &res.Description, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
@@ -206,7 +214,7 @@ func (db *ForecasterDB) UpdateSeries(
 	return res, err
 }
 
-func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.UpdatePoll) (res models.Poll, err error) {
+func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.UpdatePoll) (models.Poll, error) {
 	b := db.q.Update("forecaster.polls").
 		Set("updated_at", time.Now()).
 		Where(sq.Eq{"id": id}).
@@ -238,6 +246,8 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 		return models.Poll{}, buildingQueryFailed("update poll", err)
 	}
 
+	var res models.Poll
+
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&res.ID, &res.SeriesID, &res.Title, &res.Description, &res.Start, &res.Finish, &res.UpdatedAt, &res.CreatedAt,
@@ -250,7 +260,7 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 }
 
 func (db *ForecasterDB) UpdateOption(
-	ctx context.Context, id int32, in models.UpdateOption) (res models.Option, err error) {
+	ctx context.Context, id int32, in models.UpdateOption) (models.Option, error) {
 	b := db.q.
 		Update("forecaster.options").
 		Set("updated_at", time.Now()).
@@ -270,6 +280,8 @@ func (db *ForecasterDB) UpdateOption(
 	if err != nil {
 		return models.Option{}, fmt.Errorf("unable to build SQL: %w", err)
 	}
+
+	var res models.Option
 
 	err = db.db.QueryRow(ctx, optionSQL, args...).
 		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.UpdatedAt)

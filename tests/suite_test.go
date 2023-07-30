@@ -27,25 +27,23 @@ type envVars struct {
 	DBConn  string `env:"DB_CONN,required"`
 }
 
-var (
-	envs    envVars
-	apiAddr string
-)
-
 // APITestSuite defines the suite...
 type APITestSuite struct {
 	suite.Suite
+
 	forecasterDB *postgres.ForecasterDB
 	testDB       *db.TestDB
 
-	client *http.Client
+	apiAddr string
+	client  *http.Client
 }
 
 // SetupSuite function will be run by testify before any tests or test suites are run.
 func (s *APITestSuite) SetupSuite() {
+	var envs envVars
 	s.Require().NoError(env.Parse(&envs))
 
-	apiAddr = fmt.Sprintf("http://localhost:%d", envs.AppPort)
+	s.apiAddr = fmt.Sprintf("http://localhost:%d", envs.AppPort)
 
 	s.client = &http.Client{
 		Timeout: time.Second * 10,
@@ -98,6 +96,10 @@ func (s *APITestSuite) cleanAllTables() {
 	}
 }
 
+func (s *APITestSuite) url(path string) string {
+	return fmt.Sprintf("%s/%s", s.apiAddr, path)
+}
+
 type crudEndpointTestInput[CIn, COut, R, UIn, UOut any] struct {
 	createInput    CIn
 	updateInput    UIn
@@ -107,26 +109,26 @@ type crudEndpointTestInput[CIn, COut, R, UIn, UOut any] struct {
 	path           string
 }
 
-func testCRUDEndpoints[CIn, COut, R, UIn, UOut any](t *testing.T, in crudEndpointTestInput[CIn, COut, R, UIn, UOut]) {
+func testCRUDEndpoints[CIn, COut, R, UIn, UOut any](t *testing.T, in crudEndpointTestInput[CIn, COut, R, UIn, UOut], apiAddr string) {
 	// create
-	gotCreateResult := create[CIn, COut](t, in.createInput, in.path)
+	gotCreateResult := create[CIn, COut](t, in.createInput, apiAddr+"/"+in.path)
 	in.checkCreateRes(t, gotCreateResult)
 
 	itemID := id(gotCreateResult)
 
 	// read
-	gotReadResult := read[R](t, in.path, itemID)
+	gotReadResult := read[R](t, urlWithID(apiAddr, in.path, itemID))
 	in.checkReadRes(t, gotReadResult)
 
 	// update
-	gotUpdateResult := update[UIn, UOut](t, in.updateInput, in.path, itemID)
+	gotUpdateResult := update[UIn, UOut](t, in.updateInput, urlWithID(apiAddr, in.path, itemID))
 	in.checkUpdateRes(t, itemID, gotUpdateResult)
 
 	// delete
-	deleteOp(t, in.path, itemID)
+	deleteOp(t, urlWithID(apiAddr, in.path, itemID))
 
 	// read deleted
-	readShouldNotFound(t, in.path, itemID)
+	readShouldNotFound(t, urlWithID(apiAddr, in.path, itemID))
 }
 
 func timeRoundEqualNow(t *testing.T, got strfmt.DateTime) {
@@ -152,12 +154,12 @@ func id(entity interface{}) int32 {
 	}
 }
 
-func create[IN any, OUT any](t *testing.T, in IN, path string) OUT {
+func create[IN any, OUT any](t *testing.T, in IN, url string) OUT {
 	b, err := json.Marshal(in)
 	require.NoError(t, err)
 
 	createResp, err := http.Post(
-		fmt.Sprintf("http://localhost:%d/%s", envs.AppPort, path),
+		url,
 		"application/json",
 		bytes.NewReader(b))
 	require.NoError(t, err)
@@ -173,10 +175,8 @@ func create[IN any, OUT any](t *testing.T, in IN, path string) OUT {
 	return gotCreateResult
 }
 
-func read[OUT any](t *testing.T, path string, id int32) OUT {
-	readResp, err := http.Get(
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
-	)
+func read[OUT any](t *testing.T, url string) OUT {
+	readResp, err := http.Get(url)
 	require.NoError(t, err)
 
 	defer func() { _ = readResp.Body.Close() }()
@@ -190,10 +190,8 @@ func read[OUT any](t *testing.T, path string, id int32) OUT {
 	return got
 }
 
-func readShouldNotFound(t *testing.T, path string, id int32) {
-	readResp, err := http.Get(
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
-	)
+func readShouldNotFound(t *testing.T, url string) {
+	readResp, err := http.Get(url)
 	require.NoError(t, err)
 
 	defer func() { _ = readResp.Body.Close() }()
@@ -201,18 +199,17 @@ func readShouldNotFound(t *testing.T, path string, id int32) {
 	require.Equal(t, http.StatusNotFound, readResp.StatusCode)
 }
 
-func update[IN any, OUT any](t *testing.T, in IN, path string, id int32) OUT {
+func update[IN any, OUT any](t *testing.T, in IN, url string) OUT {
 	b, err := json.Marshal(in)
 	require.NoError(t, err)
 
-	updateReq, err := http.NewRequest(http.MethodPut,
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
-		bytes.NewReader(b))
+	updateReq, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(b))
 	require.NoError(t, err)
 	updateReq.Header.Set("Content-Type", "application/json")
 
 	updateResp, err := http.DefaultClient.Do(updateReq)
 	require.NoError(t, err)
+
 	defer func() { _ = updateResp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, updateResp.StatusCode)
@@ -224,10 +221,8 @@ func update[IN any, OUT any](t *testing.T, in IN, path string, id int32) OUT {
 	return got
 }
 
-func deleteOp(t *testing.T, path string, id int32) {
-	deleteReq, err := http.NewRequest(http.MethodDelete,
-		fmt.Sprintf("http://localhost:%d/%s/%d", envs.AppPort, path, id),
-		nil)
+func deleteOp(t *testing.T, url string) {
+	deleteReq, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
 	deleteResp, err := http.DefaultClient.Do(deleteReq)
@@ -240,9 +235,14 @@ func deleteOp(t *testing.T, path string, id int32) {
 
 func randomModel[T any](t *testing.T) T {
 	var model T
+
 	require.NoError(t, gofakeit.Struct(&model))
 
 	return model
+}
+
+func urlWithID(apiAddr string, path string, id int32) string {
+	return fmt.Sprintf("%s/%s/%d", apiAddr, path, id)
 }
 
 func TestAPI(t *testing.T) {

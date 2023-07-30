@@ -67,38 +67,38 @@ func (s *APITestSuite) TestPolls() {
 		path:           "polls",
 	}
 
-	testCRUDEndpoints[swagger.CreatePoll, swagger.Poll](s.T(), testInput)
+	testCRUDEndpoints[swagger.CreatePoll, swagger.Poll](s.T(), testInput, s.apiAddr)
 }
 
 func (s *APITestSuite) TestPolls_Options() {
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = 0
 
-	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, "polls")
+	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, s.url("polls"))
 
 	createdOptions := make([]*swagger.Option, 3)
 	for i := range createdOptions {
 		optionInput := randomModel[swagger.CreateOption](s.T())
 		optionInput.PollID = poll.ID
 
-		createdOption := create[swagger.CreateOption, swagger.Option](s.T(), optionInput, "options")
+		createdOption := create[swagger.CreateOption, swagger.Option](s.T(), optionInput, s.url("options"))
 		createdOptions[i] = &createdOption
 	}
 
-	gotPollOptions := read[swagger.PollWithOptions](s.T(), "polls", poll.ID).Options
+	gotPollOptions := read[swagger.PollWithOptions](s.T(), urlWithID(s.apiAddr, "polls", poll.ID)).Options
 
 	NewGomegaWithT(s.T()).Expect(gotPollOptions).To(ConsistOf(createdOptions))
 }
 
 func (s *APITestSuite) TestPolls_Series() {
 	series := create[swagger.CreateSeries, swagger.Series](
-		s.T(), randomModel[swagger.CreateSeries](s.T()), "series",
+		s.T(), randomModel[swagger.CreateSeries](s.T()), s.url("series"),
 	)
 
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = series.ID
 
-	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, "polls")
+	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, s.url("polls"))
 
 	require.Equal(s.T(), series.ID, poll.SeriesID)
 }

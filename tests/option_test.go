@@ -12,13 +12,13 @@ func (s *APITestSuite) TestOptions() {
 	pollInput.SeriesID = 0
 
 	poll := create[swagger.CreatePoll, swagger.Poll](
-		s.T(), pollInput, "polls",
+		s.T(), pollInput, s.url("polls"),
 	)
 
 	createInput := randomModel[swagger.CreateOption](s.T())
 	createInput.PollID = poll.ID
 
-	gotCreateResult := create[swagger.CreateOption, swagger.Option](s.T(), createInput, "options")
+	gotCreateResult := create[swagger.CreateOption, swagger.Option](s.T(), createInput, s.url("options"))
 
 	optionID := gotCreateResult.ID
 
@@ -37,7 +37,7 @@ func (s *APITestSuite) TestOptions() {
 	updateInput := randomModel[swagger.UpdateOption](s.T())
 
 	gotUpdateResult := update[swagger.UpdateOption, swagger.Option](
-		s.T(), updateInput, "options", optionID,
+		s.T(), updateInput, urlWithID(s.apiAddr, "options", optionID),
 	)
 
 	checkUpdateRes := func(t *testing.T, got swagger.Option) {
@@ -52,5 +52,5 @@ func (s *APITestSuite) TestOptions() {
 
 	checkUpdateRes(s.T(), gotUpdateResult)
 
-	deleteOp(s.T(), "options", gotCreateResult.ID)
+	deleteOp(s.T(), urlWithID(s.apiAddr, "options", optionID))
 }
