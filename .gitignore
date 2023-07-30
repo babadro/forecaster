@@ -3,3 +3,4 @@ vendor/
 .vscode
 release/
 .env.secrets
+.env.ngrok

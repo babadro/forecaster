@@ -1,0 +1,522 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Poll API"
+  description: "API for managing Polls and Options"
+paths:
+  /telegram-updates:
+    post:
+      summary: "Receive updates from Telegram"
+      operationId: "ReceiveTelegramUpdates"
+      parameters:
+        - in: "body"
+          name: "body"
+          schema:
+            type: "string"
+            format: "binary"
+      responses:
+        '200':
+          description: "Update received successfully"
+        '400':
+          description: "Bad Request"
+          schema:
+            $ref: "#/definitions/error"
+  /series:
+    post:
+      summary: "Create a new Series"
+      operationId: "CreateSeries"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "body"
+          name: "series"
+          description: "Series object to be created"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateSeries"
+      responses:
+        201:
+          description: "Series created successfully"
+          schema:
+            $ref: "#/definitions/Series"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+  /series/{seriesId}:
+    get:
+      summary: "Get a Series by its ID"
+      operationId: "GetSeriesByID"
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "seriesId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        200:
+          description: "Series found successfully"
+          schema:
+            $ref: "#/definitions/Series"
+        404:
+          description: "Series not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      summary: "Update an existing Series"
+      operationId: "UpdateSeries"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "seriesId"
+          required: true
+          type: "integer"
+          format: "int32"
+        - in: "body"
+          name: "series"
+          description: "Updated Series object"
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateSeries"
+      responses:
+        200:
+          description: "Series updated successfully"
+          schema:
+            $ref: "#/definitions/Series"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        404:
+          description: "Series not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    delete:
+      summary: "Delete a Series by its ID"
+      operationId: "DeleteSeries"
+      parameters:
+        - in: "path"
+          name: "seriesId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        204:
+          description: "Series deleted successfully"
+        404:
+          description: "Series not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+
+  /polls:
+    post:
+      summary: "Create a new Poll"
+      operationId: "CreatePoll"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "body"
+          name: "poll"
+          description: "Poll object to be created"
+          required: true
+          schema:
+            $ref: "#/definitions/CreatePoll"
+      responses:
+        201:
+          description: "Poll created successfully"
+          schema:
+            $ref: "#/definitions/Poll"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+  /polls/{pollId}:
+    get:
+      summary: "Get a Poll by its ID"
+      operationId: "GetPollByID"
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "pollId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        200:
+          description: "Poll found successfully"
+          schema:
+            $ref: "#/definitions/PollWithOptions"
+        404:
+          description: "Poll not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      summary: "Update an existing Poll"
+      operationId: "UpdatePoll"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "pollId"
+          required: true
+          type: "integer"
+          format: "int32"
+        - in: "body"
+          name: "poll"
+          description: "Updated Poll object"
+          required: true
+          schema:
+            $ref: "#/definitions/UpdatePoll"
+      responses:
+        200:
+          description: "Poll updated successfully"
+          schema:
+            $ref: "#/definitions/Poll"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        404:
+          description: "Poll not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    delete:
+      summary: "Delete a Poll by its ID"
+      operationId: "DeletePoll"
+      parameters:
+        - in: "path"
+          name: "pollId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        204:
+          description: "Poll deleted successfully"
+        404:
+          description: "Poll not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+  /options:
+    post:
+      summary: "Create a new Option"
+      operationId: "CreateOption"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "body"
+          name: "option"
+          description: "Option object to be created"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateOption"
+      responses:
+        201:
+          description: "Option created successfully"
+          schema:
+            $ref: "#/definitions/Option"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+  /options/{optionId}:
+    put:
+      summary: "Update an existing Option"
+      operationId: "UpdateOption"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: "path"
+          name: "optionId"
+          required: true
+          type: "integer"
+          format: "int32"
+        - in: "body"
+          name: "option"
+          description: "Updated Option object"
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateOption"
+      responses:
+        200:
+          description: "Option updated successfully"
+          schema:
+            $ref: "#/definitions/Option"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        404:
+          description: "Option not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+    delete:
+      summary: "Delete an Option by its ID"
+      operationId: "DeleteOption"
+      parameters:
+        - in: "path"
+          name: "optionId"
+          required: true
+          type: "integer"
+          format: "int32"
+      responses:
+        204:
+          description: "Option deleted successfully"
+        404:
+          description: "Option not found"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+definitions:
+  error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
+  CreateSeries:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+  UpdateSeries:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+        x-nullable: true
+      Description:
+        type: "string"
+        x-nullable: true
+  Series:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
+  CreatePoll:
+    type: "object"
+    properties:
+      SeriesID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      Start:
+        type: "string"
+        format: "date-time"
+      Finish:
+        type: "string"
+        format: "date-time"
+  UpdatePoll:
+    type: "object"
+    properties:
+      SeriesID:
+        type: "integer"
+        format: "int32"
+        x-nullable: true
+      Title:
+        type: "string"
+        x-nullable: true
+      Description:
+        type: "string"
+        x-nullable: true
+      Start:
+        type: "string"
+        format: "date-time"
+        x-nullable: true
+      Finish:
+        type: "string"
+        format: "date-time"
+        x-nullable: true
+  Poll:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      SeriesID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      Start:
+        type: "string"
+        format: "date-time"
+      Finish:
+        type: "string"
+        format: "date-time"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
+  PollWithOptions:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      SeriesID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      Start:
+        type: "string"
+        format: "date-time"
+      Finish:
+        type: "string"
+        format: "date-time"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
+      Options:
+        type: "array"
+        items:
+          $ref: "#/definitions/Option"
+  CreateOption:
+    type: "object"
+    properties:
+      PollID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+  UpdateOption:
+    type: "object"
+    properties:
+      Title:
+        type: "string"
+        x-nullable: true
+      Description:
+        type: "string"
+        x-nullable: true
+  Option:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      PollID:
+        type: "integer"
+        format: "int32"
+      Title:
+        type: "string"
+      Description:
+        type: "string"
+      UpdatedAt:
+        type: "string"
+        format: "date-time"
