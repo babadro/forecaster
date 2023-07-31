@@ -90,6 +90,8 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 		return fmt.Errorf("telegram bot is not initialized")
 	}
 
+	ctx := logger.WithContext(context.Background())
+
 	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
 	if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
 		return fmt.Errorf("Unable to send message: %v\n", sendErr)
