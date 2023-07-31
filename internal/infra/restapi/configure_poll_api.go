@@ -50,22 +50,19 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		l.Fatal().Msgf("Unable to parse env vars: %v\n", err)
 	}
 
-	var telegramAPI *handlers.Tg
-
 	ctx := context.Background()
 
+	var tgBot *tgbotapi.BotAPI
 	if envs.StartTelegramBot {
 		publicURL, err := getNgrokURL(ctx, envs.NgrokAgentAddr)
 		if err != nil {
 			l.Fatal().Msgf("Unable to get ngrok url: %v\n", err)
 		}
 
-		tgBot, err := initBot(publicURL+"/telegram-updates", envs.TelegramToken)
+		tgBot, err = initBot(publicURL+"/telegram-updates", envs.TelegramToken)
 		if err != nil {
 			l.Fatal().Msgf("Unable to init bot: %v\n", err)
 		}
-
-		telegramAPI = handlers.NewTelegram(tgBot)
 	}
 
 	dbPool, err := pgxpool.Connect(ctx, envs.DBConn)
@@ -75,7 +72,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	forecastDB := postgres.NewForecasterDB(dbPool)
 
-	svc := bot.NewService(forecastDB)
+	svc := bot.NewService(forecastDB, tgBot)
 	pollsAPI := handlers.NewPolls(svc)
 
 	// configure the api here
@@ -110,7 +107,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
 	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
 
-	api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(telegramAPI.ReceiveUpdates)
+	api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(pollsAPI.ReceiveTelegramUpdates)
 
 	api.PreServerShutdown = func() {}
 
@@ -118,7 +115,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		dbPool.Close()
 
 		if envs.StartTelegramBot {
-			telegramAPI.WaitTelegram()
+			pollsAPI.WaitTelegram()
 		}
 	}
 

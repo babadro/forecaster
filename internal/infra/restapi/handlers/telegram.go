@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
@@ -13,11 +14,21 @@ import (
 	"github.com/rs/zerolog/hlog"
 )
 
-func (p *Polls) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
+func (p *Polls) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
 	var update tgbotapi.Update
 	logger := hlog.FromRequest(params.HTTPRequest)
 
-	err := json.NewDecoder(params.HTTPRequest.Body).Decode(&update)
+	bodyBytes, err := io.ReadAll(params.HTTPRequest.Body)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unable to read body")
+
+		return operations.NewReceiveTelegramUpdatesBadRequest().WithPayload(&swagger.Error{
+			Code:    http.StatusBadRequest,
+			Message: fmt.Sprintf("Unable to read body: %v", err),
+		})
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&update)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unable to decode update")
 
@@ -34,7 +45,7 @@ func (p *Polls) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) m
 
 		if err = p.svc.ProcessTelegramUpdate(logger, update); err != nil {
 			logger.Error().Err(err).
-				// todo: reread request body and log it as is with Bytes method of logger
+				Bytes("update", bodyBytes).
 				Msg("Unable to process telegram update")
 		}
 	}()
@@ -44,20 +55,4 @@ func (p *Polls) ReceiveUpdates(params operations.ReceiveTelegramUpdatesParams) m
 
 func (p *Polls) WaitTelegram() {
 	p.wg.Wait()
-}
-
-func (p *Polls) processUpdate(upd tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
-	if _, sendErr := bot.Send(msg); sendErr != nil {
-		log.Printf("Unable to send message: %v\n", sendErr)
-	}
-
-	// marshal update to json and output to stdout
-	updJSON, err := json.Marshal(upd)
-	if err != nil {
-		log.Printf("Unable to marshal update: %v\n", err)
-		return
-	}
-
-	log.Printf("Update: %s\n", updJSON)
 }

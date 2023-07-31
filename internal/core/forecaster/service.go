@@ -2,7 +2,6 @@ package forecaster
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -87,18 +86,14 @@ func (s *Service) DeleteOption(ctx context.Context, id int32) error {
 }
 
 func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
+	if s.tgBot == nil {
+		return fmt.Errorf("telegram bot is not initialized")
+	}
+
 	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
 	if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
 		return fmt.Errorf("Unable to send message: %v\n", sendErr)
 	}
-
-	// marshal update to json and output to stdout
-	updJSON, err := json.Marshal(upd)
-	if err != nil {
-		return fmt.Errorf("Unable to marshal update: %v\n", err)
-	}
-
-	logger.Debug().Msgf("Update: %s\n", updJSON)
 
 	return nil
 }

@@ -39,7 +39,7 @@ type Polls struct {
 	wg  *sync.WaitGroup
 }
 
-func NewPolls(svc service, tgBot *tgbotapi.BotAPI) *Polls {
+func NewPolls(svc service) *Polls {
 	return &Polls{svc: svc, wg: &sync.WaitGroup{}}
 }
 
