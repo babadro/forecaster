@@ -1,30 +1,20 @@
-package forecaster
+package polls
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	models "github.com/babadro/forecaster/internal/models/swagger"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/rs/zerolog"
 )
 
 type Service struct {
-	db    DB
-	tgBot *tgbotapi.BotAPI
+	db db
 }
 
-func NewService(db DB, tgBot *tgbotapi.BotAPI) *Service {
-	return &Service{db: db, tgBot: tgBot}
+func NewService(db db) *Service {
+	return &Service{db: db}
 }
 
-type Tg struct {
-	tgBot *tgbotapi.BotAPI
-	wg    *sync.WaitGroup
-}
-
-type DB interface {
+type db interface {
 	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
 	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
 
@@ -83,19 +73,4 @@ func (s *Service) DeletePoll(ctx context.Context, id int32) error {
 
 func (s *Service) DeleteOption(ctx context.Context, id int32) error {
 	return s.db.DeleteOption(ctx, id)
-}
-
-func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
-	if s.tgBot == nil {
-		return fmt.Errorf("telegram bot is not initialized")
-	}
-
-	ctx := logger.WithContext(context.Background())
-
-	msg := tgbotapi.NewMessage(upd.Message.Chat.ID, upd.Message.Text)
-	if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
-		return fmt.Errorf("Unable to send message: %v\n", sendErr)
-	}
-
-	return nil
 }

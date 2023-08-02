@@ -1,4 +1,4 @@
-package handlers
+package telegram
 
 import (
 	"bytes"
@@ -6,16 +6,32 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/runtime/middleware"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 )
 
-func (p *Polls) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
+type service interface {
+	ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error
+}
+
+type Telegram struct {
+	svc service
+	wg  *sync.WaitGroup
+}
+
+func NewTelegram(svc service) *Telegram {
+	return &Telegram{svc: svc, wg: &sync.WaitGroup{}}
+}
+
+func (p *Telegram) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdatesParams) middleware.Responder {
 	var update tgbotapi.Update
+
 	logger := hlog.FromRequest(params.HTTPRequest)
 
 	bodyBytes, err := io.ReadAll(params.HTTPRequest.Body)
@@ -53,6 +69,6 @@ func (p *Polls) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdatesP
 	return operations.NewReceiveTelegramUpdatesOK()
 }
 
-func (p *Polls) WaitTelegram() {
+func (p *Telegram) Wait() {
 	p.wg.Wait()
 }

@@ -10,15 +10,17 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/polls"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram"
+	pollshandlers "github.com/babadro/forecaster/internal/infra/restapi/handlers/polls"
+	telegramhandlers "github.com/babadro/forecaster/internal/infra/restapi/handlers/telegram"
 	"github.com/babadro/forecaster/internal/infra/restapi/middlewares"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/justinas/alice"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	bot "github.com/babadro/forecaster/internal/core/forecaster"
 	"github.com/babadro/forecaster/internal/infra/postgres"
-	"github.com/babadro/forecaster/internal/infra/restapi/handlers"
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
 	"github.com/caarlos0/env"
 	oerrors "github.com/go-openapi/errors"
@@ -53,6 +55,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	ctx := context.Background()
 
 	var tgBot *tgbotapi.BotAPI
+
 	if envs.StartTelegramBot {
 		publicURL, err := getNgrokURL(ctx, envs.NgrokAgentAddr)
 		if err != nil {
@@ -72,8 +75,13 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	forecastDB := postgres.NewForecasterDB(dbPool)
 
-	svc := bot.NewService(forecastDB, tgBot)
-	pollsAPI := handlers.NewPolls(svc)
+	pollsService := polls.NewService(forecastDB)
+	pollsAPI := pollshandlers.NewPolls(pollsService)
+
+	var telegramAPI *telegramhandlers.Telegram
+	if envs.StartTelegramBot {
+		telegramAPI = telegramhandlers.NewTelegram(telegram.NewService(forecastDB, tgBot))
+	}
 
 	// configure the api here
 	api.ServeError = oerrors.ServeError
@@ -107,7 +115,9 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
 	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
 
-	api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(pollsAPI.ReceiveTelegramUpdates)
+	if envs.StartTelegramBot {
+		api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(telegramAPI.ReceiveTelegramUpdates)
+	}
 
 	api.PreServerShutdown = func() {}
 
@@ -115,7 +125,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 		dbPool.Close()
 
 		if envs.StartTelegramBot {
-			pollsAPI.WaitTelegram()
+			telegramAPI.Wait()
 		}
 	}
 
