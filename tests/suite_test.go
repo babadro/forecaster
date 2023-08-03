@@ -23,8 +23,9 @@ import (
 )
 
 type envVars struct {
-	AppPort int    `env:"APP_PORT,required"`
-	DBConn  string `env:"DB_CONN,required"`
+	AppPort   int    `env:"APP_PORT,required"`
+	DBConn    string `env:"DB_CONN,required"`
+	SleepMode bool   `env:"SLEEP_MODE" envDefault:"false"`
 }
 
 // APITestSuite defines the suite...
@@ -36,6 +37,8 @@ type APITestSuite struct {
 
 	apiAddr string
 	client  *http.Client
+
+	sleepMode bool
 }
 
 // SetupSuite function will be run by testify before any tests or test suites are run.
@@ -45,6 +48,8 @@ func (s *APITestSuite) SetupSuite() {
 	s.Require().NoError(env.Parse(&envs))
 
 	s.apiAddr = fmt.Sprintf("http://localhost:%d", envs.AppPort)
+
+	s.sleepMode = envs.SleepMode
 
 	s.client = &http.Client{
 		Timeout: time.Second * 10,
@@ -68,6 +73,10 @@ func (s *APITestSuite) SetupTest() {
 }
 
 func (s *APITestSuite) TearDownTest() {
+	if s.sleepMode {
+		time.Sleep(time.Hour * 10_000)
+	}
+
 	s.cleanAllTables()
 }
 

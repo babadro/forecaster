@@ -49,7 +49,10 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	result := s.processTGUpdate(ctx, upd)
 
 	if result.msgText != "" {
+		logger.Info().Msg(result.msgText)
+
 		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, result.msgText)
+		msg.ParseMode = "HTML"
 		if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
 			return fmt.Errorf("unable to send message: %s", sendErr.Error())
 		}
@@ -69,8 +72,8 @@ func (s *Service) processTGUpdate(ctx context.Context, upd tgbotapi.Update) proc
 	if upd.Message != nil {
 		text := upd.Message.Text
 
-		prefix := "/start showpoll"
-		if strings.HasPrefix(prefix, text) {
+		prefix := "/start showpoll_"
+		if strings.HasPrefix(text, prefix) {
 			pollIDStr := strings.TrimPrefix(text, prefix)
 
 			pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
@@ -85,7 +88,7 @@ func (s *Service) processTGUpdate(ctx context.Context, upd tgbotapi.Update) proc
 			poll, err := s.db.GetPollByID(ctx, int32(pollID))
 
 			if err != nil {
-				l.Error().Msgf("unable to get poll by id: %v\n", err)
+				l.Error().Int64("id", pollID).Msgf("unable to get poll by id: %v\n", err)
 
 				return processTGResult{
 					msgText: fmt.Sprintf("oops, can't find poll with id %d", pollID),
@@ -125,39 +128,38 @@ func keyboardMarkup(poll models.PollWithOptions) tgbotapi.InlineKeyboardMarkup {
 	return keyboard
 }
 
-func txtMsg(poll models.PollWithOptions) string {
+func txtMsg(p models.PollWithOptions) string {
 	var sb strings.Builder
-	sb.WriteString(pollToString(poll))
-	sb.WriteString("\n")
-	if time.Now().Unix() >= int64(time.Time(poll.Finish).Unix()) {
-		sb.WriteString("This poll is expired!\n")
-		// todo
-		//if poll.OutcomeOptionId > 0 {
-		//	option := poll.Options[poll.OutcomeOptionId]
-		//	sb.WriteString(fmt.Sprintf("Outcome option is: #%d %q", poll.OutcomeOptionId+1, option.Title))
-		//}
+	fPrintf(&sb, "<b>%s</b>\n", p.Title)
+	fPrintf(&sb, "<i>Start Date: %s</i>\n", time.Time(p.Start).Format(time.RFC822))
+	fPrintf(&sb, "<i>End Date: %s</i>\n", time.Time(p.Finish).Format(time.RFC822))
+	fPrintf(&sb, "\n")
+
+	timeToGo := time.Time(p.Finish).Sub(time.Now())
+	if timeToGo > 0 {
+		fPrintf(&sb, "<b>%d days %d hours to go</b>\n", int(timeToGo/3600)/24, int(timeToGo/3600)%24)
+	} else {
+		fPrintf(&sb, "<b>Poll Status: Ended %s</b>\n", time.Time(p.Finish).Format(time.RFC822))
 	}
-	// todo
-	//if votedOptionID > -1 {
-	//	sb.WriteString(fmt.Sprintf("You have already voted option %d\n", votedOptionID+1))
-	//}
+	fPrintf(&sb, "\n")
+
+	fPrint(&sb, "<b>Options:</b>\n")
+	for i, op := range p.Options {
+		fPrintf(&sb, "	%d. %s\n", i+1, op.Title)
+	}
+	fPrint(&sb, "\n")
+
+	if timeToGo <= 0 {
+		fPrint(&sb, "<b>This poll has expired!</b>\n")
+	}
+
 	return sb.String()
 }
 
-func pollToString(p models.PollWithOptions) string {
-	var sb strings.Builder
-	_, _ = fmt.Fprintf(&sb, "<b>%s</b>\n", p.Title)
-	_, _ = fmt.Fprintf(&sb, "Start: %s\n", time.Unix(time.Time(p.Start).Unix(), 0))
-	_, _ = fmt.Fprintf(&sb, "Finish: %s\n", time.Unix(time.Time(p.Finish).Unix(), 0))
-	if timeToGo := time.Time(p.Finish).Sub(time.Now()); timeToGo > 0 {
-		_, _ = fmt.Fprintf(&sb, "%d days %d hours to go\n", int(timeToGo/3600)/24, int(timeToGo/3600)%24)
-	} else {
-		_, _ = fmt.Fprintf(&sb, "Poll has ended %s\n", time.Unix(time.Time(p.Finish).Unix(), 0))
-	}
+func fPrintf(sb *strings.Builder, format string, a ...any) {
+	_, _ = fmt.Fprintf(sb, format, a...)
+}
 
-	for i, op := range p.Options {
-		_, _ = fmt.Fprintf(&sb, "	%d. %s\n", i+1, op.Title)
-	}
-
-	return sb.String()
+func fPrint(sb *strings.Builder, a ...any) {
+	_, _ = fmt.Fprint(sb, a...)
 }
