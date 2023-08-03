@@ -9,17 +9,18 @@ import (
 
 	"github.com/babadro/forecaster/internal/helpers"
 	models "github.com/babadro/forecaster/internal/models/swagger"
+	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog"
 )
 
 type Service struct {
-	db    db
-	tgBot *tgbotapi.BotAPI
+	db  db
+	bot tgBot
 }
 
-func NewService(db db, tgBot *tgbotapi.BotAPI) *Service {
-	return &Service{db: db, tgBot: tgBot}
+func NewService(db db, b tgBot) *Service {
+	return &Service{db: db, bot: b}
 }
 
 type db interface {
@@ -39,8 +40,12 @@ type db interface {
 	DeleteOption(ctx context.Context, id int32) error
 }
 
+type tgBot interface {
+	Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
+}
+
 func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
-	if s.tgBot == nil {
+	if s.bot == nil {
 		return fmt.Errorf("telegram bot is not initialized")
 	}
 
@@ -53,7 +58,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, result.msgText)
 		msg.ParseMode = "HTML"
-		if _, sendErr := s.tgBot.Send(msg); sendErr != nil {
+		if _, sendErr := s.bot.Send(msg); sendErr != nil {
 			return fmt.Errorf("unable to send message: %s", sendErr.Error())
 		}
 	}
@@ -130,16 +135,19 @@ func keyboardMarkup(poll models.PollWithOptions) tgbotapi.InlineKeyboardMarkup {
 
 func txtMsg(p models.PollWithOptions) string {
 	var sb strings.Builder
+
+	start, finish := formatTime(p.Start), formatTime(p.Finish)
+
 	fPrintf(&sb, "<b>%s</b>\n", p.Title)
-	fPrintf(&sb, "<i>Start Date: %s</i>\n", time.Time(p.Start).Format(time.RFC822))
-	fPrintf(&sb, "<i>End Date: %s</i>\n", time.Time(p.Finish).Format(time.RFC822))
+	fPrintf(&sb, "<i>Start Date: %s</i>\n", start)
+	fPrintf(&sb, "<i>End Date: %s</i>\n", finish)
 	fPrintf(&sb, "\n")
 
 	timeToGo := time.Time(p.Finish).Sub(time.Now())
 	if timeToGo > 0 {
 		fPrintf(&sb, "<b>%d days %d hours to go</b>\n", int(timeToGo/3600)/24, int(timeToGo/3600)%24)
 	} else {
-		fPrintf(&sb, "<b>Poll Status: Ended %s</b>\n", time.Time(p.Finish).Format(time.RFC822))
+		fPrintf(&sb, "<b>Poll Status: Ended %s</b>\n", finish)
 	}
 	fPrintf(&sb, "\n")
 
@@ -154,6 +162,10 @@ func txtMsg(p models.PollWithOptions) string {
 	}
 
 	return sb.String()
+}
+
+func formatTime[T time.Time | strfmt.DateTime](t T) string {
+	return time.Time(t).Format(time.RFC822)
 }
 
 func fPrintf(sb *strings.Builder, format string, a ...any) {

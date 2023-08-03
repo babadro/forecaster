@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/babadro/forecaster/tests/db"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/strfmt"
@@ -32,8 +31,7 @@ type envVars struct {
 type APITestSuite struct {
 	suite.Suite
 
-	forecasterDB *postgres.ForecasterDB
-	testDB       *db.TestDB
+	testDB *db.TestDB
 
 	apiAddr string
 	client  *http.Client
@@ -60,7 +58,6 @@ func (s *APITestSuite) SetupSuite() {
 		log.Fatalf("Unable to connection to database :%v\n", err)
 	}
 
-	s.forecasterDB = postgres.NewForecasterDB(dbPool)
 	s.testDB = db.NewTestDB(dbPool)
 }
 

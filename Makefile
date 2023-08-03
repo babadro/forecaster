@@ -26,5 +26,8 @@ down:
 start-colima:
 	colima start -c 8 -m 8 --arch aarch64 --vm-type=vz --vz-rosetta --mount-type=virtiofs --vz-rosetta
 
+gen_mocks:
+	@ mockery --name tgBot --structname TelegramBot --filename telegram_bot_mock.go --dir ./internal/core/forecaster/telegram
+
 swag:
 	swagger generate server --exclude-main --server-package=internal/infra/restapi --model-package=internal/models/swagger -f swagger.yaml
