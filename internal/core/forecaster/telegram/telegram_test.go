@@ -2,49 +2,84 @@ package telegram_test
 
 import (
 	"context"
+	"strconv"
 
-	"github.com/babadro/forecaster/internal/infra/postgres"
-	"github.com/caarlos0/env"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stretchr/testify/suite"
+	"github.com/babadro/forecaster/internal/models/swagger"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/stretchr/testify/mock"
 )
 
-type envVars struct {
-	DBConn string `env:"DB_CONN,required"`
-}
+func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
+	ctx := context.Background()
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = 0
 
-type TelegramServiceSuite struct {
-	suite.Suite
-	db     *postgres.ForecasterDB
-	dbPool *pgxpool.Pool
-}
-
-func (s *TelegramServiceSuite) SetupSuite() {
-	var envs envVars
-
-	s.Require().NoError(env.Parse(&envs))
-
-	dbPool, err := pgxpool.Connect(context.Background(), envs.DBConn)
+	poll, err := s.db.CreatePoll(ctx, pollInput)
 	s.Require().NoError(err)
 
-	s.dbPool = dbPool
-	s.db = postgres.NewForecasterDB(dbPool)
+	createdOptions := make([]*swagger.Option, 3)
+	for i := range createdOptions {
+		optionInput := randomModel[swagger.CreateOption](s.T())
+		optionInput.PollID = poll.ID
 
-}
-
-func (s *TelegramServiceSuite) TearDownTest() {
-	s.cleanAllTables()
-}
-
-func (s *TelegramServiceSuite) cleanAllTables() {
-	s.T().Helper()
-
-	for _, tableName := range []string{
-		"forecaster.series",
-		"forecaster.polls",
-		"forecaster.options",
-	} {
-		_, err := s.dbPool.Exec(context.Background(), "TRUNCATE TABLE "+tableName+" CASCADE")
+		op, err := s.db.CreateOption(ctx, optionInput)
 		s.Require().NoError(err)
+
+		createdOptions[i] = &op
 	}
+
+	update := tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			Text: "/start showpoll_" + strconv.Itoa(int(poll.ID)),
+		},
+	}
+
+	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+		s.Require().Equal(update.Message.Chat.ID, msg.ChatID)
+
+		s.Require().Contains(msg.Text, poll.Title)
+
+		for _, op := range createdOptions {
+			s.Require().Contains(msg.Text, op.Title)
+		}
+
+		return true
+	})).Return(tgbotapi.Message{}, nil)
+
+	err = s.telegramService.ProcessTelegramUpdate(&s.logger, update)
+
+	s.Require().NoError(err)
+	s.mockTgBot.AssertExpectations(s.T())
+}
+
+func (s *TelegramServiceSuite) TestProcessTelegramUpdate_notFound() {
+	update := tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			Text: "/start showpoll_999",
+		},
+	}
+
+	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+		s.Require().Equal(update.Message.Chat.ID, msg.ChatID)
+
+		s.Require().Contains(msg.Text, "can't find poll")
+
+		return true
+	})).Return(tgbotapi.Message{}, nil)
+
+	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
+
+	s.Require().NoError(err)
+
+	logOutput := s.logOutput.String()
+	s.Require().Contains(logOutput, "error")
+	s.Require().Contains(logOutput, "unable to get poll by id")
+
+	s.mockTgBot.AssertExpectations(s.T())
 }

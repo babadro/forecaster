@@ -93,14 +93,7 @@ func (s *APITestSuite) createDefaultSeries() {
 func (s *APITestSuite) cleanAllTables() {
 	s.T().Helper()
 
-	for _, tableName := range []string{
-		"forecaster.series",
-		"forecaster.polls",
-		"forecaster.options",
-	} {
-		_, err := s.testDB.DB.Exec(context.Background(), "TRUNCATE TABLE "+tableName+" CASCADE")
-		s.Require().NoError(err)
-	}
+	s.Require().NoError(s.testDB.CleanAllTables(context.Background()))
 }
 
 func (s *APITestSuite) url(path string) string {

@@ -47,6 +47,21 @@ func (db *TestDB) CreateSeries(ctx context.Context, s models.Series) (models.Ser
 	return res, nil
 }
 
+func (db *TestDB) CleanAllTables(ctx context.Context) error {
+	for _, tableName := range []string{
+		"forecaster.series",
+		"forecaster.polls",
+		"forecaster.options",
+	} {
+		_, err := db.DB.Exec(ctx, "TRUNCATE TABLE "+tableName+" CASCADE")
+		if err != nil {
+			return fmt.Errorf("clean all tables: truncate table %s failed: %w", tableName, err)
+		}
+	}
+
+	return nil
+}
+
 func buildingQueryFailed(queryName string, err error) error {
 	return fmt.Errorf("%s: building query failed: %w", queryName, err)
 }
