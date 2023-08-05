@@ -1,4 +1,4 @@
-package forecaster
+package polls
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 )
 
 type Service struct {
-	db DB
+	db db
 }
 
-func NewService(db DB) *Service {
+func NewService(db db) *Service {
 	return &Service{db: db}
 }
 
-type DB interface {
+type db interface {
 	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
 	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
 

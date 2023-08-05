@@ -440,7 +440,7 @@ func (s *Server) handleShutdown(wg *sync.WaitGroup, serversPtr *[]*http.Server) 
 		}()
 	}
 
-	// Wait until all listeners have successfully shut down before calling ServerShutdown
+	// WaitTelegram until all listeners have successfully shut down before calling ServerShutdown
 	success := true
 	for range servers {
 		success = success && <-shutdownChan

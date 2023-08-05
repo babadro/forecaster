@@ -1,8 +1,9 @@
-package handlers
+package polls
 
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/rs/zerolog/hlog"
 
@@ -31,10 +32,11 @@ type service interface {
 
 type Polls struct {
 	svc service
+	wg  *sync.WaitGroup
 }
 
 func NewPolls(svc service) *Polls {
-	return &Polls{svc: svc}
+	return &Polls{svc: svc, wg: &sync.WaitGroup{}}
 }
 
 func (p *Polls) GetSeriesByID(params operations.GetSeriesByIDParams) middleware.Responder {

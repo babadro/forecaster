@@ -8,18 +8,26 @@ build:
 run: build
 	docker-compose down -v && docker-compose build service && docker-compose up
 
+# example: make run-test-env start-bot=true
 run-test-env: build
-	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=false docker-compose up
+	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=$(start-bot) docker-compose up
 
 # example: make test filter=TestPolls
 test:
 	 (source .env.tests && go test ./... -testify.m=$(filter) -v)
+
+# example: make test-sleep filter=TestPolls_Options
+test-sleep:
+	(source .env.tests && SLEEP_MODE=true go test ./... -testify.m=$(filter) -v)
 
 down:
 	docker-compose down -v
 
 start-colima:
 	colima start -c 8 -m 8 --arch aarch64 --vm-type=vz --vz-rosetta --mount-type=virtiofs --vz-rosetta
+
+gen_mocks:
+	@ mockery --name tgBot --structname TelegramBot --filename telegram_bot_mock.go --dir ./internal/core/forecaster/telegram
 
 swag:
 	swagger generate server --exclude-main --server-package=internal/infra/restapi --model-package=internal/models/swagger -f swagger.yaml

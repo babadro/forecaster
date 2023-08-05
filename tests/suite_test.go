@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/babadro/forecaster/tests/db"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/strfmt"
@@ -23,19 +22,21 @@ import (
 )
 
 type envVars struct {
-	AppPort int    `env:"APP_PORT,required"`
-	DBConn  string `env:"DB_CONN,required"`
+	AppPort   int    `env:"APP_PORT,required"`
+	DBConn    string `env:"DB_CONN,required"`
+	SleepMode bool   `env:"SLEEP_MODE" envDefault:"false"`
 }
 
 // APITestSuite defines the suite...
 type APITestSuite struct {
 	suite.Suite
 
-	forecasterDB *postgres.ForecasterDB
-	testDB       *db.TestDB
+	testDB *db.TestDB
 
 	apiAddr string
 	client  *http.Client
+
+	sleepMode bool
 }
 
 // SetupSuite function will be run by testify before any tests or test suites are run.
@@ -46,6 +47,8 @@ func (s *APITestSuite) SetupSuite() {
 
 	s.apiAddr = fmt.Sprintf("http://localhost:%d", envs.AppPort)
 
+	s.sleepMode = envs.SleepMode
+
 	s.client = &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -55,7 +58,6 @@ func (s *APITestSuite) SetupSuite() {
 		log.Fatalf("Unable to connection to database :%v\n", err)
 	}
 
-	s.forecasterDB = postgres.NewForecasterDB(dbPool)
 	s.testDB = db.NewTestDB(dbPool)
 }
 
@@ -68,6 +70,10 @@ func (s *APITestSuite) SetupTest() {
 }
 
 func (s *APITestSuite) TearDownTest() {
+	if s.sleepMode {
+		time.Sleep(time.Hour * 10_000)
+	}
+
 	s.cleanAllTables()
 }
 
@@ -87,14 +93,7 @@ func (s *APITestSuite) createDefaultSeries() {
 func (s *APITestSuite) cleanAllTables() {
 	s.T().Helper()
 
-	for _, tableName := range []string{
-		"forecaster.series",
-		"forecaster.polls",
-		"forecaster.options",
-	} {
-		_, err := s.testDB.DB.Exec(context.Background(), "TRUNCATE TABLE "+tableName+" CASCADE")
-		s.Require().NoError(err)
-	}
+	s.Require().NoError(s.testDB.CleanAllTables(context.Background()))
 }
 
 func (s *APITestSuite) url(path string) string {
