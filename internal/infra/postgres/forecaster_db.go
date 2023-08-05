@@ -346,6 +346,57 @@ func (db *ForecasterDB) DeleteOption(ctx context.Context, id int32) error {
 	return nil
 }
 
+func (db *ForecasterDB) CreateVote(ctx context.Context, vote models.CreateVote) (models.Vote, error) {
+	voteSQL, args, err := db.q.
+		Insert("forecaster.votes").
+		Columns("option_id", "user_id", "created_at").
+		Values(vote.OptionID, vote.UserID, time.Now()).
+		Suffix("RETURNING id, option_id, user_id, created_at").
+		ToSql()
+
+	if err != nil {
+		return models.Vote{}, buildingQueryFailed("insert vote", err)
+	}
+
+	var res models.Vote
+
+	err = db.db.QueryRow(ctx, voteSQL, args...).
+		Scan(&res.ID, &res.OptionID, &res.UserID, &res.CreatedAt)
+	if err != nil {
+		return models.Vote{}, scanFailed("insert vote", err)
+	}
+
+	return res, nil
+}
+
+func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int32, pollID int32) (models.Vote, error) {
+	voteSQL, args, err := db.q.
+		Select("id", "option_id", "user_id", "created_at").
+		From("forecaster.votes").
+		Where(sq.Eq{"user_id": userID, "option_id": sq.Expr("SELECT id FROM forecaster.options WHERE poll_id = ?", pollID)}).
+		OrderBy("created_at DESC").
+		Limit(1).
+		ToSql()
+
+	if err != nil {
+		return models.Vote{}, buildingQueryFailed("select vote", err)
+	}
+
+	var res models.Vote
+
+	err = db.db.QueryRow(ctx, voteSQL, args...).
+		Scan(&res.ID, &res.OptionID, &res.UserID, &res.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Vote{}, errNotFound("select vote", err)
+		}
+
+		return models.Vote{}, scanFailed("select vote", err)
+	}
+
+	return res, nil
+}
+
 func buildingQueryFailed(queryName string, err error) error {
 	return fmt.Errorf("%s: building query failed: %s", queryName, err.Error())
 }

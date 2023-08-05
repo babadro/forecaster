@@ -26,3 +26,17 @@ CREATE TABLE forecaster.options (
     updated_at timestamp with time zone NOT NULL,
     FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE
 );
+
+CREATE TABLE forecaster.votes (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    poll_id INT NOT NULL,
+    option_id INT NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    FOREIGN KEY (option_id) REFERENCES forecaster.options(id) ON DELETE CASCADE,
+    FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_votes_on_user_id_and_poll_id ON forecaster.votes (user_id, poll_id);
+
