@@ -43,7 +43,6 @@ func (s *TelegramServiceSuite) SetupSuite() {
 
 	s.testDB = db.NewTestDB(dbPool)
 	s.db = postgres.NewForecasterDB(dbPool)
-
 }
 
 func (s *TelegramServiceSuite) SetupTest() {

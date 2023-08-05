@@ -3,11 +3,9 @@ package telegram
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/babadro/forecaster/internal/helpers"
 	models "github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -51,13 +49,14 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	ctx := logger.WithContext(context.Background())
 
-	result := s.processTGUpdate(ctx, upd)
+	result := s.processTelegramUpdate(ctx, upd)
 
 	if result.msgText != "" {
 		logger.Info().Msg(result.msgText)
 
 		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, result.msgText)
 		msg.ParseMode = "HTML"
+
 		if _, sendErr := s.bot.Send(msg); sendErr != nil {
 			return fmt.Errorf("unable to send message: %s", sendErr.Error())
 		}
@@ -71,97 +70,19 @@ type processTGResult struct {
 	inlineKeyboard tgbotapi.InlineKeyboardMarkup
 }
 
-func (s *Service) processTGUpdate(ctx context.Context, upd tgbotapi.Update) processTGResult {
-	l := zerolog.Ctx(ctx)
-
+func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) processTGResult {
 	if upd.Message != nil {
 		text := upd.Message.Text
 
 		prefix := "/start showpoll_"
 		if strings.HasPrefix(text, prefix) {
-			pollIDStr := strings.TrimPrefix(text, prefix)
+			pollIDStr := text[len(prefix):]
 
-			pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
-			if err != nil {
-				l.Error().Msgf("unable to convert poll id to int: %v\n", err)
-
-				return processTGResult{
-					msgText: fmt.Sprintf("invalid poll id: %s", pollIDStr),
-				}
-			}
-
-			poll, err := s.db.GetPollByID(ctx, int32(pollID))
-
-			if err != nil {
-				l.Error().Int64("id", pollID).Msgf("unable to get poll by id: %v\n", err)
-
-				return processTGResult{
-					msgText: fmt.Sprintf("oops, can't find poll with id %d", pollID),
-				}
-			}
-
-			return processTGResult{
-				msgText:        txtMsg(poll),
-				inlineKeyboard: keyboardMarkup(poll),
-			}
+			return s.poll(ctx, pollIDStr)
 		}
 	}
 
 	return processTGResult{}
-}
-
-func keyboardMarkup(poll models.PollWithOptions) tgbotapi.InlineKeyboardMarkup {
-	length := len(poll.Options)
-	rowsCount := length / 8
-
-	if length%8 > 0 {
-		rowsCount++
-	}
-
-	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
-
-	for i := range poll.Options {
-		rowIdx := i / 8
-		rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
-			Text:         strconv.Itoa(i + 1),
-			CallbackData: helpers.Ptr(""),
-		})
-	}
-
-	var keyboard tgbotapi.InlineKeyboardMarkup
-	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, rows...)
-	return keyboard
-}
-
-func txtMsg(p models.PollWithOptions) string {
-	var sb strings.Builder
-
-	start, finish := formatTime(p.Start), formatTime(p.Finish)
-
-	fPrintf(&sb, "<b>%s</b>\n", p.Title)
-	fPrintf(&sb, "<i>Start Date: %s</i>\n", start)
-	fPrintf(&sb, "<i>End Date: %s</i>\n", finish)
-	fPrintf(&sb, "\n")
-
-	timeToGo := time.Time(p.Finish).Sub(time.Now())
-	if timeToGo > 0 {
-		fPrintf(&sb, "<b>%d days %d hours to go</b>\n", int(timeToGo/3600)/24, int(timeToGo/3600)%24)
-	} else {
-		fPrintf(&sb, "<b>Poll Status: Ended %s</b>\n", finish)
-	}
-	fPrintf(&sb, "\n")
-
-	fPrint(&sb, "<b>Options:</b>\n")
-	for i, op := range p.Options {
-		fPrintf(&sb, "	%d. %s\n", i+1, op.Title)
-	}
-	fPrint(&sb, "\n")
-
-	if timeToGo <= 0 {
-		fPrint(&sb, "<b>This poll has expired!</b>\n")
-	}
-
-	return sb.String()
 }
 
 func formatTime[T time.Time | strfmt.DateTime](t T) string {

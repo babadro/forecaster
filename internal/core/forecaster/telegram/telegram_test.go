@@ -22,7 +22,8 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
 		optionInput := randomModel[swagger.CreateOption](s.T())
 		optionInput.PollID = poll.ID
 
-		op, err := s.db.CreateOption(ctx, optionInput)
+		var op swagger.Option
+		op, err = s.db.CreateOption(ctx, optionInput)
 		s.Require().NoError(err)
 
 		createdOptions[i] = &op
