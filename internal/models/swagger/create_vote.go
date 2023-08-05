@@ -21,7 +21,7 @@ type CreateVote struct {
 	OptionID int32 `json:"OptionID,omitempty"`
 
 	// user ID
-	UserID int32 `json:"UserID,omitempty"`
+	UserID int64 `json:"UserID,omitempty"`
 }
 
 // Validate validates this create vote
