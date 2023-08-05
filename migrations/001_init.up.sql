@@ -29,7 +29,7 @@ CREATE TABLE forecaster.options (
 
 CREATE TABLE forecaster.votes (
     id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id BIGINT NOT NULL,
     poll_id INT NOT NULL,
     option_id INT NOT NULL,
     created_at timestamp with time zone NOT NULL,
