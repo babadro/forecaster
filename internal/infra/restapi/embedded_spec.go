@@ -604,6 +604,19 @@ func init() {
         }
       }
     },
+    "CreateVote": {
+      "type": "object",
+      "properties": {
+        "OptionID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "Option": {
       "type": "object",
       "properties": {
@@ -777,6 +790,27 @@ func init() {
         "Title": {
           "type": "string",
           "x-nullable": true
+        }
+      }
+    },
+    "Vote": {
+      "type": "object",
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "OptionID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -1381,6 +1415,19 @@ func init() {
         }
       }
     },
+    "CreateVote": {
+      "type": "object",
+      "properties": {
+        "OptionID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "Option": {
       "type": "object",
       "properties": {
@@ -1554,6 +1601,27 @@ func init() {
         "Title": {
           "type": "string",
           "x-nullable": true
+        }
+      }
+    },
+    "Vote": {
+      "type": "object",
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "OptionID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

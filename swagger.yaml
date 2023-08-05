@@ -520,3 +520,27 @@ definitions:
       UpdatedAt:
         type: "string"
         format: "date-time"
+  CreateVote:
+    type: "object"
+    properties:
+      OptionID:
+        type: "integer"
+        format: "int32"
+      UserID:
+        type: "integer"
+        format: "int32"
+  Vote:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int32"
+      OptionID:
+        type: "integer"
+        format: "int32"
+      UserID:
+        type: "integer"
+        format: "int32"
+      CreatedAt:
+        type: "string"
+        format: "date-time"
