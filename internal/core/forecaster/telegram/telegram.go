@@ -82,7 +82,9 @@ func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update
 		}
 	}
 
-	return processTGResult{}
+	return processTGResult{
+		msgText: "I don't understand you",
+	}
 }
 
 func formatTime[T time.Time | strfmt.DateTime](t T) string {
