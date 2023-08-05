@@ -528,11 +528,14 @@ definitions:
         format: "int32"
       UserID:
         type: "integer"
-        format: "int32"
+        format: "int64"
   Vote:
     type: "object"
     properties:
       ID:
+        type: "integer"
+        format: "int32"
+      PollID:
         type: "integer"
         format: "int32"
       OptionID:
@@ -540,7 +543,7 @@ definitions:
         format: "int32"
       UserID:
         type: "integer"
-        format: "int32"
+        format: "int64"
       CreatedAt:
         type: "string"
         format: "date-time"

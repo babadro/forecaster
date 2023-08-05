@@ -613,7 +613,7 @@ func init() {
         },
         "UserID": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         }
       }
     },
@@ -808,9 +808,13 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
-        "UserID": {
+        "PollID": {
           "type": "integer",
           "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -1424,7 +1428,7 @@ func init() {
         },
         "UserID": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         }
       }
     },
@@ -1619,9 +1623,13 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
-        "UserID": {
+        "PollID": {
           "type": "integer",
           "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
