@@ -1,6 +1,9 @@
 package polls_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
@@ -53,4 +56,22 @@ func (s *APITestSuite) TestOptions() {
 	checkUpdateRes(s.T(), gotUpdateResult)
 
 	deleteOp(s.T(), optionURLWithIDs(s.apiAddr, poll.ID, optionID))
+}
+
+func (s *APITestSuite) TestOptions_pollDoesntExist() {
+	createInput := randomModel[swagger.CreateOption](s.T())
+	createInput.PollID = 999
+
+	b, err := json.Marshal(createInput)
+	s.Require().NoError(err)
+
+	createResp, err := http.Post(
+		s.url("options"),
+		"application/json",
+		bytes.NewReader(b))
+	s.Require().NoError(err)
+
+	defer func() { _ = createResp.Body.Close() }()
+
+	s.Require().Equal(http.StatusBadRequest, createResp.StatusCode)
 }

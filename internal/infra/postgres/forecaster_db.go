@@ -159,6 +159,19 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 func (db *ForecasterDB) CreateOption(
 	ctx context.Context, option models.CreateOption, now time.Time,
 ) (models.Option, error) {
+	var rowsCount sql.NullInt32
+
+	err := db.db.
+		QueryRow(ctx, "SELECT count(*) FROM forecaster.polls WHERE id = $1", option.PollID).
+		Scan(&rowsCount)
+	if err != nil {
+		return models.Option{}, scanFailed("select count from polls", err)
+	}
+
+	if rowsCount.Int32 == 0 {
+		return models.Option{}, fmt.Errorf("%w: poll with id %d does not exist", domain.ErrNotFound, option.PollID)
+	}
+
 	query, args, err := db.q.Select("MAX(id)").
 		From("forecaster.options").
 		Where(sq.Eq{"poll_id": option.PollID}).
@@ -170,9 +183,11 @@ func (db *ForecasterDB) CreateOption(
 
 	var maxOptionID sql.NullInt16
 	if err = db.db.QueryRow(ctx, query, args...).Scan(&maxOptionID); err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return models.Option{}, scanFailed("select max id", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Option{}, errNotFound("select max id", err)
 		}
+
+		return models.Option{}, scanFailed("select max id", err)
 	}
 
 	optionID := maxOptionID.Int16 + 1

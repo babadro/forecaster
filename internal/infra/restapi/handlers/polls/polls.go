@@ -3,6 +3,8 @@ package polls
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/rs/zerolog/hlog"
@@ -94,6 +96,13 @@ func (p *Polls) CreatePoll(params operations.CreatePollParams) middleware.Respon
 func (p *Polls) CreateOption(params operations.CreateOptionParams) middleware.Responder {
 	option, err := p.svc.CreateOption(params.HTTPRequest.Context(), *params.Option)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return operations.NewCreateOptionBadRequest().WithPayload(&models.Error{
+				Code:    http.StatusBadRequest,
+				Message: fmt.Sprintf("Poll with id %d doesn't exist", params.Option.PollID),
+			})
+		}
+
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to create option")
 
 		return operations.NewCreateOptionInternalServerError()
