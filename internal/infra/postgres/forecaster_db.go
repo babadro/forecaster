@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -158,23 +159,23 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 func (db *ForecasterDB) CreateOption(
 	ctx context.Context, option models.CreateOption, now time.Time,
 ) (models.Option, error) {
-	query, args, err := sq.Select("MAX(id)").
-		From("options").
+	query, args, err := db.q.Select("MAX(id)").
+		From("forecaster.options").
 		Where(sq.Eq{"poll_id": option.PollID}).
 		ToSql()
 
 	if err != nil {
-		return models.Option{}, buildingQueryFailed("select max option_id", err)
+		return models.Option{}, buildingQueryFailed("select max id", err)
 	}
 
-	var maxOptionID int16
+	var maxOptionID sql.NullInt16
 	if err = db.db.QueryRow(ctx, query, args...).Scan(&maxOptionID); err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return models.Option{}, scanFailed("select max option_id", err)
+			return models.Option{}, scanFailed("select max id", err)
 		}
 	}
 
-	optionID := maxOptionID + 1
+	optionID := maxOptionID.Int16 + 1
 
 	optionSQL, args, err := db.q.
 		Insert("forecaster.options").

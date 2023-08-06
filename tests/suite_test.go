@@ -149,8 +149,6 @@ func id(entity interface{}) int32 {
 		return v.ID
 	case models.Poll:
 		return v.ID
-	case models.Option:
-		return v.ID
 	default:
 		panic(fmt.Sprintf("unknown type %T", entity))
 	}
@@ -245,6 +243,10 @@ func randomModel[T any](t *testing.T) T {
 
 func urlWithID(apiAddr string, path string, id int32) string {
 	return fmt.Sprintf("%s/%s/%d", apiAddr, path, id)
+}
+
+func optionURLWithIDs(apiAddr string, pollID int32, optionID int16) string {
+	return fmt.Sprintf("%s/options/%d/%d", apiAddr, pollID, optionID)
 }
 
 func TestAPI(t *testing.T) {

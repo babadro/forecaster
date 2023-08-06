@@ -37,7 +37,7 @@ func (s *APITestSuite) TestOptions() {
 	updateInput := randomModel[swagger.UpdateOption](s.T())
 
 	gotUpdateResult := update[swagger.UpdateOption, swagger.Option](
-		s.T(), updateInput, urlWithID(s.apiAddr, "options", optionID),
+		s.T(), updateInput, optionURLWithIDs(s.apiAddr, poll.ID, optionID),
 	)
 
 	checkUpdateRes := func(t *testing.T, got swagger.Option) {
@@ -52,5 +52,5 @@ func (s *APITestSuite) TestOptions() {
 
 	checkUpdateRes(s.T(), gotUpdateResult)
 
-	deleteOp(s.T(), urlWithID(s.apiAddr, "options", optionID))
+	deleteOp(s.T(), optionURLWithIDs(s.apiAddr, poll.ID, optionID))
 }

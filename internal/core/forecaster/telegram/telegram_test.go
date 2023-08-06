@@ -3,6 +3,7 @@ package telegram_test
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -14,7 +15,7 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = 0
 
-	poll, err := s.db.CreatePoll(ctx, pollInput)
+	poll, err := s.db.CreatePoll(ctx, pollInput, time.Now())
 	s.Require().NoError(err)
 
 	createdOptions := make([]*swagger.Option, 3)
@@ -23,7 +24,7 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
 		optionInput.PollID = poll.ID
 
 		var op swagger.Option
-		op, err = s.db.CreateOption(ctx, optionInput)
+		op, err = s.db.CreateOption(ctx, optionInput, time.Now())
 		s.Require().NoError(err)
 
 		createdOptions[i] = &op
