@@ -19,24 +19,21 @@ CREATE TABLE forecaster.polls (
 );
 
 CREATE TABLE forecaster.options (
-    id SERIAL PRIMARY KEY,
+    id SMALLINT INT NOT NULL,
     poll_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE
+    FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE,
+    PRIMARY KEY (poll_id, id)
 );
 
 CREATE TABLE forecaster.votes (
-    id SERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
     poll_id INT NOT NULL,
+    user_id BIGINT NOT NULL,
     option_id INT NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    FOREIGN KEY (option_id) REFERENCES forecaster.options(id) ON DELETE CASCADE,
+    epoch_unix_timestamp BIGINT NOT NULL,
     FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (option_id) REFERENCES forecaster.options(id) ON DELETE CASCADE,
+    PRIMARY KEY (poll_id, user_id, option_id, epoch_unix_timestamp)
 );
-
-CREATE INDEX idx_votes_on_user_id_and_poll_id ON forecaster.votes (user_id, poll_id);
-
