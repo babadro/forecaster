@@ -25,17 +25,19 @@ type db interface {
 	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
 	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
 
-	CreateSeries(ctx context.Context, s models.CreateSeries) (models.Series, error)
-	CreatePoll(ctx context.Context, poll models.CreatePoll) (models.Poll, error)
-	CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error)
+	CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error)
+	CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error)
+	CreateOption(ctx context.Context, option models.CreateOption, now time.Time) (models.Option, error)
 
-	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
-	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll) (models.Poll, error)
-	UpdateOption(ctx context.Context, id int32, option models.UpdateOption) (models.Option, error)
+	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries, now time.Time) (models.Series, error)
+	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll, now time.Time) (models.Poll, error)
+	UpdateOption(
+		ctx context.Context, pollID int32, optionID int16, option models.UpdateOption, now time.Time,
+	) (models.Option, error)
 
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
-	DeleteOption(ctx context.Context, id int32) error
+	DeleteOption(ctx context.Context, pollID int32, optionID int16) error
 }
 
 type tgBot interface {
