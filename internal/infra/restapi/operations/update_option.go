@@ -30,7 +30,7 @@ func NewUpdateOption(ctx *middleware.Context, handler UpdateOptionHandler) *Upda
 }
 
 /*
-UpdateOption swagger:route PUT /options/{optionId} updateOption
+UpdateOption swagger:route PUT /options/{pollId}/{optionId} updateOption
 
 Update an existing Option
 */

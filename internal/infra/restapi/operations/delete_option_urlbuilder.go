@@ -16,7 +16,8 @@ import (
 
 // DeleteOptionURL generates an URL for the delete option operation
 type DeleteOptionURL struct {
-	OptionID int32
+	OptionID int16
+	PollID   int32
 
 	_basePath string
 	// avoid unkeyed usage
@@ -42,13 +43,20 @@ func (o *DeleteOptionURL) SetBasePath(bp string) {
 func (o *DeleteOptionURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/options/{optionId}"
+	var _path = "/options/{pollId}/{optionId}"
 
-	optionID := swag.FormatInt32(o.OptionID)
+	optionID := swag.FormatInt16(o.OptionID)
 	if optionID != "" {
 		_path = strings.Replace(_path, "{optionId}", optionID, -1)
 	} else {
 		return nil, errors.New("optionId is required on DeleteOptionURL")
+	}
+
+	pollID := swag.FormatInt32(o.PollID)
+	if pollID != "" {
+		_path = strings.Replace(_path, "{pollId}", pollID, -1)
+	} else {
+		return nil, errors.New("pollId is required on DeleteOptionURL")
 	}
 
 	_basePath := o._basePath

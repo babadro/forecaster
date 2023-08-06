@@ -23,7 +23,7 @@ type Option struct {
 	Description string `json:"Description,omitempty"`
 
 	// ID
-	ID int32 `json:"ID,omitempty"`
+	ID int16 `json:"ID,omitempty"`
 
 	// poll ID
 	PollID int32 `json:"PollID,omitempty"`

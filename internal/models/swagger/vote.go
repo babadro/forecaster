@@ -8,10 +8,8 @@ package swagger
 import (
 	"context"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // Vote vote
@@ -19,15 +17,11 @@ import (
 // swagger:model Vote
 type Vote struct {
 
-	// created at
-	// Format: date-time
-	CreatedAt strfmt.DateTime `json:"CreatedAt,omitempty"`
-
-	// ID
-	ID int32 `json:"ID,omitempty"`
+	// epoch unix timestamp
+	EpochUnixTimestamp int64 `json:"EpochUnixTimestamp,omitempty"`
 
 	// option ID
-	OptionID int32 `json:"OptionID,omitempty"`
+	OptionID int16 `json:"OptionID,omitempty"`
 
 	// poll ID
 	PollID int32 `json:"PollID,omitempty"`
@@ -38,27 +32,6 @@ type Vote struct {
 
 // Validate validates this vote
 func (m *Vote) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateCreatedAt(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *Vote) validateCreatedAt(formats strfmt.Registry) error {
-	if swag.IsZero(m.CreatedAt) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("CreatedAt", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
-		return err
-	}
-
 	return nil
 }
 

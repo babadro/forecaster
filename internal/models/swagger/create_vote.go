@@ -18,7 +18,10 @@ import (
 type CreateVote struct {
 
 	// option ID
-	OptionID int32 `json:"OptionID,omitempty"`
+	OptionID int16 `json:"OptionID,omitempty"`
+
+	// poll ID
+	PollID int32 `json:"PollID,omitempty"`
 
 	// user ID
 	UserID int64 `json:"UserID,omitempty"`
