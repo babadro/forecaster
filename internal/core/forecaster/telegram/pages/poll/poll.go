@@ -45,16 +45,16 @@ func Poll(ctx context.Context, pollIDStr string, scope models.Scope) models.Proc
 
 func keyboardMarkup(poll swagger.PollWithOptions) tgbotapi.InlineKeyboardMarkup {
 	length := len(poll.Options)
-	rowsCount := length / models.MaxRows
+	rowsCount := length / models.MaxCountInRow
 
-	if length%models.MaxRows > 0 {
+	if length%models.MaxCountInRow > 0 {
 		rowsCount++
 	}
 
 	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
 
 	for i := range poll.Options {
-		rowIdx := i / models.MaxRows
+		rowIdx := i / models.MaxCountInRow
 		rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
 			Text:         strconv.Itoa(i + 1),
 			CallbackData: helpers.Ptr(""),

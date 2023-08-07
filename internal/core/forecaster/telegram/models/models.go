@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	MaxRows     = 8
-	Hours24     = 24
-	Seconds3600 = 3600
+	MaxCountInRow = 8
+	Hours24       = 24
+	Seconds3600   = 3600
 )
 
 type DB interface {
