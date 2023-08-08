@@ -31,3 +31,6 @@ gen_mocks:
 
 swag:
 	swagger generate server --exclude-main --server-package=internal/infra/restapi --model-package=internal/models/swagger -f swagger.yaml
+
+proto:
+	protoc --go_out=/internal/core/telegram/proto /internal/core/telegram/proto/*.proto

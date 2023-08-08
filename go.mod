@@ -14,6 +14,7 @@ require (
 	github.com/go-openapi/swag v0.22.4
 	github.com/go-openapi/validate v0.22.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
+	github.com/golang/protobuf v1.5.3
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/justinas/alice v1.2.0
@@ -22,6 +23,7 @@ require (
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/net v0.12.0
+	google.golang.org/protobuf v1.28.0
 )
 
 require (
