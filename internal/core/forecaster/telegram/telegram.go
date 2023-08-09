@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog"
@@ -27,7 +28,14 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	ctx := logger.WithContext(context.Background())
 
-	result := s.processTelegramUpdate(ctx, upd)
+	result, errMsg, err := s.processTelegramUpdate(ctx, upd)
+	if err != nil {
+		if errMsg == "" {
+			errMsg = "Something went wrong"
+		}
+
+		result = errorpage.ErrorPage(errMsg)
+	}
 
 	if result.MsgText != "" {
 		logger.Info().Msg(result.MsgText)
@@ -43,7 +51,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return nil
 }
 
-func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) models.ProcessTgResult {
+func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) (models.ProcessTgResult, string, error) {
 	sc := models.Scope{
 		DB:  s.db,
 		Bot: s.bot,
@@ -56,9 +64,9 @@ func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update
 		if strings.HasPrefix(text, prefix) {
 			pollIDStr := text[len(prefix):]
 
-			return poll.Poll(ctx, pollIDStr, sc)
+			return poll.Poll(ctx, pollIDStr, upd.Message.From.ID, sc)
 		}
 	}
 
-	return models.ProcessTgResult{}
+	return models.ProcessTgResult{}, "", nil
 }

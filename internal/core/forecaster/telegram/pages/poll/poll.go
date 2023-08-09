@@ -7,43 +7,45 @@ import (
 	"strings"
 	"time"
 
+	helpers2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/rs/zerolog"
 )
 
-func Poll(ctx context.Context, pollIDStr string, scope models.Scope) models.ProcessTgResult {
-	l := zerolog.Ctx(ctx)
-
+func Poll(ctx context.Context, pollIDStr string, userID int64, scope models.Scope) (models.ProcessTgResult, string, error) {
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
-		l.Error().Msgf("unable to convert poll id to int: %v\n", err)
-
-		return models.ProcessTgResult{
-			MsgText: fmt.Sprintf("invalid poll id: %s", pollIDStr),
-		}
+		return models.ProcessTgResult{},
+			fmt.Sprintf("Oops, can't parse poll id %s", pollIDStr),
+			fmt.Errorf("unable to parse poll id: %s", err.Error())
 	}
 
 	poll, err := scope.DB.GetPollByID(ctx, int32(pollID))
 
 	if err != nil {
-		l.Error().Int64("id", pollID).Msgf("unable to get poll by id: %v\n", err)
+		return models.ProcessTgResult{},
+			fmt.Sprintf("oops, can't find poll with id %d", pollID),
+			fmt.Errorf("unable to get poll by id: %s\n", err.Error())
+	}
 
-		return models.ProcessTgResult{
-			MsgText: fmt.Sprintf("oops, can't find poll with id %d", pollID),
-		}
+	keyboard, err := keyboardMarkup(poll)
+	if err != nil {
+		return models.ProcessTgResult{},
+			"Sorry, something went wrong, I can't show this option right now",
+			fmt.Errorf("unable to create keyboard markup: %s\n", err.Error())
 	}
 
 	return models.ProcessTgResult{
 		MsgText:        txtMsg(poll),
-		InlineKeyboard: keyboardMarkup(poll),
-	}
+		InlineKeyboard: keyboard,
+	}, "", nil
 }
 
-func keyboardMarkup(poll swagger.PollWithOptions) tgbotapi.InlineKeyboardMarkup {
+func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup, error) {
 	length := len(poll.Options)
 	rowsCount := length / models.MaxCountInRow
 
@@ -53,18 +55,28 @@ func keyboardMarkup(poll swagger.PollWithOptions) tgbotapi.InlineKeyboardMarkup 
 
 	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
 
-	for i := range poll.Options {
+	for i, op := range poll.Options {
+		votePreview := votepreview.VotePreview{
+			PollId:   helpers.Ptr(poll.ID),
+			OptionId: helpers.Ptr[int32](int32(op.ID)),
+		}
+
+		callbackData, err := helpers2.CallbackData(models.VotePreviewRoute, &votePreview)
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to create callback data: %w", err)
+		}
+
 		rowIdx := i / models.MaxCountInRow
 		rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
 			Text:         strconv.Itoa(i + 1),
-			CallbackData: helpers.Ptr(""),
+			CallbackData: callbackData,
 		})
 	}
 
 	var keyboard tgbotapi.InlineKeyboardMarkup
 	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, rows...)
 
-	return keyboard
+	return keyboard, nil
 }
 
 func txtMsg(p swagger.PollWithOptions) string {

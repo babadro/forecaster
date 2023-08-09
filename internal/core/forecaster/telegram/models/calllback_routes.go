@@ -1,6 +1,6 @@
 package models
 
 const (
-	VotePreview byte = iota
+	VotePreviewRoute byte = iota
 	Vote
 )
