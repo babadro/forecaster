@@ -28,8 +28,8 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	ctx := logger.WithContext(context.Background())
 
-	result, errMsg, err := s.processTelegramUpdate(ctx, upd)
-	if err != nil {
+	result, errMsg, processErr := s.processTelegramUpdate(ctx, upd)
+	if processErr != nil {
 		if errMsg == "" {
 			errMsg = "Something went wrong"
 		}
@@ -37,18 +37,27 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 		result = errorpage.ErrorPage(errMsg)
 	}
 
+	var sendErr error
 	if result.MsgText != "" {
 		logger.Info().Msg(result.MsgText)
 
 		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, result.MsgText)
 		msg.ParseMode = "HTML"
 
-		if _, sendErr := s.bot.Send(msg); sendErr != nil {
-			return fmt.Errorf("unable to send message: %s", sendErr.Error())
+		if _, err := s.bot.Send(msg); sendErr != nil {
+			sendErr = fmt.Errorf("unable to send message: %s", err.Error())
 		}
 	}
 
-	return nil
+	if processErr != nil && sendErr != nil {
+		return fmt.Errorf("process error: %s; send error: %s", processErr.Error(), sendErr.Error())
+	}
+
+	if processErr != nil {
+		return processErr
+	}
+
+	return sendErr
 }
 
 func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) (models.ProcessTgResult, string, error) {
