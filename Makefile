@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build run down start-colima swag
+.PHONY: build run run-test-env test test-sleep down start-colima gen_mocks swag proto
 
 build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o release/app github.com/babadro/forecaster/cmd/server
@@ -33,4 +33,4 @@ swag:
 	swagger generate server --exclude-main --server-package=internal/infra/restapi --model-package=internal/models/swagger -f swagger.yaml
 
 proto:
-	protoc --go_out=/internal/core/telegram/proto /internal/core/telegram/proto/*.proto
+	protoc --go_out=./internal/core/forecaster/telegram/proto ./internal/core/forecaster/telegram/proto/*/*.proto

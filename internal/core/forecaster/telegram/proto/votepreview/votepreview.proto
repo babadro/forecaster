@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+package votepreview;
+
 option go_package = "./votepreview";
 
 message VotePreview {
