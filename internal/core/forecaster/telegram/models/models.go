@@ -41,8 +41,3 @@ type Scope struct {
 	DB  DB
 	Bot TgBot
 }
-
-type ProcessTgResult struct {
-	MsgText        string
-	InlineKeyboard tgbotapi.InlineKeyboardMarkup
-}

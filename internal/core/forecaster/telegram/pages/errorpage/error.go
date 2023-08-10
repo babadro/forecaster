@@ -1,7 +1,9 @@
 package errorpage
 
-import "github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+import (
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
-func ErrorPage(txtMsg string) models.ProcessTgResult {
-	return models.ProcessTgResult{}
+func ErrorPage(txtMsg string) tgbotapi.Chattable {
+	return nil
 }

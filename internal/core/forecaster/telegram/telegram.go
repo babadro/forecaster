@@ -8,6 +8,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog"
 )
@@ -38,13 +39,8 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	}
 
 	var sendErr error
-	if result.MsgText != "" {
-		logger.Info().Msg(result.MsgText)
-
-		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, result.MsgText)
-		msg.ParseMode = "HTML"
-
-		if _, err := s.bot.Send(msg); sendErr != nil {
+	if result != nil {
+		if _, err := s.bot.Send(result); sendErr != nil {
 			sendErr = fmt.Errorf("unable to send message: %s", err.Error())
 		}
 	}
@@ -60,7 +56,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return sendErr
 }
 
-func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) (models.ProcessTgResult, string, error) {
+func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	sc := models.Scope{
 		DB:  s.db,
 		Bot: s.bot,
@@ -75,7 +71,12 @@ func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update
 
 			return poll.Poll(ctx, pollIDStr, upd.Message.From.ID, sc)
 		}
+	} else if callbackData := upd.CallbackData(); callbackData != "" {
+		switch callbackData[0] {
+		case models.VotePreviewRoute:
+			return votepreview.VotePreview(ctx, callbackData, sc)
+		}
 	}
 
-	return models.ProcessTgResult{}, "", nil
+	return nil, "", nil
 }

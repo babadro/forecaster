@@ -16,10 +16,19 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func Poll(ctx context.Context, pollIDStr string, userID int64, scope models.Scope) (models.ProcessTgResult, string, error) {
+type Service struct {
+	db  models.DB
+	bot models.TgBot
+}
+
+func NewPoll(db models.DB, bot models.TgBot) *Service {
+	return &Service{db: db, bot: bot}
+}
+
+func (s *Service) Render(ctx context.Context, pollIDStr string, chatID int64, scope models.Scope) (tgbotapi.Chattable, string, error) {
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
-		return models.ProcessTgResult{},
+		return nil,
 			fmt.Sprintf("Oops, can't parse poll id %s", pollIDStr),
 			fmt.Errorf("unable to parse poll id: %s", err.Error())
 	}
@@ -27,22 +36,19 @@ func Poll(ctx context.Context, pollIDStr string, userID int64, scope models.Scop
 	poll, err := scope.DB.GetPollByID(ctx, int32(pollID))
 
 	if err != nil {
-		return models.ProcessTgResult{},
+		return nil,
 			fmt.Sprintf("oops, can't find poll with id %d", pollID),
 			fmt.Errorf("unable to get poll by id: %s\n", err.Error())
 	}
 
 	keyboard, err := keyboardMarkup(poll)
 	if err != nil {
-		return models.ProcessTgResult{},
-			"Sorry, something went wrong, I can't show this option right now",
+		return nil,
+			"Sorry, something went wrong, I can't show this poll right now",
 			fmt.Errorf("unable to create keyboard markup: %s\n", err.Error())
 	}
 
-	return models.ProcessTgResult{
-		MsgText:        txtMsg(poll),
-		InlineKeyboard: keyboard,
-	}, "", nil
+	return helpers2.NewMessageWithKeyboard(chatID, txtMsg(poll), keyboard), "", nil
 }
 
 func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup, error) {
