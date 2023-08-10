@@ -6,7 +6,7 @@ import (
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/golang/protobuf/proto"
 )
@@ -28,7 +28,7 @@ func NewCallbackHandlers(db models.DB, bot models.TgBot) [256]callbackHandlerFun
 		handlers[i] = defaultHandler
 	}
 
-	handlers[models.Vote] = unmarshalMiddleware(poll.NewPoll(db, bot))
+	handlers[models.VotePreviewRoute] = unmarshalMiddleware(votepreview.VotePreview(db, bot))
 
 }
 
