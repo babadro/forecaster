@@ -44,7 +44,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	ctx := logger.WithContext(context.Background())
 
-	result, errMsg, processErr := s.processTelegramUpdate(ctx, upd)
+	result, errMsg, processErr := s.switcher(ctx, upd)
 	if processErr != nil {
 		if errMsg == "" {
 			errMsg = "Something went wrong"
@@ -71,7 +71,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return sendErr
 }
 
-func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	sc := models.Scope{
 		DB:  s.db,
 		Bot: s.bot,
