@@ -32,7 +32,7 @@ func NewService(db models.DB, b models.TgBot) *Service {
 		poll:        poll.New(db, b),
 	}
 
-	callbackHandlers := NewCallbackHandlers(svc)
+	callbackHandlers := newCallbackHandlers(svc)
 
 	return &Service{db: db, bot: b, pages: svc, callbackHandlers: callbackHandlers}
 }
@@ -55,7 +55,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	var sendErr error
 	if result != nil {
-		if _, err := s.bot.Send(result); sendErr != nil {
+		if _, err := s.bot.Send(result); err != nil {
 			sendErr = fmt.Errorf("unable to send message: %s", err.Error())
 		}
 	}

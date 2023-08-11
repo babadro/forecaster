@@ -38,14 +38,14 @@ func (s *Service) Render(ctx context.Context, pollIDStr string, chatID int64, sc
 	if err != nil {
 		return nil,
 			fmt.Sprintf("oops, can't find poll with id %d", pollID),
-			fmt.Errorf("unable to get poll by id: %s\n", err.Error())
+			fmt.Errorf("unable to get poll by id: %s", err.Error())
 	}
 
 	keyboard, err := keyboardMarkup(poll)
 	if err != nil {
 		return nil,
 			"Sorry, something went wrong, I can't show this poll right now",
-			fmt.Errorf("unable to create keyboard markup: %s\n", err.Error())
+			fmt.Errorf("unable to create keyboard markup: %s", err.Error())
 	}
 
 	return helpers2.NewMessageWithKeyboard(chatID, txtMsg(poll), keyboard), "", nil

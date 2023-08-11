@@ -17,7 +17,7 @@ type pageService[T proto.Message] interface {
 	RenderCallback(ctx context.Context, request T) (tgbotapi.Chattable, string, error)
 }
 
-func NewCallbackHandlers(svc pageServices) [256]callbackHandlerFunc {
+func newCallbackHandlers(svc pageServices) [256]callbackHandlerFunc {
 	var handlers [256]callbackHandlerFunc
 
 	defaultHandler := func(ctx context.Context, callbackData string) (tgbotapi.Chattable, string, error) {
