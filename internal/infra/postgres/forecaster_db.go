@@ -409,7 +409,7 @@ func (db *ForecasterDB) CreateVote(
 	return res, nil
 }
 
-func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int32, pollID int32) (models.Vote, error) {
+func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int64, pollID int32) (models.Vote, error) {
 	voteSQL, args, err := db.q.
 		Select("poll_id", "option_id", "user_id", "epoch_unix_timestamp").
 		From("forecaster.votes").

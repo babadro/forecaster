@@ -17,6 +17,7 @@ const (
 type DB interface {
 	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
 	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
+	GetLastVote(ctx context.Context, userID int64, pollID int32) (models.Vote, error)
 
 	CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error)
 	CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error)
