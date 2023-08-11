@@ -44,8 +44,8 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	ctx := logger.WithContext(context.Background())
 
-	result, errMsg, processErr := s.switcher(ctx, upd)
-	if processErr != nil {
+	result, errMsg, switcherErr := s.switcher(ctx, upd)
+	if switcherErr != nil {
 		if errMsg == "" {
 			errMsg = "Something went wrong"
 		}
@@ -60,12 +60,12 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 		}
 	}
 
-	if processErr != nil && sendErr != nil {
-		return fmt.Errorf("process error: %s; send error: %s", processErr.Error(), sendErr.Error())
+	if switcherErr != nil && sendErr != nil {
+		return fmt.Errorf("process error: %s; send error: %s", switcherErr.Error(), sendErr.Error())
 	}
 
-	if processErr != nil {
-		return processErr
+	if switcherErr != nil {
+		return switcherErr
 	}
 
 	return sendErr
