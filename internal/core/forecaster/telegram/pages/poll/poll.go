@@ -21,7 +21,7 @@ type Service struct {
 	bot models.TgBot
 }
 
-func NewPoll(db models.DB, bot models.TgBot) *Service {
+func New(db models.DB, bot models.TgBot) *Service {
 	return &Service{db: db, bot: bot}
 }
 

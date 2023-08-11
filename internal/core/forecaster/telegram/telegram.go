@@ -13,13 +13,28 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type pageServices struct {
+	votePreview *votepreview.Service
+	poll        *poll.Service
+}
+
 type Service struct {
 	db  models.DB
 	bot models.TgBot
+
+	pages            pageServices
+	callbackHandlers [256]callbackHandlerFunc
 }
 
 func NewService(db models.DB, b models.TgBot) *Service {
-	return &Service{db: db, bot: b}
+	svc := pageServices{
+		votePreview: votepreview.New(db, b),
+		poll:        poll.New(db, b),
+	}
+
+	callbackHandlers := NewCallbackHandlers(svc)
+
+	return &Service{db: db, bot: b, pages: svc, callbackHandlers: callbackHandlers}
 }
 
 func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
@@ -69,13 +84,12 @@ func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update
 		if strings.HasPrefix(text, prefix) {
 			pollIDStr := text[len(prefix):]
 
-			return poll.Poll(ctx, pollIDStr, upd.Message.From.ID, sc)
+			return s.pages.poll.Render(ctx, pollIDStr, upd.Message.From.ID, sc)
 		}
 	} else if callbackData := upd.CallbackData(); callbackData != "" {
-		switch callbackData[0] {
-		case models.VotePreviewRoute:
-			return votepreview.VotePreview(ctx, callbackData, sc)
-		}
+		route := callbackData[0]
+
+		return s.callbackHandlers[route](ctx, callbackData)
 	}
 
 	return nil, "", nil
