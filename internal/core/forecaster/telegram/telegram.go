@@ -27,14 +27,14 @@ type Service struct {
 }
 
 func NewService(db models.DB, b models.TgBot) *Service {
-	svc := pageServices{
-		votePreview: votepreview.New(db, b),
-		poll:        poll.New(db, b),
+	pages := pageServices{
+		votePreview: votepreview.New(db),
+		poll:        poll.New(db),
 	}
 
-	callbackHandlers := newCallbackHandlers(svc)
+	callbackHandlers := newCallbackHandlers(pages)
 
-	return &Service{db: db, bot: b, pages: svc, callbackHandlers: callbackHandlers}
+	return &Service{db: db, bot: b, pages: pages, callbackHandlers: callbackHandlers}
 }
 
 func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
@@ -72,11 +72,6 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 }
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	sc := models.Scope{
-		DB:  s.db,
-		Bot: s.bot,
-	}
-
 	if upd.Message != nil {
 		text := upd.Message.Text
 
@@ -84,7 +79,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		if strings.HasPrefix(text, prefix) {
 			pollIDStr := text[len(prefix):]
 
-			return s.pages.poll.Render(ctx, pollIDStr, upd.Message.From.ID, sc)
+			return s.pages.poll.Render(ctx, pollIDStr, upd.Message.From.ID)
 		}
 	} else if callbackData := upd.CallbackData(); callbackData != "" {
 		route := callbackData[0]

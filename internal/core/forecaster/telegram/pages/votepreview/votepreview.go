@@ -9,12 +9,11 @@ import (
 )
 
 type Service struct {
-	db  models.DB
-	bot models.TgBot
+	db models.DB
 }
 
-func New(db models.DB, bot models.TgBot) *Service {
-	return &Service{db: db, bot: bot}
+func New(db models.DB) *Service {
+	return &Service{db: db}
 }
 
 func (s *Service) RenderCallback(ctx context.Context, callbackData *votepreview2.VotePreview) (tgbotapi.Chattable, string, error) {

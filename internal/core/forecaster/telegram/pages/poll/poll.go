@@ -17,15 +17,14 @@ import (
 )
 
 type Service struct {
-	db  models.DB
-	bot models.TgBot
+	db models.DB
 }
 
-func New(db models.DB, bot models.TgBot) *Service {
-	return &Service{db: db, bot: bot}
+func New(db models.DB) *Service {
+	return &Service{db: db}
 }
 
-func (s *Service) Render(ctx context.Context, pollIDStr string, chatID int64, scope models.Scope) (tgbotapi.Chattable, string, error) {
+func (s *Service) Render(ctx context.Context, pollIDStr string, chatID int64) (tgbotapi.Chattable, string, error) {
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
 		return nil,
@@ -33,7 +32,7 @@ func (s *Service) Render(ctx context.Context, pollIDStr string, chatID int64, sc
 			fmt.Errorf("unable to parse poll id: %s", err.Error())
 	}
 
-	poll, err := scope.DB.GetPollByID(ctx, int32(pollID))
+	poll, err := s.db.GetPollByID(ctx, int32(pollID))
 
 	if err != nil {
 		return nil,
