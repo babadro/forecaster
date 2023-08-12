@@ -53,7 +53,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 			errMsg = "Something went wrong"
 		}
 
-		result = errorpage.ErrorPage(errMsg)
+		result = errorpage.ErrorPage(errMsg, upd)
 	}
 
 	var sendErr error

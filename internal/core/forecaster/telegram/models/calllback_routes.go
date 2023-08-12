@@ -1,7 +1,8 @@
 package models
 
 const (
-	VotePreviewRoute byte = iota
+	MainPageRoute byte = iota
+	VotePreviewRoute
 	VoteRoute
 	PollRoute
 )
