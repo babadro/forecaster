@@ -1,14 +1,13 @@
-package helpers
+package proto
 
 import (
 	"fmt"
 
 	"github.com/babadro/forecaster/internal/helpers"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/golang/protobuf/proto"
 )
 
-func CallbackData(route byte, m proto.Message) (*string, error) {
+func MarshalCallbackData(route byte, m proto.Message) (*string, error) {
 	binaryData, err := proto.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal proto message: %w", err)
@@ -23,21 +22,16 @@ func CallbackData(route byte, m proto.Message) (*string, error) {
 
 func UnmarshalCallbackData(data string, m proto.Message) error {
 	if len(data) < 2 {
-		return fmt.Errorf("data is too short")
+		return fmt.Errorf("callback data is too short")
 	}
 
-	// first byte is route
+	route := data[0]
+
 	binaryData := []byte(data[1:])
 
-	return proto.Unmarshal(binaryData, m)
-}
+	if err := proto.Unmarshal(binaryData, m); err != nil {
+		return fmt.Errorf("can't unmarshal proto message for route %d: %s", route, err.Error())
+	}
 
-func NewMessageWithKeyboard(
-	chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup,
-) tgbotapi.MessageConfig {
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ReplyMarkup = keyboard
-	msg.ParseMode = tgbotapi.ModeHTML
-
-	return msg
+	return nil
 }

@@ -5,16 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	helpers2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
 	"github.com/babadro/forecaster/internal/domain"
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
-	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -66,7 +65,7 @@ func (s *Service) Render(ctx context.Context, pollIDStr string, userID, chatID i
 			fmt.Errorf("unable to create keyboard markup: %s", err.Error())
 	}
 
-	return helpers2.NewMessageWithKeyboard(chatID, msg, keyboard), "", nil
+	return render.NewMessageWithKeyboard(chatID, msg, keyboard), "", nil
 }
 
 func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup, error) {
@@ -85,7 +84,7 @@ func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup
 			OptionId: helpers.Ptr[int32](int32(op.ID)),
 		}
 
-		callbackData, err := helpers2.CallbackData(models.VotePreviewRoute, &votePreview)
+		callbackData, err := proto.MarshalCallbackData(models.VotePreviewRoute, &votePreview)
 		if err != nil {
 			return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to create callback data: %w", err)
 		}
@@ -104,37 +103,37 @@ func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup
 }
 
 func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.Vote) (string, error) {
-	var sb strings.Builder
+	var sb render.StringBuilder
 
-	start, finish := formatTime(p.Start), formatTime(p.Finish)
+	start, finish := render.FormatTime(p.Start), render.FormatTime(p.Finish)
 
-	fPrintf(&sb, "<b>%s</b>\n", p.Title)
-	fPrintf(&sb, "<i>Start Date: %s</i>\n", start)
-	fPrintf(&sb, "<i>End Date: %s</i>\n", finish)
-	fPrintf(&sb, "\n")
+	sb.Printf("<b>%s</b>\n", p.Title)
+	sb.Printf("<i>Start Date: %s</i>\n", start)
+	sb.Printf("<i>End Date: %s</i>\n", finish)
+	sb.Printf("\n")
 
 	timeToGo := time.Until(time.Time(p.Finish))
 	if timeToGo > 0 {
-		fPrintf(
-			&sb, "<b>%d days %d hours to go</b>\n",
+		sb.Printf(
+			"<b>%d days %d hours to go</b>\n",
 			int(timeToGo/models.Seconds3600)/models.Hours24, int(timeToGo/models.Seconds3600)%models.Hours24,
 		)
 	} else {
-		fPrintf(&sb, "<b>Poll Status: Ended %s</b>\n", finish)
+		sb.Printf("<b>Poll Status: Ended %s</b>\n", finish)
 	}
 
-	fPrintf(&sb, "\n")
+	sb.WriteString("\n")
 
-	fPrint(&sb, "<b>Options:</b>\n")
+	sb.WriteString("<b>Options:</b>\n")
 
 	for i, op := range p.Options {
-		fPrintf(&sb, "	%d. %s\n", i+1, op.Title)
+		sb.Printf("	%d. %s\n", i+1, op.Title)
 	}
 
-	fPrint(&sb, "\n")
+	sb.WriteString("\n")
 
 	if timeToGo <= 0 {
-		fPrint(&sb, "<b>This poll has expired!</b>\n")
+		sb.WriteString("<b>This poll has expired!</b>\n")
 	}
 
 	if userAlreadyVoted {
@@ -143,7 +142,7 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 			return "", fmt.Errorf("unable to find voted option %d for poll %d", lastVote.OptionID, p.ID)
 		}
 
-		fPrintf(&sb, "<b>Last time you voted for: %d. </b> %s\n", idx, votedOption.Title)
+		sb.Printf("<b>Last time you voted for: %d. </b> %s\n", idx, votedOption.Title)
 	}
 
 	return sb.String(), nil
@@ -157,16 +156,4 @@ func findOptionByID(options []*swagger.Option, id int16) (*swagger.Option, int) 
 	}
 
 	return nil, -1
-}
-
-func formatTime[T time.Time | strfmt.DateTime](t T) string {
-	return time.Time(t).Format(time.RFC822)
-}
-
-func fPrintf(sb *strings.Builder, format string, a ...any) {
-	_, _ = fmt.Fprintf(sb, format, a...)
-}
-
-func fPrint(sb *strings.Builder, a ...any) {
-	_, _ = fmt.Fprint(sb, a...)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/vote"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog"
@@ -15,6 +16,7 @@ import (
 
 type pageServices struct {
 	votePreview *votepreview.Service
+	vote        *vote.Service
 	poll        *poll.Service
 }
 
@@ -79,12 +81,12 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		if strings.HasPrefix(text, prefix) {
 			pollIDStr := text[len(prefix):]
 
-			return s.pages.poll.Render(ctx, pollIDStr, upd.Message.From.ID)
+			return s.pages.poll.Render(ctx, pollIDStr, upd.Message.Chat.ID, upd.Message.From.ID)
 		}
 	} else if callbackData := upd.CallbackData(); callbackData != "" {
 		route := callbackData[0]
 
-		return s.callbackHandlers[route](ctx, callbackData)
+		return s.callbackHandlers[route](ctx, upd)
 	}
 
 	return nil, "", nil

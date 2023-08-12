@@ -22,6 +22,7 @@ type DB interface {
 	CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error)
 	CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error)
 	CreateOption(ctx context.Context, option models.CreateOption, now time.Time) (models.Option, error)
+	CreateVote(ctx context.Context, vote models.CreateVote, nowUnixTimestamp int64) (models.Vote, error)
 
 	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries, now time.Time) (models.Series, error)
 	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll, now time.Time) (models.Poll, error)
