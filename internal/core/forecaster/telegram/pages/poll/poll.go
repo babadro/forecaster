@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"strconv"
 	"time"
 
@@ -25,7 +26,7 @@ func New(db models.DB) *Service {
 	return &Service{db: db}
 }
 
-func (s *Service) Render(ctx context.Context, pollIDStr string, userID, chatID int64) (tgbotapi.Chattable, string, error) {
+func (s *Service) RenderStartCommand(ctx context.Context, pollIDStr string, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
 		return nil,
@@ -33,7 +34,21 @@ func (s *Service) Render(ctx context.Context, pollIDStr string, userID, chatID i
 			fmt.Errorf("unable to parse poll id: %s", err.Error())
 	}
 
-	poll, err := s.db.GetPollByID(ctx, int32(pollID))
+	return s.render(
+		ctx, int32(pollID), upd.CallbackQuery.From.ID, upd.CallbackQuery.Message.Chat.ID,
+		upd.CallbackQuery.Message.MessageID, false)
+}
+
+func (s *Service) RenderCallback(ctx context.Context, req *poll.Poll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	return s.render(
+		ctx, *req.PollId, upd.CallbackQuery.From.ID, upd.CallbackQuery.Message.Chat.ID,
+		upd.CallbackQuery.Message.MessageID, true)
+}
+
+func (s *Service) render(
+	ctx context.Context, pollID int32, userID int64, chatID int64, messageID int, editMessage bool,
+) (tgbotapi.Chattable, string, error) {
+	p, err := s.db.GetPollByID(ctx, pollID)
 
 	if err != nil {
 		return nil,
@@ -42,7 +57,7 @@ func (s *Service) Render(ctx context.Context, pollIDStr string, userID, chatID i
 	}
 
 	userAlreadyVoted := false
-	lastVote, err := s.db.GetLastVote(ctx, userID, poll.ID)
+	lastVote, err := s.db.GetLastVote(ctx, userID, p.ID)
 	if err == nil {
 		userAlreadyVoted = true
 	} else if !errors.Is(err, domain.ErrNotFound) {
@@ -51,21 +66,28 @@ func (s *Service) Render(ctx context.Context, pollIDStr string, userID, chatID i
 			fmt.Errorf("unable to get last vote: %s", err.Error())
 	}
 
-	msg, err := txtMsg(poll, userAlreadyVoted, lastVote)
+	txt, err := txtMsg(p, userAlreadyVoted, lastVote)
 	if err != nil {
 		return nil,
 			"Sorry, something went wrong, I can't show this poll right now",
 			fmt.Errorf("unable to create text message: %s", err.Error())
 	}
 
-	keyboard, err := keyboardMarkup(poll)
+	keyboard, err := keyboardMarkup(p)
 	if err != nil {
 		return nil,
 			"Sorry, something went wrong, I can't show this poll right now",
 			fmt.Errorf("unable to create keyboard markup: %s", err.Error())
 	}
 
-	return render.NewMessageWithKeyboard(chatID, msg, keyboard), "", nil
+	var res tgbotapi.Chattable
+	if editMessage {
+		res = render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard)
+	} else {
+		res = render.NewMessageWithKeyboard(chatID, txt, keyboard)
+	}
+
+	return res, "", nil
 }
 
 func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup, error) {

@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package poll;
+
+option go_package = "./poll";
+
+message Poll {
+  required int32 poll_id = 1;
+}

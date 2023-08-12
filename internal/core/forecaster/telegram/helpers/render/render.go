@@ -41,6 +41,15 @@ func NewMessageWithKeyboard(
 	return msg
 }
 
+func NewEditMessageTextWithKeyboard(
+	chatID int64, messageID int, text string, keyboard tgbotapi.InlineKeyboardMarkup) tgbotapi.EditMessageTextConfig {
+	msg := tgbotapi.NewEditMessageText(chatID, messageID, text)
+	msg.ReplyMarkup = &keyboard
+	msg.ParseMode = tgbotapi.ModeHTML
+
+	return msg
+}
+
 func Keyboard(buttons ...tgbotapi.InlineKeyboardButton) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 		buttons,

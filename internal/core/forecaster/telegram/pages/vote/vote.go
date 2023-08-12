@@ -3,9 +3,9 @@ package vote
 import (
 	"context"
 	"fmt"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"time"
 
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
 	"github.com/babadro/forecaster/internal/models/swagger"
@@ -46,15 +46,11 @@ func (s *Service) RenderCallback(ctx context.Context, vote *vote.Vote, upd tgbot
 			fmt.Errorf("vote: unable to create vote: %s", err.Error())
 	}
 
-	return nil, "", nil
-}
-
-func expiredMsg() tgbotapi.Chattable {
-	return render.NewMessageWithKeyboard(0, "This poll is expired!",
+	return render.NewEditMessageTextWithKeyboard(
+		upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID,
+		"Success!",
 		render.Keyboard(tgbotapi.InlineKeyboardButton{
 			Text:         "Back to poll",
 			CallbackData: nil, // todo route to
-		}))
+		})), "", nil
 }
-
-func txtMsg()

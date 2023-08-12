@@ -31,6 +31,7 @@ type Service struct {
 func NewService(db models.DB, b models.TgBot) *Service {
 	pages := pageServices{
 		votePreview: votepreview.New(db),
+		vote:        vote.New(db),
 		poll:        poll.New(db),
 	}
 
@@ -81,7 +82,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		if strings.HasPrefix(text, prefix) {
 			pollIDStr := text[len(prefix):]
 
-			return s.pages.poll.Render(ctx, pollIDStr, upd.Message.Chat.ID, upd.Message.From.ID)
+			return s.pages.poll.RenderStartCommand(ctx, pollIDStr, upd)
 		}
 	} else if callbackData := upd.CallbackData(); callbackData != "" {
 		route := callbackData[0]
