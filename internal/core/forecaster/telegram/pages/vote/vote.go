@@ -3,7 +3,9 @@ package vote
 import (
 	"context"
 	"fmt"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
+	poll2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
@@ -46,11 +48,20 @@ func (s *Service) RenderCallback(ctx context.Context, vote *vote.Vote, upd tgbot
 			fmt.Errorf("vote: unable to create vote: %s", err.Error())
 	}
 
+	callBackData, err := proto.MarshalCallbackData(models.PollRoute, &poll2.Poll{
+		PollId: vote.PollId,
+	})
+	if err != nil {
+		return nil,
+			"Vote was successful, but I cant get you back to poll due to the error",
+			fmt.Errorf("vote: unable to marshal callback data: %s", err.Error())
+	}
+
 	return render.NewEditMessageTextWithKeyboard(
 		upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID,
 		"Success!",
 		render.Keyboard(tgbotapi.InlineKeyboardButton{
 			Text:         "Back to poll",
-			CallbackData: nil, // todo route to
+			CallbackData: callBackData,
 		})), "", nil
 }
