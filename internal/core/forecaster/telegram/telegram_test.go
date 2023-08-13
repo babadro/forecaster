@@ -40,12 +40,12 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
 	}
 
 	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-		s.Require().Equal(update.Message.Chat.ID, msg.ChatID)
+		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
 
-		s.Require().Contains(msg.Text, poll.Title)
+		s.Assert().Contains(msg.Text, poll.Title)
 
 		for _, op := range createdOptions {
-			s.Require().Contains(msg.Text, op.Title)
+			s.Assert().Contains(msg.Text, op.Title)
 		}
 
 		return true
@@ -63,25 +63,24 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_notFound() {
 			Chat: &tgbotapi.Chat{
 				ID: 123,
 			},
+			From: &tgbotapi.User{
+				ID: 456,
+			},
 			Text: "/start showpoll_999",
 		},
 	}
 
 	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-		s.Require().Equal(update.Message.Chat.ID, msg.ChatID)
+		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
 
-		s.Require().Contains(msg.Text, "can't find poll")
+		s.Assert().Contains(msg.Text, "can't find poll")
 
 		return true
 	})).Return(tgbotapi.Message{}, nil)
 
 	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
-
-	s.Require().NoError(err)
-
-	logOutput := s.logOutput.String()
-	s.Require().Contains(logOutput, "error")
-	s.Require().Contains(logOutput, "unable to get poll by id")
+	s.Require().Error(err)
+	s.ErrorContains(err, "unable to get poll by id")
 
 	s.mockTgBot.AssertExpectations(s.T())
 }
