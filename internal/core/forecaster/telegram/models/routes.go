@@ -6,3 +6,7 @@ const (
 	VoteRoute
 	PollRoute
 )
+
+const (
+	ShowPollStartCommand = "/start showpoll_"
+)

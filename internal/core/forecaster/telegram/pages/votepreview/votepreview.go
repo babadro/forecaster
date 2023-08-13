@@ -23,7 +23,9 @@ func New(db models.DB) *Service {
 	return &Service{db: db}
 }
 
-func (s *Service) RenderCallback(ctx context.Context, votePreview *votepreview2.VotePreview, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+func (s *Service) RenderCallback(
+	ctx context.Context, votePreview *votepreview2.VotePreview, upd tgbotapi.Update,
+) (tgbotapi.Chattable, string, error) {
 	poll, err := s.db.GetPollByID(ctx, *votePreview.PollId)
 	if err != nil {
 		return nil,

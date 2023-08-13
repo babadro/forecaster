@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/babadro/forecaster/internal/helpers"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
+
+const minCallbackDataLength = 2
 
 func MarshalCallbackData(route byte, m proto.Message) (*string, error) {
 	binaryData, err := proto.Marshal(m)
@@ -21,7 +23,7 @@ func MarshalCallbackData(route byte, m proto.Message) (*string, error) {
 }
 
 func UnmarshalCallbackData(data string, m proto.Message) error {
-	if len(data) < 2 {
+	if len(data) < minCallbackDataLength {
 		return fmt.Errorf("callback data is too short")
 	}
 

@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"strconv"
 	"time"
+
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
@@ -26,7 +27,9 @@ func New(db models.DB) *Service {
 	return &Service{db: db}
 }
 
-func (s *Service) RenderStartCommand(ctx context.Context, pollIDStr string, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	pollIDStr := upd.Message.Text[len(models.ShowPollStartCommand):]
+
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
 		return nil,
@@ -34,16 +37,41 @@ func (s *Service) RenderStartCommand(ctx context.Context, pollIDStr string, upd 
 			fmt.Errorf("unable to parse poll id: %s", err.Error())
 	}
 
+	if upd.Message == nil {
+		return nil, "", errors.New("message is nil")
+	}
+
+	chat := upd.Message.Chat
+	if chat == nil {
+		return nil, "", fmt.Errorf("chat is nil")
+	}
+
+	user := upd.Message.From
+	if user == nil {
+		return nil, "", fmt.Errorf("user is nil")
+	}
+
 	return s.render(
-		ctx, int32(pollID), upd.CallbackQuery.From.ID, upd.CallbackQuery.Message.Chat.ID,
-		upd.CallbackQuery.Message.MessageID, false)
+		ctx, int32(pollID), user.ID, chat.ID,
+		upd.Message.MessageID, false)
 }
 
-func (s *Service) RenderCallback(ctx context.Context, req *poll.Poll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	return s.render(
-		ctx, *req.PollId, upd.CallbackQuery.From.ID, upd.CallbackQuery.Message.Chat.ID,
-		upd.CallbackQuery.Message.MessageID, true)
+func (s *Service) RenderCallback(
+	ctx context.Context, req *poll.Poll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	user := upd.CallbackQuery.From
+	if user == nil {
+		return nil, "", errors.New("user is nil")
+	}
+
+	chat := upd.CallbackQuery.Message.Chat
+	message := upd.CallbackQuery.Message
+
+	return s.render(ctx, *req.PollId, user.ID, chat.ID, message.MessageID, true)
 }
+
+const (
+	cantShowPollMsg = "Sorry, something went wrong, I can't show this poll right now"
+)
 
 func (s *Service) render(
 	ctx context.Context, pollID int32, userID int64, chatID int64, messageID int, editMessage bool,
@@ -57,26 +85,27 @@ func (s *Service) render(
 	}
 
 	userAlreadyVoted := false
+
 	lastVote, err := s.db.GetLastVote(ctx, userID, p.ID)
 	if err == nil {
 		userAlreadyVoted = true
 	} else if !errors.Is(err, domain.ErrNotFound) {
 		return nil,
-			"Sorry, something went wrong, I can't show this poll right now",
+			cantShowPollMsg,
 			fmt.Errorf("unable to get last vote: %s", err.Error())
 	}
 
 	txt, err := txtMsg(p, userAlreadyVoted, lastVote)
 	if err != nil {
 		return nil,
-			"Sorry, something went wrong, I can't show this poll right now",
+			cantShowPollMsg,
 			fmt.Errorf("unable to create text message: %s", err.Error())
 	}
 
 	keyboard, err := keyboardMarkup(p)
 	if err != nil {
 		return nil,
-			"Sorry, something went wrong, I can't show this poll right now",
+			cantShowPollMsg,
 			fmt.Errorf("unable to create keyboard markup: %s", err.Error())
 	}
 

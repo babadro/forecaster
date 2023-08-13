@@ -3,10 +3,11 @@ package vote
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	poll2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
-	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
@@ -22,7 +23,8 @@ func New(db models.DB) *Service {
 	return &Service{db: db}
 }
 
-func (s *Service) RenderCallback(ctx context.Context, vote *vote.Vote, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+func (s *Service) RenderCallback(
+	ctx context.Context, vote *vote.Vote, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	poll, err := s.db.GetPollByID(ctx, *vote.PollId)
 	if err != nil {
 		return nil,

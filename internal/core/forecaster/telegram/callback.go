@@ -9,33 +9,39 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
 	votepreviewproto "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
-type callbackHandlerFunc func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error)
+type handlerFunc func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error)
 
 type pageService[T proto.Message] interface {
 	RenderCallback(ctx context.Context, req T, upd tgbotapi.Update) (tgbotapi.Chattable, string, error)
 }
 
-func newCallbackHandlers(svc pageServices) [256]callbackHandlerFunc {
-	var handlers [256]callbackHandlerFunc
+func newCallbackHandlers(svc pageServices) [256]handlerFunc {
+	var handlers [256]handlerFunc
+
+	handlers[models.VotePreviewRoute] = unmarshalMiddleware[*votepreviewproto.VotePreview](svc.votePreview)
+	handlers[models.VoteRoute] = unmarshalMiddleware[*vote.Vote](svc.vote)
 
 	defaultHandler := func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		return nil, "", fmt.Errorf("handler for route %d is not implemented", upd.CallbackQuery.Data[0])
 	}
 
 	for i := range handlers {
+		if handlers[i] != nil {
+			handlers[i] = chainMiddlewares(handlers[i], validateCallbackInput)
+
+			continue
+		}
+
 		handlers[i] = defaultHandler
 	}
-
-	handlers[models.VotePreviewRoute] = unmarshalMiddleware[*votepreviewproto.VotePreview](svc.votePreview)
-	handlers[models.VoteRoute] = unmarshalMiddleware[*vote.Vote](svc.vote)
 
 	return handlers
 }
 
-func unmarshalMiddleware[T proto.Message](next pageService[T]) callbackHandlerFunc {
+func unmarshalMiddleware[T proto.Message](next pageService[T]) handlerFunc {
 	return func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		var req T
 		if err := proto2.UnmarshalCallbackData(upd.CallbackQuery.Data, req); err != nil {
@@ -43,5 +49,35 @@ func unmarshalMiddleware[T proto.Message](next pageService[T]) callbackHandlerFu
 		}
 
 		return next.RenderCallback(ctx, req, upd)
+	}
+}
+
+type middleware func(next handlerFunc) handlerFunc
+
+func chainMiddlewares(mainHandler handlerFunc, middlewares ...middleware) handlerFunc {
+	h := mainHandler
+
+	for i := range middlewares {
+		h = middlewares[len(middlewares)-1-i](h)
+	}
+
+	return h
+}
+
+func validateCallbackInput(next handlerFunc) handlerFunc {
+	return func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+		if upd.CallbackQuery == nil {
+			return nil, "", fmt.Errorf("callback query is nil")
+		}
+
+		if upd.CallbackQuery.Message == nil {
+			return nil, "", fmt.Errorf("message is nil")
+		}
+
+		if upd.CallbackQuery.Message.Chat == nil {
+			return nil, "", fmt.Errorf("chat is nil")
+		}
+
+		return next(ctx, upd)
 	}
 }

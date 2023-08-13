@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,7 +26,7 @@ type Service struct {
 	bot models.TgBot
 
 	pages            pageServices
-	callbackHandlers [256]callbackHandlerFunc
+	callbackHandlers [256]handlerFunc
 }
 
 func NewService(db models.DB, b models.TgBot) *Service {
@@ -53,10 +54,11 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 			errMsg = "Something went wrong"
 		}
 
-		result = errorpage.ErrorPage(errMsg, upd)
+		result = errorpage.ErrorPage(logger, errMsg, upd)
 	}
 
 	var sendErr error
+
 	if result != nil {
 		if _, err := s.bot.Send(result); err != nil {
 			sendErr = fmt.Errorf("unable to send message: %s", err.Error())
@@ -75,20 +77,16 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 }
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	if upd.Message != nil {
-		text := upd.Message.Text
-
-		prefix := "/start showpoll_"
-		if strings.HasPrefix(text, prefix) {
-			pollIDStr := text[len(prefix):]
-
-			return s.pages.poll.RenderStartCommand(ctx, pollIDStr, upd)
+	switch {
+	case upd.Message != nil:
+		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
+			return s.pages.poll.RenderStartCommand(ctx, upd)
 		}
-	} else if callbackData := upd.CallbackData(); callbackData != "" {
-		route := callbackData[0]
+	case upd.CallbackQuery != nil:
+		route := upd.CallbackQuery.Data[0]
 
 		return s.callbackHandlers[route](ctx, upd)
 	}
 
-	return nil, "", nil
+	return nil, "", errors.New("unknown update type")
 }
