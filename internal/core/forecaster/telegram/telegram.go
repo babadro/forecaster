@@ -66,7 +66,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	}
 
 	if switcherErr != nil && sendErr != nil {
-		return fmt.Errorf("process error: %s; send error: %s", switcherErr.Error(), sendErr.Error())
+		return fmt.Errorf("switcher error: %s; send error: %s", switcherErr.Error(), sendErr.Error())
 	}
 
 	if switcherErr != nil {
