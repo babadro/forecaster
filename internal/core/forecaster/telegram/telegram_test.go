@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
+func (s *TelegramServiceSuite) TestShowPollStartCommand() {
 	ctx := context.Background()
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = 0
@@ -35,6 +35,9 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
 			Chat: &tgbotapi.Chat{
 				ID: 123,
 			},
+			From: &tgbotapi.User{
+				ID: 456,
+			},
 			Text: "/start showpoll_" + strconv.Itoa(int(poll.ID)),
 		},
 	}
@@ -57,7 +60,7 @@ func (s *TelegramServiceSuite) TestProcessTelegramUpdate_happyPath() {
 	s.mockTgBot.AssertExpectations(s.T())
 }
 
-func (s *TelegramServiceSuite) TestProcessTelegramUpdate_notFound() {
+func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 	update := tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{
