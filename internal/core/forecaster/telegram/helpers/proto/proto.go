@@ -31,6 +31,11 @@ func UnmarshalCallbackData(data string, m proto.Message) error {
 
 	binaryData := []byte(data[1:])
 
+	fmt.Printf("message type is: %T\n", m)
+	fmt.Printf("message content is %v\n", m)
+
+	fmt.Printf("binary data is: %v\n", binaryData)
+
 	if err := proto.Unmarshal(binaryData, m); err != nil {
 		return fmt.Errorf("can't unmarshal proto message for route %d: %s", route, err.Error())
 	}

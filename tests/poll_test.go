@@ -2,9 +2,11 @@ package polls_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/gomega"
@@ -73,6 +75,8 @@ func (s *APITestSuite) TestPolls() {
 func (s *APITestSuite) TestPolls_Options() {
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = 0
+	pollInput.Start = strfmt.DateTime(time.Now())
+	pollInput.Finish = strfmt.DateTime(time.Now().Add(time.Hour))
 
 	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, s.url("polls"))
 

@@ -12,10 +12,14 @@ run: build
 run-test-env: build
 	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=$(start-bot) docker-compose up
 
+run-test-env-with-bot: build
+	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=true docker-compose up
+
 # example: make test filter=TestPolls
 test:
 	 (source .env.tests && go test ./... -testify.m=$(filter) -v)
 
+filter ?= TestPolls_Options
 # example: make test-sleep filter=TestPolls_Options
 test-sleep:
 	(source .env.tests && SLEEP_MODE=true go test ./... -testify.m=$(filter) -v)
