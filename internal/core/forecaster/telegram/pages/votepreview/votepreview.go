@@ -59,9 +59,7 @@ func txtMsg(expired bool, option swagger.Option) string {
 
 	if expired {
 		sb.WriteStringLn("This poll is expired!")
-	}
-
-	if !expired {
+	} else {
 		sb.WriteStringLn("Vote for this option?")
 	}
 
