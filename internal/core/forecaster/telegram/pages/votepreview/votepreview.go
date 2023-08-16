@@ -57,7 +57,7 @@ func (s *Service) RenderCallback(
 			fmt.Errorf("votepreview: unable to create keyboard markup: %s", err.Error())
 	}
 
-	return render.NewMessageWithKeyboard(upd.Message.Chat.ID, msg, markup), "", nil
+	return render.NewMessageWithKeyboard(upd.CallbackQuery.Message.Chat.ID, msg, markup), "", nil
 }
 
 func txtMsg(expired bool, option swagger.Option) string {
