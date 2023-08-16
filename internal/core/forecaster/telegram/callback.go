@@ -9,24 +9,23 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
 	votepreviewproto "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/proto"
 )
 
 type handlerFunc func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error)
 
-type pageService[T request] interface {
-	RenderCallback(ctx context.Context, req *T, upd tgbotapi.Update) (tgbotapi.Chattable, string, error)
-}
-
-type request interface {
-	ProtoReflect() protoreflect.Message
+type pageService[T proto.Message] interface {
+	RenderCallback(ctx context.Context, req T, upd tgbotapi.Update) (tgbotapi.Chattable, string, error)
+	// NewRequest returns proto message and request for RenderCallback
+	// Under the hood both of returned values are the same pointer to the same struct
+	NewRequest() (proto.Message, T)
 }
 
 func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	var handlers [256]handlerFunc
 
-	handlers[models.VotePreviewRoute] = unmarshalMiddleware[votepreviewproto.VotePreview](svc.votePreview)
-	handlers[models.VoteRoute] = unmarshalMiddleware[vote.Vote](svc.vote)
+	handlers[models.VotePreviewRoute] = unmarshalMiddleware[*votepreviewproto.VotePreview](svc.votePreview)
+	handlers[models.VoteRoute] = unmarshalMiddleware[*vote.Vote](svc.vote)
 
 	defaultHandler := func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		return nil, "", fmt.Errorf("handler for route %d is not implemented", upd.CallbackQuery.Data[0])
@@ -45,17 +44,15 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	return handlers
 }
 
-func unmarshalMiddleware[T request](next pageService[T]) handlerFunc {
+func unmarshalMiddleware[T proto.Message](next pageService[T]) handlerFunc {
 	return func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-		var req T
+		requestAsProtoMessage, requestAsStruct := next.NewRequest()
 
-		msg := req.ProtoReflect()
-
-		if err := proto2.UnmarshalCallbackData(upd.CallbackQuery.Data, msg); err != nil {
+		if err := proto2.UnmarshalCallbackData(upd.CallbackQuery.Data, requestAsProtoMessage); err != nil {
 			return nil, "", fmt.Errorf("can't unmarshal callback data: %w", err)
 		}
 
-		return next.RenderCallback(ctx, req, upd)
+		return next.RenderCallback(ctx, requestAsStruct, upd)
 	}
 }
 

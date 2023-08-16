@@ -13,6 +13,7 @@ import (
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"google.golang.org/protobuf/proto"
 )
 
 type Service struct {
@@ -21,6 +22,11 @@ type Service struct {
 
 func New(db models.DB) *Service {
 	return &Service{db: db}
+}
+
+func (s *Service) NewRequest() (proto.Message, *votepreview2.VotePreview) {
+	v := new(votepreview2.VotePreview)
+	return v, v
 }
 
 func (s *Service) RenderCallback(

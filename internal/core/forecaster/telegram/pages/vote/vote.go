@@ -8,6 +8,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	poll2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
@@ -21,6 +22,11 @@ type Service struct {
 
 func New(db models.DB) *Service {
 	return &Service{db: db}
+}
+
+func (s *Service) NewRequest() (proto2.Message, *vote.Vote) {
+	v := new(vote.Vote)
+	return v, v
 }
 
 func (s *Service) RenderCallback(
