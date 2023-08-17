@@ -77,22 +77,27 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 }
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	var msg tgbotapi.Chattable
+	var errMsg, updateType string
+	var err error
+
 	switch {
 	case upd.Message != nil:
 		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
-			msg, errMsg, err := s.pages.poll.RenderStartCommand(ctx, upd)
-			if err != nil {
-				return nil, errMsg, fmt.Errorf("unable to render start command: %s", err.Error())
-			}
-
-			return msg, errMsg, nil
+			updateType = "show poll start command"
+			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
 		}
 	case upd.CallbackQuery != nil:
 		route := upd.CallbackQuery.Data[0]
 
-		msg, errMsg, err := s.callbackHandlers[route](ctx, upd)
+		updateType = fmt.Sprintf("render callback query for route %d", route)
+
+		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
+	}
+
+	if updateType != "" {
 		if err != nil {
-			return nil, errMsg, fmt.Errorf("unable to handle callback for route %d: %s", route, err.Error())
+			return nil, errMsg, fmt.Errorf("unable to handle %s: %s", updateType, err.Error())
 		}
 
 		return msg, errMsg, nil

@@ -35,7 +35,9 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 
 	for i := range handlers {
 		if handlers[i] != nil {
-			handlers[i] = chainMiddlewares(handlers[i], validateCallbackInput)
+			handlers[i] = chainMiddlewares(handlers[i],
+				validateCallbackInput,
+			)
 
 			continue
 		}
