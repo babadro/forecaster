@@ -87,3 +87,53 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 
 	s.mockTgBot.AssertExpectations(s.T())
 }
+
+func (s *TelegramServiceSuite) createRandomPoll() swagger.PollWithOptions {
+	s.T().Helper()
+
+	ctx := context.Background()
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = 0
+
+	poll, err := s.db.CreatePoll(ctx, pollInput, time.Now())
+	s.Require().NoError(err)
+
+	createdOptions := make([]*swagger.Option, 3)
+	for i := range createdOptions {
+		optionInput := randomModel[swagger.CreateOption](s.T())
+		optionInput.PollID = poll.ID
+
+		var op swagger.Option
+		op, err = s.db.CreateOption(ctx, optionInput, time.Now())
+		s.Require().NoError(err)
+
+		createdOptions[i] = &op
+	}
+
+	pollWithOptions, err := s.db.GetPollByID(ctx, poll.ID)
+	s.Require().NoError(err)
+
+	return pollWithOptions
+}
+
+func (s *TelegramServiceSuite) TestVoting() {
+	poll := s.createRandomPoll()
+
+	update := tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: 456,
+			},
+			Text: "/start showpoll_" + strconv.Itoa(int(poll.ID)),
+		},
+	}
+
+	s.mockTgBot.On("Send", mock.Anything).Return(tgbotapi.Message{}, nil)
+
+	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
+	s.Require().NoError(err)
+
+}
