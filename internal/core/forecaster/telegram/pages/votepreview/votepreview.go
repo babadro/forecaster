@@ -8,6 +8,7 @@ import (
 	proto2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
 	votepreview2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
 	"github.com/babadro/forecaster/internal/helpers"
@@ -78,7 +79,12 @@ func txtMsg(expired bool, option swagger.Option) string {
 }
 
 func keyboardMarkup(pollID int32, optionID int16, voteNotAllowed bool) (tgbotapi.InlineKeyboardMarkup, error) {
-	backBtn := tgbotapi.InlineKeyboardButton{Text: "Back", CallbackData: nil} // todo data for back button
+	backData, err := proto2.MarshalCallbackData(models.PollRoute, &poll.Poll{PollId: helpers.Ptr[int32](pollID)})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
+	}
+
+	backBtn := tgbotapi.InlineKeyboardButton{Text: "Back", CallbackData: backData}
 
 	if voteNotAllowed {
 		return render.Keyboard(backBtn), nil

@@ -80,12 +80,22 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 	switch {
 	case upd.Message != nil:
 		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
-			return s.pages.poll.RenderStartCommand(ctx, upd)
+			msg, errMsg, err := s.pages.poll.RenderStartCommand(ctx, upd)
+			if err != nil {
+				return nil, errMsg, fmt.Errorf("unable to render start command: %s", err.Error())
+			}
+
+			return msg, errMsg, nil
 		}
 	case upd.CallbackQuery != nil:
 		route := upd.CallbackQuery.Data[0]
 
-		return s.callbackHandlers[route](ctx, upd)
+		msg, errMsg, err := s.callbackHandlers[route](ctx, upd)
+		if err != nil {
+			return nil, errMsg, fmt.Errorf("unable to handle callback for route %d: %s", route, err.Error())
+		}
+
+		return msg, errMsg, nil
 	}
 
 	return nil, "", errors.New("unknown update type")

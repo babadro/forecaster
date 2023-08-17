@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
@@ -25,6 +26,12 @@ type Service struct {
 
 func New(db models.DB) *Service {
 	return &Service{db: db}
+}
+
+func (s *Service) NewRequest() (proto2.Message, *poll.Poll) {
+	v := new(poll.Poll)
+
+	return v, v
 }
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
