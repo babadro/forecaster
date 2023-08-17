@@ -170,11 +170,13 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 	sb.Printf("<i>End Date: %s</i>\n", finish)
 	sb.Printf("\n")
 
-	timeToGo := time.Until(time.Time(p.Finish))
+	timeToGo := time.Until(time.Time(p.Finish)).Seconds()
 	if timeToGo > 0 {
+		days := int(timeToGo/models.Seconds3600) / models.Hours24
+		hours := int(timeToGo/models.Seconds3600) % models.Hours24
+
 		sb.Printf(
-			"<b>%d days %d hours to go</b>\n",
-			int(timeToGo/models.Seconds3600)/models.Hours24, int(timeToGo/models.Seconds3600)%models.Hours24,
+			"<b>%d days %d hours minutes to go</b>\n", days, hours,
 		)
 	} else {
 		sb.Printf("<b>Poll Status: Ended %s</b>\n", finish)
