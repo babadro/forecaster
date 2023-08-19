@@ -17,7 +17,7 @@ run-test-env-with-bot: build
 
 # example: make test filter=TestPolls
 test:
-	 (source .env.tests && go test ./... -testify.m=$(filter) -v)
+	 (source .env.tests && go test ./... -p 1 -testify.m=$(filter) -v)
 
 #filter ?= TestPolls_Options
 # example: make test-sleep filter=TestPolls_Options
