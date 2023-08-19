@@ -79,11 +79,15 @@ func validateCallbackInput(next handlerFunc) handlerFunc {
 		}
 
 		if upd.CallbackQuery.Message == nil {
-			return nil, "", fmt.Errorf("message is nil")
+			return nil, "", fmt.Errorf("callbackQuery.message is nil")
 		}
 
 		if upd.CallbackQuery.Message.Chat == nil {
-			return nil, "", fmt.Errorf("chat is nil")
+			return nil, "", fmt.Errorf("callbackQuery.chat is nil")
+		}
+
+		if upd.CallbackQuery.From == nil {
+			return nil, "", fmt.Errorf("callbackQuery.from is nil")
 		}
 
 		return next(ctx, upd)
