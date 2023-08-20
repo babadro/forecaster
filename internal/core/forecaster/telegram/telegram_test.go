@@ -123,6 +123,7 @@ func (s *TelegramServiceSuite) createRandomPoll() swagger.PollWithOptions {
 	return pollWithOptions
 }
 
+// Vote 2 times for different options and verify the results
 func (s *TelegramServiceSuite) TestVoting() {
 	var sentMsg interface{}
 
@@ -134,21 +135,14 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	poll := s.createRandomPoll()
 
-	update := startShowPoll(poll.ID)
-
 	// send /start showpoll_<poll_id> command
-	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
-	s.Require().NoError(err)
+	update := startShowPoll(poll.ID)
+	s.sendMessage(update)
 
-	// verify the poll message
-	msg, ok := sentMsg.(tgbotapi.MessageConfig)
-	s.Require().True(ok)
+	pollMsg := s.asMessage(sentMsg)
 
-	pollKeyboard, ok := msg.ReplyMarkup.(tgbotapi.InlineKeyboardMarkup)
-	s.Require().True(ok)
-
+	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
 	// each keyboard button is a poll option
-	pollButtons := getButtons(pollKeyboard)
 	s.Require().Len(pollButtons, len(poll.Options))
 
 	// send the first option
@@ -156,31 +150,28 @@ func (s *TelegramServiceSuite) TestVoting() {
 	s.sendCallback(firstButton)
 
 	// verify the result votepreview message
-	editMsg, ok := sentMsg.(tgbotapi.EditMessageTextConfig)
-	s.Require().True(ok)
+	votePreviewMsg := s.asEditMessage(sentMsg)
 
 	// verify contains the poll title and description
-	txt := editMsg.Text
+	txt := votePreviewMsg.Text
 	option := s.findOptionByCallbackData(poll, firstButton.CallbackData)
 	s.Require().Contains(txt, option.Title)
 	s.Require().Contains(txt, option.Description)
 
 	// verify message has two buttons
-	votePreviewKeyboard := *editMsg.ReplyMarkup
-	votePreviewButtons := getButtons(votePreviewKeyboard)
+	votePreviewButtons := getButtons(*votePreviewMsg.ReplyMarkup)
 	s.Require().Len(votePreviewButtons, 2)
 
 	// push the first button (yes)
 	s.sendCallback(votePreviewButtons[0])
 
 	// verify the vote message
-	editMsg, ok = sentMsg.(tgbotapi.EditMessageTextConfig)
-	s.Require().True(ok)
+	voteMsg := s.asEditMessage(sentMsg)
 
-	s.Require().Contains(editMsg.Text, "Success")
+	s.Require().Contains(voteMsg.Text, "Success")
 
 	// push back to poll button
-	voteKeyboard := getButtons(*editMsg.ReplyMarkup)
+	voteKeyboard := getButtons(*voteMsg.ReplyMarkup)
 	s.Require().Len(voteKeyboard, 1)
 
 	backButton := voteKeyboard[0]
@@ -188,60 +179,56 @@ func (s *TelegramServiceSuite) TestVoting() {
 	s.sendCallback(backButton)
 
 	// verify the poll message
-	editMsg, ok = sentMsg.(tgbotapi.EditMessageTextConfig)
-	s.Require().True(ok)
+	pollMsg2 := s.asEditMessage(sentMsg)
 
-	s.Require().Contains(editMsg.Text, poll.Title)
+	s.Require().Contains(pollMsg2.Text, poll.Title)
 	pattern := "Last time you voted for:.+" + option.Title
 	regex := regexp.MustCompile(pattern)
-	s.Require().True(regex.MatchString(editMsg.Text), "expected %s to match regex %s", editMsg.Text, pattern)
+	s.Require().True(regex.MatchString(pollMsg2.Text), "expected %s to match regex %s", pollMsg2.Text, pattern)
 
 	// each keyboard button is a poll option
-	pollButtons = getButtons(pollKeyboard)
-	s.Require().Len(pollButtons, len(poll.Options))
+	pollButtons2 := getButtons(*pollMsg2.ReplyMarkup)
+	s.Require().Len(pollButtons2, len(poll.Options))
 
 	// chose option I didn't vote earlier
 	anotherOptionButton, found := tgbotapi.InlineKeyboardButton{}, false
-	for _, button := range pollButtons {
+	for _, button := range pollButtons2 {
 		op := s.findOptionByCallbackData(poll, button.CallbackData)
 		if op.ID != option.ID {
 			anotherOptionButton, found = button, true
 			break
 		}
 	}
-
-	// push the button to vote for another option this time
 	s.Require().True(found)
+
 	// sleep for second to make sure vote timestamp (which used second precision) is different
 	time.Sleep(time.Second)
+	// push the button to vote for another option this time
 	s.sendCallback(anotherOptionButton)
 
 	// verify the votepreview message
-	editMsg, ok = sentMsg.(tgbotapi.EditMessageTextConfig)
-	s.Require().True(ok)
+	votePreviewMsg2 := s.asEditMessage(sentMsg)
 
 	// verify the poll contains title and description
-	txt = editMsg.Text
+	txt = votePreviewMsg2.Text
 	anotherOption := s.findOptionByCallbackData(poll, anotherOptionButton.CallbackData)
 	s.Require().Contains(txt, anotherOption.Title)
 	s.Require().Contains(txt, anotherOption.Description)
 
 	// verify message has two buttons
-	votePreviewKeyboard = *editMsg.ReplyMarkup
-	votePreviewButtons = getButtons(votePreviewKeyboard)
+	votePreviewButtons = getButtons(*votePreviewMsg2.ReplyMarkup)
 	s.Require().Len(votePreviewButtons, 2)
 
 	// push the first button (yes)
 	s.sendCallback(votePreviewButtons[0])
 
 	// verify the vote message
-	editMsg, ok = sentMsg.(tgbotapi.EditMessageTextConfig)
-	s.Require().True(ok)
+	voteMsg2 := s.asEditMessage(sentMsg)
 
-	s.Require().Contains(editMsg.Text, "Success")
+	s.Require().Contains(voteMsg2.Text, "Success")
 
 	// push back to poll button
-	voteKeyboard = getButtons(*editMsg.ReplyMarkup)
+	voteKeyboard = getButtons(*voteMsg2.ReplyMarkup)
 	s.Require().Len(voteKeyboard, 1)
 
 	backButton = voteKeyboard[0]
@@ -249,17 +236,16 @@ func (s *TelegramServiceSuite) TestVoting() {
 	s.sendCallback(backButton)
 
 	// verify the poll message
-	editMsg, ok = sentMsg.(tgbotapi.EditMessageTextConfig)
-	s.Require().True(ok)
+	pollMsg3 := s.asEditMessage(sentMsg)
 
-	s.Require().Contains(editMsg.Text, poll.Title)
+	s.Require().Contains(pollMsg3.Text, poll.Title)
 	pattern = "Last time you voted for:.+" + anotherOption.Title
 	regex = regexp.MustCompile(pattern)
-	s.Require().True(regex.MatchString(editMsg.Text), "expected %s to match regex: %q", editMsg.Text, pattern)
+	s.Require().True(regex.MatchString(pollMsg3.Text), "expected %s to match regex: %q", pollMsg3.Text, pattern)
 
 	// each keyboard button is a poll option
-	pollButtons = getButtons(pollKeyboard)
-	s.Require().Len(pollButtons, len(poll.Options))
+	pollButtons3 := getButtons(*pollMsg3.ReplyMarkup)
+	s.Require().Len(pollButtons3, len(poll.Options))
 }
 
 func (s *TelegramServiceSuite) sendCallback(button tgbotapi.InlineKeyboardButton) {
@@ -331,4 +317,38 @@ func callback(data string) tgbotapi.Update {
 			},
 		},
 	}
+}
+
+func (s *TelegramServiceSuite) sendMessage(upd tgbotapi.Update) {
+	s.T().Helper()
+
+	err := s.telegramService.ProcessTelegramUpdate(&s.logger, upd)
+	s.Require().NoError(err)
+}
+
+func (s *TelegramServiceSuite) asMessage(sentMsg interface{}) tgbotapi.MessageConfig {
+	s.T().Helper()
+
+	msg, ok := sentMsg.(tgbotapi.MessageConfig)
+	s.Require().True(ok)
+
+	return msg
+}
+
+func (s *TelegramServiceSuite) asEditMessage(sentMsg interface{}) tgbotapi.EditMessageTextConfig {
+	s.T().Helper()
+
+	msg, ok := sentMsg.(tgbotapi.EditMessageTextConfig)
+	s.Require().True(ok)
+
+	return msg
+}
+
+func (s *TelegramServiceSuite) buttonsFromInterface(in interface{}) []tgbotapi.InlineKeyboardButton {
+	s.T().Helper()
+
+	keyboard, ok := in.(tgbotapi.InlineKeyboardMarkup)
+	s.Require().True(ok)
+
+	return getButtons(keyboard)
 }
