@@ -74,7 +74,7 @@ func init() {
         }
       }
     },
-    "/options/{optionId}": {
+    "/options/{pollId}/{optionId}": {
       "put": {
         "consumes": [
           "application/json"
@@ -88,6 +88,13 @@ func init() {
           {
             "type": "integer",
             "format": "int32",
+            "name": "pollId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int16",
             "name": "optionId",
             "in": "path",
             "required": true
@@ -139,6 +146,13 @@ func init() {
           {
             "type": "integer",
             "format": "int32",
+            "name": "pollId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int16",
             "name": "optionId",
             "in": "path",
             "required": true
@@ -604,6 +618,23 @@ func init() {
         }
       }
     },
+    "CreateVote": {
+      "type": "object",
+      "properties": {
+        "OptionID": {
+          "type": "integer",
+          "format": "int16"
+        },
+        "PollID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "Option": {
       "type": "object",
       "properties": {
@@ -612,7 +643,7 @@ func init() {
         },
         "ID": {
           "type": "integer",
-          "format": "int32"
+          "format": "int16"
         },
         "PollID": {
           "type": "integer",
@@ -777,6 +808,27 @@ func init() {
         "Title": {
           "type": "string",
           "x-nullable": true
+        }
+      }
+    },
+    "Vote": {
+      "type": "object",
+      "properties": {
+        "EpochUnixTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "OptionID": {
+          "type": "integer",
+          "format": "int16"
+        },
+        "PollID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -851,7 +903,7 @@ func init() {
         }
       }
     },
-    "/options/{optionId}": {
+    "/options/{pollId}/{optionId}": {
       "put": {
         "consumes": [
           "application/json"
@@ -865,6 +917,13 @@ func init() {
           {
             "type": "integer",
             "format": "int32",
+            "name": "pollId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int16",
             "name": "optionId",
             "in": "path",
             "required": true
@@ -916,6 +975,13 @@ func init() {
           {
             "type": "integer",
             "format": "int32",
+            "name": "pollId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int16",
             "name": "optionId",
             "in": "path",
             "required": true
@@ -1381,6 +1447,23 @@ func init() {
         }
       }
     },
+    "CreateVote": {
+      "type": "object",
+      "properties": {
+        "OptionID": {
+          "type": "integer",
+          "format": "int16"
+        },
+        "PollID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "Option": {
       "type": "object",
       "properties": {
@@ -1389,7 +1472,7 @@ func init() {
         },
         "ID": {
           "type": "integer",
-          "format": "int32"
+          "format": "int16"
         },
         "PollID": {
           "type": "integer",
@@ -1554,6 +1637,27 @@ func init() {
         "Title": {
           "type": "string",
           "x-nullable": true
+        }
+      }
+    },
+    "Vote": {
+      "type": "object",
+      "properties": {
+        "EpochUnixTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "OptionID": {
+          "type": "integer",
+          "format": "int16"
+        },
+        "PollID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UserID": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

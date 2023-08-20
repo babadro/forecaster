@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package votepreview;
+
+option go_package = "./votepreview";
+
+message VotePreview {
+  required int32 poll_id = 1;
+  required int32 option_id = 2;
+}

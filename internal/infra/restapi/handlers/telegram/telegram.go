@@ -63,6 +63,8 @@ func (p *Telegram) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdat
 			logger.Error().Err(err).
 				Bytes("update", bodyBytes).
 				Msg("Unable to process telegram update")
+		} else {
+			logger.Debug().Bytes("update", bodyBytes).Msg("Got message from user")
 		}
 	}()
 

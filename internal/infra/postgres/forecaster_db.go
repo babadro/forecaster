@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -110,9 +111,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	return poll, nil
 }
 
-func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries) (models.Series, error) {
-	now := time.Now()
-
+func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error) {
 	seriesSQL, args, err := db.q.
 		Insert("forecaster.series").Columns("title", "description", "updated_at", "created_at").
 		Values(s.Title, s.Description, now, now).
@@ -134,9 +133,7 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries)
 	return res, nil
 }
 
-func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) (models.Poll, error) {
-	now := time.Now()
-
+func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error) {
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
 		Columns("series_id", "title", "description", "start", "finish", "created_at", "updated_at").
@@ -159,11 +156,46 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll) 
 	return res, nil
 }
 
-func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error) {
+func (db *ForecasterDB) CreateOption(
+	ctx context.Context, option models.CreateOption, now time.Time,
+) (models.Option, error) {
+	var rowsCount sql.NullInt32
+
+	err := db.db.
+		QueryRow(ctx, "SELECT count(*) FROM forecaster.polls WHERE id = $1", option.PollID).
+		Scan(&rowsCount)
+	if err != nil {
+		return models.Option{}, scanFailed("select count from polls", err)
+	}
+
+	if rowsCount.Int32 == 0 {
+		return models.Option{}, fmt.Errorf("%w: poll with id %d does not exist", domain.ErrNotFound, option.PollID)
+	}
+
+	query, args, err := db.q.Select("MAX(id)").
+		From("forecaster.options").
+		Where(sq.Eq{"poll_id": option.PollID}).
+		ToSql()
+
+	if err != nil {
+		return models.Option{}, buildingQueryFailed("select max id", err)
+	}
+
+	var maxOptionID sql.NullInt16
+	if err = db.db.QueryRow(ctx, query, args...).Scan(&maxOptionID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Option{}, errNotFound("select max id", err)
+		}
+
+		return models.Option{}, scanFailed("select max id", err)
+	}
+
+	optionID := maxOptionID.Int16 + 1
+
 	optionSQL, args, err := db.q.
 		Insert("forecaster.options").
-		Columns("poll_id", "title", "description", "updated_at").
-		Values(option.PollID, option.Title, option.Description, time.Now()).
+		Columns("id", "poll_id", "title", "description", "updated_at").
+		Values(optionID, option.PollID, option.Title, option.Description, now).
 		Suffix("RETURNING id, poll_id, title, description, updated_at").
 		ToSql()
 
@@ -183,9 +215,10 @@ func (db *ForecasterDB) CreateOption(ctx context.Context, option models.CreateOp
 }
 
 func (db *ForecasterDB) UpdateSeries(
-	ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error) {
+	ctx context.Context, id int32, s models.UpdateSeries, now time.Time,
+) (models.Series, error) {
 	b := db.q.Update("forecaster.series").
-		Set("updated_at", time.Now()).
+		Set("updated_at", now).
 		Where(sq.Eq{"id": id}).
 		Suffix("RETURNING id, title, description, updated_at, created_at")
 
@@ -214,9 +247,11 @@ func (db *ForecasterDB) UpdateSeries(
 	return res, err
 }
 
-func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.UpdatePoll) (models.Poll, error) {
+func (db *ForecasterDB) UpdatePoll(
+	ctx context.Context, id int32, in models.UpdatePoll, now time.Time,
+) (models.Poll, error) {
 	b := db.q.Update("forecaster.polls").
-		Set("updated_at", time.Now()).
+		Set("updated_at", now).
 		Where(sq.Eq{"id": id}).
 		Suffix("RETURNING id, series_id, title, description, start, finish, updated_at, created_at")
 
@@ -260,11 +295,13 @@ func (db *ForecasterDB) UpdatePoll(ctx context.Context, id int32, in models.Upda
 }
 
 func (db *ForecasterDB) UpdateOption(
-	ctx context.Context, id int32, in models.UpdateOption) (models.Option, error) {
+	ctx context.Context, pollID int32, optionID int16, in models.UpdateOption, now time.Time,
+) (models.Option, error) {
 	b := db.q.
 		Update("forecaster.options").
-		Set("updated_at", time.Now()).
-		Where(sq.Eq{"id": id}).
+		Set("updated_at", now).
+		Where(sq.Eq{"poll_id": pollID}).
+		Where(sq.Eq{"id": optionID}).
 		Suffix("RETURNING id, poll_id, title, description, updated_at")
 
 	if in.Title != nil {
@@ -328,10 +365,11 @@ func (db *ForecasterDB) DeletePoll(ctx context.Context, id int32) error {
 	return nil
 }
 
-func (db *ForecasterDB) DeleteOption(ctx context.Context, id int32) error {
+func (db *ForecasterDB) DeleteOption(ctx context.Context, pollID int32, optionID int16) error {
 	optionSQL, args, err := db.q.
 		Delete("forecaster.options").
-		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{"poll_id": pollID}).
+		Where(sq.Eq{"id": optionID}).
 		ToSql()
 
 	if err != nil {
@@ -344,6 +382,60 @@ func (db *ForecasterDB) DeleteOption(ctx context.Context, id int32) error {
 	}
 
 	return nil
+}
+
+func (db *ForecasterDB) CreateVote(
+	ctx context.Context, vote models.CreateVote, nowUnixTimestamp int64,
+) (models.Vote, error) {
+	voteSQL, args, err := db.q.
+		Insert("forecaster.votes").
+		Columns("poll_id", "option_id", "user_id", "epoch_unix_timestamp").
+		Values(vote.PollID, vote.OptionID, vote.UserID, nowUnixTimestamp).
+		Suffix("RETURNING poll_id, option_id, user_id, epoch_unix_timestamp").
+		ToSql()
+
+	if err != nil {
+		return models.Vote{}, buildingQueryFailed("insert vote", err)
+	}
+
+	var res models.Vote
+
+	err = db.db.QueryRow(ctx, voteSQL, args...).
+		Scan(&res.PollID, &res.OptionID, &res.UserID, &res.EpochUnixTimestamp)
+	if err != nil {
+		return models.Vote{}, scanFailed("insert vote", err)
+	}
+
+	return res, nil
+}
+
+func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int64, pollID int32) (models.Vote, error) {
+	voteSQL, args, err := db.q.
+		Select("poll_id", "option_id", "user_id", "epoch_unix_timestamp").
+		From("forecaster.votes").
+		Where(sq.Eq{"poll_id": pollID}).
+		Where(sq.Eq{"user_id": userID}).
+		OrderBy("epoch_unix_timestamp DESC").
+		Limit(1).
+		ToSql()
+
+	if err != nil {
+		return models.Vote{}, buildingQueryFailed("select vote", err)
+	}
+
+	var res models.Vote
+
+	err = db.db.QueryRow(ctx, voteSQL, args...).
+		Scan(&res.PollID, &res.OptionID, &res.UserID, &res.EpochUnixTimestamp)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Vote{}, errNotFound("select vote", err)
+		}
+
+		return models.Vote{}, scanFailed("select vote", err)
+	}
+
+	return res, nil
 }
 
 func buildingQueryFailed(queryName string, err error) error {

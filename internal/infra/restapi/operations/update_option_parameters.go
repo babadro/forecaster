@@ -45,7 +45,12 @@ type UpdateOptionParams struct {
 	  Required: true
 	  In: path
 	*/
-	OptionID int32
+	OptionID int16
+	/*
+	  Required: true
+	  In: path
+	*/
+	PollID int32
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -89,6 +94,11 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 		res = append(res, err)
 	}
 
+	rPollID, rhkPollID, _ := route.Params.GetOK("pollId")
+	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -105,11 +115,30 @@ func (o *UpdateOptionParams) bindOptionID(rawData []string, hasKey bool, formats
 	// Required: true
 	// Parameter is provided by construction from the route
 
-	value, err := swag.ConvertInt32(raw)
+	value, err := swag.ConvertInt16(raw)
 	if err != nil {
-		return errors.InvalidType("optionId", "path", "int32", raw)
+		return errors.InvalidType("optionId", "path", "int16", raw)
 	}
 	o.OptionID = value
+
+	return nil
+}
+
+// bindPollID binds and validates parameter PollID from path.
+func (o *UpdateOptionParams) bindPollID(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+	// Parameter is provided by construction from the route
+
+	value, err := swag.ConvertInt32(raw)
+	if err != nil {
+		return errors.InvalidType("pollId", "path", "int32", raw)
+	}
+	o.PollID = value
 
 	return nil
 }

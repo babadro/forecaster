@@ -2,44 +2,43 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
-	"time"
 
-	models "github.com/babadro/forecaster/internal/models/swagger"
-	"github.com/go-openapi/strfmt"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/vote"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog"
 )
 
+type pageServices struct {
+	votePreview *votepreview.Service
+	vote        *vote.Service
+	poll        *poll.Service
+}
+
 type Service struct {
-	db  db
-	bot tgBot
+	db  models.DB
+	bot models.TgBot
+
+	pages            pageServices
+	callbackHandlers [256]handlerFunc
 }
 
-func NewService(db db, b tgBot) *Service {
-	return &Service{db: db, bot: b}
-}
+func NewService(db models.DB, b models.TgBot) *Service {
+	pages := pageServices{
+		votePreview: votepreview.New(db),
+		vote:        vote.New(db),
+		poll:        poll.New(db),
+	}
 
-type db interface {
-	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
-	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
+	callbackHandlers := newCallbackHandlers(pages)
 
-	CreateSeries(ctx context.Context, s models.CreateSeries) (models.Series, error)
-	CreatePoll(ctx context.Context, poll models.CreatePoll) (models.Poll, error)
-	CreateOption(ctx context.Context, option models.CreateOption) (models.Option, error)
-
-	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
-	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll) (models.Poll, error)
-	UpdateOption(ctx context.Context, id int32, option models.UpdateOption) (models.Option, error)
-
-	DeleteSeries(ctx context.Context, id int32) error
-	DeletePoll(ctx context.Context, id int32) error
-	DeleteOption(ctx context.Context, id int32) error
-}
-
-type tgBot interface {
-	Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
+	return &Service{db: db, bot: b, pages: pages, callbackHandlers: callbackHandlers}
 }
 
 func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Update) error {
@@ -49,52 +48,62 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 	ctx := logger.WithContext(context.Background())
 
-	result := s.processTelegramUpdate(ctx, upd)
+	result, errMsg, switcherErr := s.switcher(ctx, upd)
+	if switcherErr != nil {
+		if errMsg == "" {
+			errMsg = "Something went wrong"
+		}
 
-	if result.msgText != "" {
-		logger.Info().Msg(result.msgText)
+		result = errorpage.ErrorPage(logger, errMsg, upd)
+	}
 
-		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, result.msgText)
-		msg.ParseMode = "HTML"
+	var sendErr error
 
-		if _, sendErr := s.bot.Send(msg); sendErr != nil {
-			return fmt.Errorf("unable to send message: %s", sendErr.Error())
+	if result != nil {
+		if _, err := s.bot.Send(result); err != nil {
+			sendErr = fmt.Errorf("unable to send message: %s", err.Error())
 		}
 	}
 
-	return nil
+	if switcherErr != nil && sendErr != nil {
+		return fmt.Errorf("switcher error: %s; send error: %s", switcherErr.Error(), sendErr.Error())
+	}
+
+	if switcherErr != nil {
+		return switcherErr
+	}
+
+	return sendErr
 }
 
-type processTGResult struct {
-	msgText        string
-	inlineKeyboard tgbotapi.InlineKeyboardMarkup
-}
+func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	var msg tgbotapi.Chattable
 
-func (s *Service) processTelegramUpdate(ctx context.Context, upd tgbotapi.Update) processTGResult {
-	if upd.Message != nil {
-		text := upd.Message.Text
+	var errMsg, updateType string
 
-		prefix := "/start showpoll_"
-		if strings.HasPrefix(text, prefix) {
-			pollIDStr := text[len(prefix):]
+	var err error
 
-			return s.poll(ctx, pollIDStr)
+	switch {
+	case upd.Message != nil:
+		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
+			updateType = "show poll start command"
+			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
 		}
+	case upd.CallbackQuery != nil:
+		route := upd.CallbackQuery.Data[0]
+
+		updateType = fmt.Sprintf("render callback query for route %d", route)
+
+		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
 	}
 
-	return processTGResult{
-		msgText: "I don't understand you",
+	if updateType != "" {
+		if err != nil {
+			return nil, errMsg, fmt.Errorf("unable to handle %s: %s", updateType, err.Error())
+		}
+
+		return msg, errMsg, nil
 	}
-}
 
-func formatTime[T time.Time | strfmt.DateTime](t T) string {
-	return time.Time(t).Format(time.RFC822)
-}
-
-func fPrintf(sb *strings.Builder, format string, a ...any) {
-	_, _ = fmt.Fprintf(sb, format, a...)
-}
-
-func fPrint(sb *strings.Builder, a ...any) {
-	_, _ = fmt.Fprint(sb, a...)
+	return nil, "", errors.New("unknown update type")
 }

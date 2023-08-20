@@ -292,7 +292,7 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/error"
-  /options/{optionId}:
+  /options/{pollId}/{optionId}:
     put:
       summary: "Update an existing Option"
       operationId: "UpdateOption"
@@ -302,10 +302,15 @@ paths:
         - application/json
       parameters:
         - in: "path"
-          name: "optionId"
+          name: "pollId"
           required: true
           type: "integer"
           format: "int32"
+        - in: "path"
+          name: "optionId"
+          required: true
+          type: "integer"
+          format: "int16"
         - in: "body"
           name: "option"
           description: "Updated Option object"
@@ -336,10 +341,15 @@ paths:
       operationId: "DeleteOption"
       parameters:
         - in: "path"
-          name: "optionId"
+          name: "pollId"
           required: true
           type: "integer"
           format: "int32"
+        - in: "path"
+          name: "optionId"
+          required: true
+          type: "integer"
+          format: "int16"
       responses:
         204:
           description: "Option deleted successfully"
@@ -509,7 +519,7 @@ definitions:
     properties:
       ID:
         type: "integer"
-        format: "int32"
+        format: "int16"
       PollID:
         type: "integer"
         format: "int32"
@@ -520,3 +530,30 @@ definitions:
       UpdatedAt:
         type: "string"
         format: "date-time"
+  CreateVote:
+    type: "object"
+    properties:
+      PollID:
+        type: "integer"
+        format: "int32"
+      OptionID:
+        type: "integer"
+        format: "int16"
+      UserID:
+        type: "integer"
+        format: "int64"
+  Vote:
+    type: "object"
+    properties:
+      PollID:
+        type: "integer"
+        format: "int32"
+      OptionID:
+        type: "integer"
+        format: "int16"
+      UserID:
+        type: "integer"
+        format: "int64"
+      EpochUnixTimestamp:
+        type: "integer"
+        format: "int64"

@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package mainpage;
+
+option go_package = "./mainpage";
+
+message MainPage {}

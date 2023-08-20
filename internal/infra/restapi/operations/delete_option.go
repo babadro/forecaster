@@ -30,7 +30,7 @@ func NewDeleteOption(ctx *middleware.Context, handler DeleteOptionHandler) *Dele
 }
 
 /*
-DeleteOption swagger:route DELETE /options/{optionId} deleteOption
+DeleteOption swagger:route DELETE /options/{pollId}/{optionId} deleteOption
 
 Delete an Option by its ID
 */

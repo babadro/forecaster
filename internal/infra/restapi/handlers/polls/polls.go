@@ -3,6 +3,8 @@ package polls
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/rs/zerolog/hlog"
@@ -23,11 +25,11 @@ type service interface {
 
 	UpdateSeries(ctx context.Context, id int32, s models.UpdateSeries) (models.Series, error)
 	UpdatePoll(ctx context.Context, id int32, poll models.UpdatePoll) (models.Poll, error)
-	UpdateOption(ctx context.Context, id int32, option models.UpdateOption) (models.Option, error)
+	UpdateOption(ctx context.Context, pollID int32, optionID int16, option models.UpdateOption) (models.Option, error)
 
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
-	DeleteOption(ctx context.Context, id int32) error
+	DeleteOption(ctx context.Context, pollID int32, optionID int16) error
 }
 
 type Polls struct {
@@ -94,6 +96,13 @@ func (p *Polls) CreatePoll(params operations.CreatePollParams) middleware.Respon
 func (p *Polls) CreateOption(params operations.CreateOptionParams) middleware.Responder {
 	option, err := p.svc.CreateOption(params.HTTPRequest.Context(), *params.Option)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return operations.NewCreateOptionBadRequest().WithPayload(&models.Error{
+				Code:    http.StatusBadRequest,
+				Message: fmt.Sprintf("Poll with id %d doesn't exist", params.Option.PollID),
+			})
+		}
+
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to create option")
 
 		return operations.NewCreateOptionInternalServerError()
@@ -125,7 +134,7 @@ func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Respon
 }
 
 func (p *Polls) UpdateOption(params operations.UpdateOptionParams) middleware.Responder {
-	option, err := p.svc.UpdateOption(params.HTTPRequest.Context(), params.OptionID, *params.Option)
+	option, err := p.svc.UpdateOption(params.HTTPRequest.Context(), params.PollID, params.OptionID, *params.Option)
 	if err != nil {
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to update option")
 
@@ -147,7 +156,7 @@ func (p *Polls) DeletePoll(params operations.DeletePollParams) middleware.Respon
 }
 
 func (p *Polls) DeleteOption(params operations.DeleteOptionParams) middleware.Responder {
-	err := p.svc.DeleteOption(params.HTTPRequest.Context(), params.OptionID)
+	err := p.svc.DeleteOption(params.HTTPRequest.Context(), params.PollID, params.OptionID)
 	if err != nil {
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to delete option")
 

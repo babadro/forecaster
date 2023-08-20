@@ -1,6 +1,6 @@
 module github.com/babadro/forecaster
 
-go 1.20
+go 1.21
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -22,6 +22,7 @@ require (
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/net v0.12.0
+	google.golang.org/protobuf v1.28.0
 )
 
 require (

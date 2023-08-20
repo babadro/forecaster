@@ -351,7 +351,7 @@ func (o *PollAPIAPI) initHandlerCache() {
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
-	o.handlers["DELETE"]["/options/{optionId}"] = NewDeleteOption(o.context, o.DeleteOptionHandler)
+	o.handlers["DELETE"]["/options/{pollId}/{optionId}"] = NewDeleteOption(o.context, o.DeleteOptionHandler)
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
@@ -375,7 +375,7 @@ func (o *PollAPIAPI) initHandlerCache() {
 	if o.handlers["PUT"] == nil {
 		o.handlers["PUT"] = make(map[string]http.Handler)
 	}
-	o.handlers["PUT"]["/options/{optionId}"] = NewUpdateOption(o.context, o.UpdateOptionHandler)
+	o.handlers["PUT"]["/options/{pollId}/{optionId}"] = NewUpdateOption(o.context, o.UpdateOptionHandler)
 	if o.handlers["PUT"] == nil {
 		o.handlers["PUT"] = make(map[string]http.Handler)
 	}
