@@ -39,10 +39,14 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand() {
 func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 	update := startShowPoll(999)
 
-	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
+	var msg tgbotapi.MessageConfig
 
-		s.Assert().Contains(msg.Text, "can't find poll")
+	s.mockTgBot.On("Send", mock.MatchedBy(func(sentMsg tgbotapi.MessageConfig) bool {
+		s.Assert().Equal(update.Message.Chat.ID, sentMsg.ChatID)
+
+		s.Assert().Contains(sentMsg.Text, "can't find poll")
+
+		msg = sentMsg
 
 		return true
 	})).Return(tgbotapi.Message{}, nil)
@@ -50,6 +54,10 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
 	s.Require().Error(err)
 	s.ErrorContains(err, "unable to get poll by id")
+
+	buttons := s.buttonsFromInterface(msg.ReplyMarkup)
+	s.Require().Len(buttons, 1)
+	s.Require().Contains(buttons[0].Text, "Back to main")
 
 	s.mockTgBot.AssertExpectations(s.T())
 }
