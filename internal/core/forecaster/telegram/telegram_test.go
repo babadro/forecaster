@@ -15,67 +15,29 @@ import (
 )
 
 func (s *TelegramServiceSuite) TestShowPollStartCommand() {
-	ctx := context.Background()
-	pollInput := randomModel[swagger.CreatePoll](s.T())
-	pollInput.SeriesID = 0
+	poll := s.createRandomPoll()
 
-	poll, err := s.db.CreatePoll(ctx, pollInput, time.Now())
-	s.Require().NoError(err)
-
-	createdOptions := make([]*swagger.Option, 3)
-	for i := range createdOptions {
-		optionInput := randomModel[swagger.CreateOption](s.T())
-		optionInput.PollID = poll.ID
-
-		var op swagger.Option
-		op, err = s.db.CreateOption(ctx, optionInput, time.Now())
-		s.Require().NoError(err)
-
-		createdOptions[i] = &op
-	}
-
-	update := tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: 123,
-			},
-			From: &tgbotapi.User{
-				ID: 456,
-			},
-			Text: "/start showpoll_" + strconv.Itoa(int(poll.ID)),
-		},
-	}
+	update := startShowPoll(poll.ID)
 
 	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
 
 		s.Assert().Contains(msg.Text, poll.Title)
 
-		for _, op := range createdOptions {
+		for _, op := range poll.Options {
 			s.Assert().Contains(msg.Text, op.Title)
 		}
 
 		return true
 	})).Return(tgbotapi.Message{}, nil)
 
-	err = s.telegramService.ProcessTelegramUpdate(&s.logger, update)
+	s.sendMessage(update)
 
-	s.Require().NoError(err)
 	s.mockTgBot.AssertExpectations(s.T())
 }
 
 func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
-	update := tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: 123,
-			},
-			From: &tgbotapi.User{
-				ID: 456,
-			},
-			Text: "/start showpoll_999",
-		},
-	}
+	update := startShowPoll(999)
 
 	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
@@ -95,11 +57,18 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 func (s *TelegramServiceSuite) createRandomPoll() swagger.PollWithOptions {
 	s.T().Helper()
 
-	ctx := context.Background()
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = 0
 	pollInput.Start = strfmt.DateTime(time.Now().Add(-time.Hour))
 	pollInput.Finish = strfmt.DateTime(time.Now().Add(time.Hour))
+
+	return s.createPoll(pollInput)
+}
+
+func (s *TelegramServiceSuite) createPoll(pollInput swagger.CreatePoll) swagger.PollWithOptions {
+	s.T().Helper()
+
+	ctx := context.Background()
 
 	poll, err := s.db.CreatePoll(ctx, pollInput, time.Now())
 	s.Require().NoError(err)
@@ -123,15 +92,11 @@ func (s *TelegramServiceSuite) createRandomPoll() swagger.PollWithOptions {
 	return pollWithOptions
 }
 
-// Vote 2 times for different options and verify the results
+// Vote 2 times for different options of the same poll and verify the results
 func (s *TelegramServiceSuite) TestVoting() {
 	var sentMsg interface{}
 
-	s.mockTgBot.On("Send", mock.Anything).
-		Return(tgbotapi.Message{}, nil).
-		Run(func(args mock.Arguments) {
-			sentMsg = args.Get(0)
-		})
+	s.mockTelegramSender(&sentMsg)
 
 	poll := s.createRandomPoll()
 
@@ -246,6 +211,82 @@ func (s *TelegramServiceSuite) TestVoting() {
 	// each keyboard button is a poll option
 	pollButtons3 := getButtons(*pollMsg3.ReplyMarkup)
 	s.Require().Len(pollButtons3, len(poll.Options))
+}
+
+func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	poll := s.createRandomPoll()
+
+	// send /start showpoll_<poll_id> command
+	update := startShowPoll(poll.ID)
+	s.sendMessage(update)
+
+	pollMsg := s.asMessage(sentMsg)
+
+	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+
+	// send the first option
+	firstButton := pollButtons[0]
+	s.sendCallback(firstButton)
+
+	// verify the result votepreview message
+	votePreviewMsg := s.asEditMessage(sentMsg)
+
+	// verify message has two buttons
+	votePreviewButtons := getButtons(*votePreviewMsg.ReplyMarkup)
+	s.Require().Len(votePreviewButtons, 2)
+
+	// push the back button
+	s.sendCallback(votePreviewButtons[1])
+
+	// verify the poll message
+	pollMsg2 := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(pollMsg2.Text, poll.Title)
+}
+
+func (s *TelegramServiceSuite) Test_expiredPoll() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = 0
+	pollInput.Finish = strfmt.DateTime(time.Now().Add(-time.Hour)) // expired
+
+	poll := s.createPoll(pollInput)
+
+	// send /start showpoll_<poll_id> command
+	update := startShowPoll(poll.ID)
+	s.sendMessage(update)
+
+	pollMsg := s.asMessage(sentMsg)
+	// verify the poll message
+	s.Require().Contains(pollMsg.Text, "poll has expired")
+
+	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	// send the first option
+	s.sendCallback(pollButtons[0])
+
+	// verify votepreview message
+	votePreviewMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(votePreviewMsg.Text, "poll is expired")
+
+	votePreviewButtons := getButtons(*votePreviewMsg.ReplyMarkup)
+	s.Require().Len(votePreviewButtons, 1)
+	// the only button is "Back"
+	s.Require().Contains(votePreviewButtons[0].Text, "Back")
+}
+
+func (s *TelegramServiceSuite) mockTelegramSender(sentMsg *interface{}) {
+	s.mockTgBot.On("Send", mock.Anything).
+		Return(tgbotapi.Message{}, nil).
+		Run(func(args mock.Arguments) {
+			*sentMsg = args.Get(0)
+		})
 }
 
 func (s *TelegramServiceSuite) sendCallback(button tgbotapi.InlineKeyboardButton) {
