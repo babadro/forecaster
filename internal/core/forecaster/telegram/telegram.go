@@ -78,7 +78,9 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	var msg tgbotapi.Chattable
+
 	var errMsg, updateType string
+
 	var err error
 
 	switch {

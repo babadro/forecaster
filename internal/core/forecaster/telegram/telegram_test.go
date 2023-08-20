@@ -100,7 +100,7 @@ func (s *TelegramServiceSuite) createPoll(pollInput swagger.CreatePoll) swagger.
 	return pollWithOptions
 }
 
-// Vote 2 times for different options of the same poll and verify the results
+// Vote 2 times for different options of the same poll and verify the results...
 func (s *TelegramServiceSuite) TestVoting() {
 	var sentMsg interface{}
 
@@ -165,6 +165,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// chose option I didn't vote earlier
 	anotherOptionButton, found := tgbotapi.InlineKeyboardButton{}, false
+
 	for _, button := range pollButtons2 {
 		op := s.findOptionByCallbackData(poll, button.CallbackData)
 		if op.ID != option.ID {
@@ -172,6 +173,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 			break
 		}
 	}
+
 	s.Require().True(found)
 
 	// sleep for second to make sure vote timestamp (which used second precision) is different
@@ -307,12 +309,15 @@ func (s *TelegramServiceSuite) sendCallback(button tgbotapi.InlineKeyboardButton
 	s.Require().NoError(err)
 }
 
-func (s *TelegramServiceSuite) findOptionByCallbackData(poll swagger.PollWithOptions, callbackData *string) *swagger.Option {
+func (s *TelegramServiceSuite) findOptionByCallbackData(
+	poll swagger.PollWithOptions, callbackData *string) *swagger.Option {
 	s.T().Helper()
 
 	s.Require().NotNil(callbackData)
+
 	votepreview := &votepreview2.VotePreview{}
 	err := proto.UnmarshalCallbackData(*callbackData, votepreview)
+
 	s.Require().NoError(err)
 	s.Require().Equal(poll.ID, *votepreview.PollId)
 
@@ -329,10 +334,9 @@ func (s *TelegramServiceSuite) findOptionByCallbackData(poll swagger.PollWithOpt
 
 func getButtons(keyboard tgbotapi.InlineKeyboardMarkup) []tgbotapi.InlineKeyboardButton {
 	var buttons []tgbotapi.InlineKeyboardButton
+
 	for _, row := range keyboard.InlineKeyboard {
-		for _, button := range row {
-			buttons = append(buttons, button)
-		}
+		buttons = append(buttons, row...)
 	}
 
 	return buttons
