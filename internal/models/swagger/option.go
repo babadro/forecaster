@@ -25,6 +25,9 @@ type Option struct {
 	// ID
 	ID int16 `json:"ID,omitempty"`
 
+	// is actual outcome
+	IsActualOutcome bool `json:"IsActualOutcome,omitempty"`
+
 	// poll ID
 	PollID int32 `json:"PollID,omitempty"`
 

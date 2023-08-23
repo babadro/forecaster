@@ -645,6 +645,9 @@ func init() {
           "type": "integer",
           "format": "int16"
         },
+        "IsActualOutcome": {
+          "type": "boolean"
+        },
         "PollID": {
           "type": "integer",
           "format": "int32"
@@ -762,6 +765,10 @@ func init() {
       "properties": {
         "Description": {
           "type": "string",
+          "x-nullable": true
+        },
+        "IsActualOutcome": {
+          "type": "boolean",
           "x-nullable": true
         },
         "Title": {
@@ -1474,6 +1481,9 @@ func init() {
           "type": "integer",
           "format": "int16"
         },
+        "IsActualOutcome": {
+          "type": "boolean"
+        },
         "PollID": {
           "type": "integer",
           "format": "int32"
@@ -1591,6 +1601,10 @@ func init() {
       "properties": {
         "Description": {
           "type": "string",
+          "x-nullable": true
+        },
+        "IsActualOutcome": {
+          "type": "boolean",
           "x-nullable": true
         },
         "Title": {

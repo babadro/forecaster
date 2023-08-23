@@ -514,6 +514,9 @@ definitions:
       Description:
         type: "string"
         x-nullable: true
+      IsActualOutcome:
+        type: "boolean"
+        x-nullable: true
   Option:
     type: "object"
     properties:
@@ -527,6 +530,8 @@ definitions:
         type: "string"
       Description:
         type: "string"
+      IsActualOutcome:
+        type: "boolean"
       UpdatedAt:
         type: "string"
         format: "date-time"
