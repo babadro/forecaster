@@ -24,6 +24,7 @@ CREATE TABLE forecaster.options (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    is_actual_outcome BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE,
     PRIMARY KEY (poll_id, id)
 );
