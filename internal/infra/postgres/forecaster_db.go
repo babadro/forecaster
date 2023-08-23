@@ -312,6 +312,10 @@ func (db *ForecasterDB) UpdateOption(
 		b = b.Set("description", in.Description)
 	}
 
+	if in.IsActualOutcome != nil {
+		b = b.Set("is_actual_outcome", in.IsActualOutcome)
+	}
+
 	optionSQL, args, err := b.ToSql()
 
 	if err != nil {
