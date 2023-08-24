@@ -165,7 +165,7 @@ func (db *ForecasterDB) CreateOption(
 		QueryRow(ctx, "SELECT count(*) FROM forecaster.polls WHERE id = $1", option.PollID).
 		Scan(&rowsCount)
 	if err != nil {
-		return models.Option{}, scanFailed("select count from polls", err)
+		return models.Option{}, scanFailed("select count(*) from forecaster.polls", err)
 	}
 
 	if rowsCount.Int32 == 0 {
@@ -297,12 +297,12 @@ func (db *ForecasterDB) UpdatePoll(
 func (db *ForecasterDB) UpdateOption(
 	ctx context.Context, pollID int32, optionID int16, in models.UpdateOption, now time.Time,
 ) (models.Option, error) {
-	b := db.q.
-		Update("forecaster.options").
+	// Build the query
+	b := sq.Update("forecaster.options").
 		Set("updated_at", now).
 		Where(sq.Eq{"poll_id": pollID}).
 		Where(sq.Eq{"id": optionID}).
-		Suffix("RETURNING id, poll_id, title, description, updated_at")
+		Suffix("RETURNING id, poll_id, title, description, actual_outcome, updated_at")
 
 	if in.Title != nil {
 		b = b.Set("title", in.Title)
@@ -317,17 +317,56 @@ func (db *ForecasterDB) UpdateOption(
 	}
 
 	optionSQL, args, err := b.ToSql()
-
 	if err != nil {
-		return models.Option{}, fmt.Errorf("unable to build SQL: %w", err)
+		return models.Option{}, buildingQueryFailed("update option", err)
+	}
+
+	var tx pgx.Tx
+
+	// Start a new transaction only if IsActualOutcome is being set to true
+	if in.IsActualOutcome != nil && *in.IsActualOutcome {
+		tx, err = db.db.Begin(ctx)
+		if err != nil {
+			return models.Option{}, fmt.Errorf("unable to start transaction: %w", err)
+		}
+
+		var existingOptionID int16
+
+		err = tx.QueryRow(ctx,
+			"SELECT id FROM forecaster.options WHERE poll_id = $1 AND is_actual_outcome = TRUE AND id != $2",
+			pollID, optionID,
+		).Scan(&existingOptionID)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return models.Option{}, rollback(ctx, tx, scanFailed("searching existing actual outcome for poll", err))
+		}
+
+		if err == nil {
+			return models.Option{}, rollback(ctx, tx, domain.OptionWithOutcomeFlagAlreadyExistsError{
+				PollID:   pollID,
+				OptionID: existingOptionID,
+			})
+		}
 	}
 
 	var res models.Option
+	if tx == nil {
+		err = db.db.QueryRow(ctx, optionSQL, args...).
+			Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)
+		if err != nil {
+			return models.Option{}, scanFailed("update option", err)
+		}
 
-	err = db.db.QueryRow(ctx, optionSQL, args...).
-		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.UpdatedAt)
+		return res, nil
+	}
+
+	err = tx.QueryRow(ctx, optionSQL, args...).
+		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)
 	if err != nil {
-		return models.Option{}, fmt.Errorf("unable to update option: %w", err)
+		return models.Option{}, rollback(ctx, tx, scanFailed("update option", err))
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return models.Option{}, commitTxFailed("update option", err)
 	}
 
 	return res, nil
@@ -464,4 +503,17 @@ func execFailed(queryName string, err error) error {
 
 func errNotFound(queryName string, err error) error {
 	return fmt.Errorf("%s: %w: %s", queryName, domain.ErrNotFound, err.Error())
+}
+
+func rollback(ctx context.Context, tx pgx.Tx, err error) error {
+	tErr := tx.Rollback(ctx)
+	if tErr != nil {
+		return fmt.Errorf("forecasterDB: rollback failed: %s. Original error: %w", tErr.Error(), err)
+	}
+
+	return err
+}
+
+func commitTxFailed(queryName string, err error) error {
+	return fmt.Errorf("%s: commit transaction failed: %s", queryName, err.Error())
 }
