@@ -298,7 +298,7 @@ func (db *ForecasterDB) UpdateOption(
 	ctx context.Context, pollID int32, optionID int16, in models.UpdateOption, now time.Time,
 ) (models.Option, error) {
 	// Build the query
-	b := sq.Update("forecaster.options").
+	b := db.q.Update("forecaster.options").
 		Set("updated_at", now).
 		Where(sq.Eq{"poll_id": pollID}).
 		Where(sq.Eq{"id": optionID}).
@@ -336,7 +336,7 @@ func (db *ForecasterDB) UpdateOption(
 			"SELECT id FROM forecaster.options WHERE poll_id = $1 AND is_actual_outcome = TRUE AND id != $2",
 			pollID, optionID,
 		).Scan(&existingOptionID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return models.Option{}, rollback(ctx, tx, scanFailed("searching existing actual outcome for poll", err))
 		}
 
@@ -358,6 +358,8 @@ func (db *ForecasterDB) UpdateOption(
 
 		return res, nil
 	}
+
+	panic("haha")
 
 	err = tx.QueryRow(ctx, optionSQL, args...).
 		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)
