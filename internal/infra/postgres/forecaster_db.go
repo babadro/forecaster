@@ -302,7 +302,7 @@ func (db *ForecasterDB) UpdateOption(
 		Set("updated_at", now).
 		Where(sq.Eq{"poll_id": pollID}).
 		Where(sq.Eq{"id": optionID}).
-		Suffix("RETURNING id, poll_id, title, description, actual_outcome, updated_at")
+		Suffix("RETURNING id, poll_id, title, description, is_actual_outcome, updated_at")
 
 	if in.Title != nil {
 		b = b.Set("title", in.Title)
@@ -358,8 +358,6 @@ func (db *ForecasterDB) UpdateOption(
 
 		return res, nil
 	}
-
-	panic("haha")
 
 	err = tx.QueryRow(ctx, optionSQL, args...).
 		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)

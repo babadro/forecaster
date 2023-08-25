@@ -49,6 +49,7 @@ func (s *APITestSuite) TestOptions() {
 
 		require.Equal(t, *updateInput.Description, got.Description)
 		require.Equal(t, *updateInput.Title, got.Title)
+		require.Equal(t, *updateInput.IsActualOutcome, got.IsActualOutcome)
 
 		timeRoundEqualNow(t, got.UpdatedAt)
 	}
