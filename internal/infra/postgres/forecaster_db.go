@@ -81,7 +81,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	}
 
 	optionsSQL, args, err := db.q.Select(
-		"id", "poll_id", "title", "description", "updated_at",
+		"id", "poll_id", "title", "description", "is_actual_outcome", "updated_at",
 	).From("forecaster.options").Where(sq.Eq{"poll_id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select options", err)
@@ -96,7 +96,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	for rows.Next() {
 		var option models.Option
 
-		err = rows.Scan(&option.ID, &option.PollID, &option.Title, &option.Description, &option.UpdatedAt)
+		err = rows.Scan(&option.ID, &option.PollID, &option.Title, &option.Description, &option.IsActualOutcome, &option.UpdatedAt)
 		if err != nil {
 			return models.PollWithOptions{}, scanFailed("select options", err)
 		}
@@ -196,7 +196,7 @@ func (db *ForecasterDB) CreateOption(
 		Insert("forecaster.options").
 		Columns("id", "poll_id", "title", "description", "updated_at").
 		Values(optionID, option.PollID, option.Title, option.Description, now).
-		Suffix("RETURNING id, poll_id, title, description, updated_at").
+		Suffix("RETURNING id, poll_id, title, description, is_actual_outcome, updated_at").
 		ToSql()
 
 	if err != nil {
@@ -206,7 +206,7 @@ func (db *ForecasterDB) CreateOption(
 	var res models.Option
 
 	err = db.db.QueryRow(ctx, optionSQL, args...).
-		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.UpdatedAt)
+		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)
 	if err != nil {
 		return models.Option{}, scanFailed("insert option", err)
 	}
