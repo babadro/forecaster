@@ -96,7 +96,9 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	for rows.Next() {
 		var option models.Option
 
-		err = rows.Scan(&option.ID, &option.PollID, &option.Title, &option.Description, &option.IsActualOutcome, &option.UpdatedAt)
+		err = rows.Scan(
+			&option.ID, &option.PollID, &option.Title, &option.Description, &option.IsActualOutcome, &option.UpdatedAt,
+		)
 		if err != nil {
 			return models.PollWithOptions{}, scanFailed("select options", err)
 		}

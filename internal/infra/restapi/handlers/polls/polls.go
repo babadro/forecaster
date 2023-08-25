@@ -125,6 +125,17 @@ func (p *Polls) UpdateSeries(params operations.UpdateSeriesParams) middleware.Re
 func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Responder {
 	poll, err := p.svc.UpdatePoll(params.HTTPRequest.Context(), params.PollID, *params.Poll)
 	if err != nil {
+		var outcomeAlreadyExistsErr domain.OptionWithOutcomeFlagAlreadyExistsError
+		if errors.As(err, &outcomeAlreadyExistsErr) {
+			return operations.NewUpdatePollBadRequest().WithPayload(&models.Error{
+				Code: http.StatusBadRequest,
+				Message: fmt.Sprintf(
+					"Option with IsActualOutcome=true already exists; pollID: %d, optionID: %d, "+
+						"set IsActualOutcome=false for this option before setting it to true for another option",
+					outcomeAlreadyExistsErr.PollID, outcomeAlreadyExistsErr.OptionID),
+			})
+		}
+
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to update poll")
 
 		return operations.NewUpdatePollInternalServerError()

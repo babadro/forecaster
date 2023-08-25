@@ -15,5 +15,5 @@ type OptionWithOutcomeFlagAlreadyExistsError struct {
 }
 
 func (e OptionWithOutcomeFlagAlreadyExistsError) Error() string {
-	return fmt.Sprintf("option with ActualOutcome=true already exists; pollID: %d, optionID: %d", e.PollID, e.OptionID)
+	return fmt.Sprintf("option with IsActualOutcome=true already exists; pollID: %d, optionID: %d", e.PollID, e.OptionID)
 }
