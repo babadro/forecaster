@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/stretchr/testify/require"
 )
@@ -76,4 +77,48 @@ func (s *APITestSuite) TestOptions_pollDoesntExist() {
 	defer func() { _ = createResp.Body.Close() }()
 
 	s.Require().Equal(http.StatusBadRequest, createResp.StatusCode)
+}
+
+func (s *APITestSuite) TestOptions_setIsActualOutcomeReturnsErrorBecauseAnotherOptionAlreadyHasIt() {
+	options := s.createPollWithOptions(2).Options
+
+	firstOption := options[0]
+	updateInput := swagger.UpdateOption{
+		IsActualOutcome: helpers.Ptr[bool](true),
+	}
+	_ = update[swagger.UpdateOption, swagger.Option](
+		s.T(), updateInput, optionURLWithIDs(s.apiAddr, firstOption.PollID, firstOption.ID),
+	)
+
+	secondOption := options[1]
+	updateInput = swagger.UpdateOption{
+		IsActualOutcome: helpers.Ptr[bool](true),
+	}
+
+	gotErr := updateShouldReturnError[swagger.UpdateOption](
+		s.T(), updateInput, optionURLWithIDs(s.apiAddr, secondOption.PollID, secondOption.ID),
+		http.StatusBadRequest,
+	)
+
+	s.Require().Contains(gotErr.Message, "Option with IsActualOutcome=true already exists")
+}
+
+func (s *APITestSuite) createPollWithOptions(optionsCount int) swagger.PollWithOptions {
+	s.T().Helper()
+
+	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.SeriesID = 0
+
+	pollID := create[swagger.CreatePoll, swagger.Poll](
+		s.T(), pollInput, s.url("polls"),
+	).ID
+
+	for i := 0; i < optionsCount; i++ {
+		optionInput := randomModel[swagger.CreateOption](s.T())
+		optionInput.PollID = pollID
+
+		_ = create[swagger.CreateOption, swagger.Option](s.T(), optionInput, s.url("options"))
+	}
+
+	return read[swagger.PollWithOptions](s.T(), urlWithID(s.apiAddr, "polls", pollID))
 }

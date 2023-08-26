@@ -221,6 +221,28 @@ func update[IN any, OUT any](t *testing.T, in IN, url string) OUT {
 	return got
 }
 
+func updateShouldReturnError[IN any](t *testing.T, in IN, url string, expectedStatus int) models.Error {
+	b, err := json.Marshal(in)
+	require.NoError(t, err)
+
+	updateReq, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(b))
+	require.NoError(t, err)
+	updateReq.Header.Set("Content-Type", "application/json")
+
+	updateResp, err := http.DefaultClient.Do(updateReq)
+	require.NoError(t, err)
+
+	defer func() { _ = updateResp.Body.Close() }()
+
+	require.Equal(t, expectedStatus, updateResp.StatusCode)
+
+	var got models.Error
+	err = json.NewDecoder(updateResp.Body).Decode(&got)
+	require.NoError(t, err)
+
+	return got
+}
+
 func deleteOp(t *testing.T, url string) {
 	deleteReq, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
