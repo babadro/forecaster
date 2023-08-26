@@ -197,7 +197,7 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 	}
 
 	if userAlreadyVoted {
-		votedOption, idx := findOptionByID(p.Options, lastVote.OptionID)
+		votedOption, idx := swagger.FindOptionByID(p.Options, lastVote.OptionID)
 		if idx == -1 {
 			return "", fmt.Errorf("unable to find voted option %d for poll %d", lastVote.OptionID, p.ID)
 		}
@@ -206,14 +206,4 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 	}
 
 	return sb.String(), nil
-}
-
-func findOptionByID(options []*swagger.Option, id int16) (*swagger.Option, int) {
-	for i, op := range options {
-		if op.ID == id {
-			return op, i
-		}
-	}
-
-	return nil, -1
 }
