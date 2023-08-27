@@ -10,9 +10,10 @@ import (
 
 const (
 	MaxCountInRow = 8
-	Days365       = 365
-	Hours24       = 24
-	Seconds3600   = 3600
+
+	Days365     = 365
+	Hours24     = 24
+	Seconds3600 = 3600
 )
 
 type DB interface {

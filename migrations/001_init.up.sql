@@ -35,5 +35,5 @@ CREATE TABLE forecaster.votes (
     option_id INT NOT NULL,
     epoch_unix_timestamp BIGINT NOT NULL,
     FOREIGN KEY (poll_id, option_id) REFERENCES forecaster.options(poll_id, id) ON DELETE CASCADE,
-    PRIMARY KEY (poll_id, user_id, option_id, epoch_unix_timestamp)
+    PRIMARY KEY (poll_id, user_id, epoch_unix_timestamp)
 );
