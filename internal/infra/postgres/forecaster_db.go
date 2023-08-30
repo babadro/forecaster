@@ -490,6 +490,42 @@ func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int64, pollID in
 	return res, nil
 }
 
+func (db *ForecasterDB) CalculateStatistics(ctx context.Context, pollID int32) error {
+	// Update total_votes for each option
+	updateTotalVotesSQL, _, err := db.q.
+		Update("forecaster.options").
+		Set("total_votes", sq.Expr("(SELECT COUNT(*) FROM forecaster.votes WHERE poll_id = ? AND option_id = forecaster.options.id)", pollID)).
+		Where(sq.Eq{"poll_id": pollID}).
+		ToSql()
+
+	if err != nil {
+		return models.PollWithOptions{}, buildingQueryFailed("update total_votes", err)
+	}
+
+	_, err = db.db.Exec(ctx, updateTotalVotesSQL)
+	if err != nil {
+		return models.PollWithOptions{}, execFailed("update total_votes", err)
+	}
+
+	// Update position for each vote if is_actual_outcome = true
+	updatePositionSQL, _, err := db.q.Update("forecaster.votes").
+		SetExpr("position", "ROW_NUMBER() OVER (ORDER BY epoch_unix_timestamp)").
+		FromSelect(sq.Select("poll_id, user_id").From("forecaster.options").Where(sq.Eq{"is_actual_outcome": true, "poll_id": pollID})).
+		ToSql()
+
+	if err != nil {
+		return models.PollWithOptions{}, buildingQueryFailed("update position", err)
+	}
+
+	_, err = db.db.Exec(ctx, updatePositionSQL)
+	if err != nil {
+		return models.PollWithOptions{}, execFailed("update position", err)
+	}
+
+	// Call your existing GetPollByID function to return the updated poll information
+	return db.GetPollByID(ctx, pollID)
+}
+
 func buildingQueryFailed(queryName string, err error) error {
 	return fmt.Errorf("%s: building query failed: %s", queryName, err.Error())
 }
