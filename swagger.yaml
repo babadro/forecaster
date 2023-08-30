@@ -363,6 +363,37 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/error"
+  /calculate-statistics/{pollId}:
+    post:
+        summary: "Calculate statistics for a Poll"
+        operationId: "CalculateStatistics"
+        produces:
+            - application/json
+        parameters:
+          - in: "path"
+            name: "pollId"
+            required: true
+            type: "integer"
+            format: "int32"
+        responses:
+            200:
+              description: "Statistics calculated successfully"
+              schema:
+                  $ref: "#/definitions/PollWithOptions"
+            400:
+              description: "Bad request"
+              schema:
+                  $ref: "#/definitions/error"
+            404:
+              description: "Poll not found"
+            500:
+              description: "Internal server error"
+              schema:
+                  $ref: "#/definitions/error"
+            default:
+              description: error
+              schema:
+                  $ref: "#/definitions/error"
 definitions:
   error:
     type: object

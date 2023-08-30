@@ -25,6 +25,53 @@ func init() {
     "version": "1.0.0"
   },
   "paths": {
+    "/calculate-statistics/{pollId}": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Calculate statistics for a Poll",
+        "operationId": "CalculateStatistics",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "pollId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics calculated successfully",
+            "schema": {
+              "$ref": "#/definitions/PollWithOptions"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "404": {
+            "description": "Poll not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/options": {
       "post": {
         "consumes": [
@@ -869,6 +916,53 @@ func init() {
     "version": "1.0.0"
   },
   "paths": {
+    "/calculate-statistics/{pollId}": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Calculate statistics for a Poll",
+        "operationId": "CalculateStatistics",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "pollId",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics calculated successfully",
+            "schema": {
+              "$ref": "#/definitions/PollWithOptions"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "404": {
+            "description": "Poll not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/options": {
       "post": {
         "consumes": [
