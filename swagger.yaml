@@ -532,6 +532,9 @@ definitions:
         type: "string"
       IsActualOutcome:
         type: "boolean"
+      TotalVotes:
+        type: "integer"
+        format: "int32"
       UpdatedAt:
         type: "string"
         format: "date-time"
@@ -562,3 +565,6 @@ definitions:
       EpochUnixTimestamp:
         type: "integer"
         format: "int64"
+      Position:
+        type: "integer"
+        format: "int32"

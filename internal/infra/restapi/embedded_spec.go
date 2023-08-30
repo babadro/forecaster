@@ -655,6 +655,10 @@ func init() {
         "Title": {
           "type": "string"
         },
+        "TotalVotes": {
+          "type": "integer",
+          "format": "int32"
+        },
         "UpdatedAt": {
           "type": "string",
           "format": "date-time"
@@ -830,6 +834,10 @@ func init() {
           "format": "int16"
         },
         "PollID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Position": {
           "type": "integer",
           "format": "int32"
         },
@@ -1491,6 +1499,10 @@ func init() {
         "Title": {
           "type": "string"
         },
+        "TotalVotes": {
+          "type": "integer",
+          "format": "int32"
+        },
         "UpdatedAt": {
           "type": "string",
           "format": "date-time"
@@ -1666,6 +1678,10 @@ func init() {
           "format": "int16"
         },
         "PollID": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Position": {
           "type": "integer",
           "format": "int32"
         },

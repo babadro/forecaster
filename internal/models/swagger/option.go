@@ -34,6 +34,9 @@ type Option struct {
 	// title
 	Title string `json:"Title,omitempty"`
 
+	// total votes
+	TotalVotes int32 `json:"TotalVotes,omitempty"`
+
 	// updated at
 	// Format: date-time
 	UpdatedAt strfmt.DateTime `json:"UpdatedAt,omitempty"`

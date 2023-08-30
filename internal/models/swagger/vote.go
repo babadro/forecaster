@@ -26,6 +26,9 @@ type Vote struct {
 	// poll ID
 	PollID int32 `json:"PollID,omitempty"`
 
+	// position
+	Position int32 `json:"Position,omitempty"`
+
 	// user ID
 	UserID int64 `json:"UserID,omitempty"`
 }
