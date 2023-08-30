@@ -81,7 +81,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	}
 
 	optionsSQL, args, err := db.q.Select(
-		"id", "poll_id", "title", "description", "is_actual_outcome", "updated_at",
+		"id", "poll_id", "title", "description", "is_actual_outcome", "total_votes", "updated_at",
 	).From("forecaster.options").Where(sq.Eq{"poll_id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select options", err)
@@ -97,7 +97,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 		var option models.Option
 
 		err = rows.Scan(
-			&option.ID, &option.PollID, &option.Title, &option.Description, &option.IsActualOutcome, &option.UpdatedAt,
+			&option.ID, &option.PollID, &option.Title, &option.Description, &option.IsActualOutcome, &option.TotalVotes, &option.UpdatedAt,
 		)
 		if err != nil {
 			return models.PollWithOptions{}, scanFailed("select options", err)
@@ -304,7 +304,7 @@ func (db *ForecasterDB) UpdateOption(
 		Set("updated_at", now).
 		Where(sq.Eq{"poll_id": pollID}).
 		Where(sq.Eq{"id": optionID}).
-		Suffix("RETURNING id, poll_id, title, description, is_actual_outcome, updated_at")
+		Suffix("RETURNING id, poll_id, title, description, is_actual_outcome, total_votes, updated_at")
 
 	if in.Title != nil {
 		b = b.Set("title", in.Title)
@@ -353,7 +353,7 @@ func (db *ForecasterDB) UpdateOption(
 	var res models.Option
 	if tx == nil {
 		err = db.db.QueryRow(ctx, optionSQL, args...).
-			Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)
+			Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.TotalVotes, &res.UpdatedAt)
 		if err != nil {
 			return models.Option{}, scanFailed("update option", err)
 		}
@@ -362,7 +362,7 @@ func (db *ForecasterDB) UpdateOption(
 	}
 
 	err = tx.QueryRow(ctx, optionSQL, args...).
-		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.UpdatedAt)
+		Scan(&res.ID, &res.PollID, &res.Title, &res.Description, &res.IsActualOutcome, &res.TotalVotes, &res.UpdatedAt)
 	if err != nil {
 		return models.Option{}, rollback(ctx, tx, scanFailed("update option", err))
 	}
@@ -463,7 +463,7 @@ func (db *ForecasterDB) CreateVote(
 
 func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int64, pollID int32) (models.Vote, error) {
 	voteSQL, args, err := db.q.
-		Select("poll_id", "option_id", "user_id", "epoch_unix_timestamp").
+		Select("poll_id", "option_id", "user_id", "position", "epoch_unix_timestamp").
 		From("forecaster.votes").
 		Where(sq.Eq{"poll_id": pollID}).
 		Where(sq.Eq{"user_id": userID}).
@@ -478,7 +478,7 @@ func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int64, pollID in
 	var res models.Vote
 
 	err = db.db.QueryRow(ctx, voteSQL, args...).
-		Scan(&res.PollID, &res.OptionID, &res.UserID, &res.EpochUnixTimestamp)
+		Scan(&res.PollID, &res.OptionID, &res.UserID, &res.Position, &res.EpochUnixTimestamp)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.Vote{}, errNotFound("select vote", err)
