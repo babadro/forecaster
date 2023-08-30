@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("object not found")
+	ErrNotFound                        = errors.New("object not found")
+	ErrVoteWithSameOptionAlreadyExists = errors.New("vote with the same option already exists")
 )
 
 type OptionWithOutcomeFlagAlreadyExistsError struct {

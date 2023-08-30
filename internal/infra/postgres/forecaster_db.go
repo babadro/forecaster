@@ -436,7 +436,10 @@ func (db *ForecasterDB) CreateVote(
 		Insert("forecaster.votes").
 		Columns("poll_id", "option_id", "user_id", "epoch_unix_timestamp").
 		Values(vote.PollID, vote.OptionID, vote.UserID, nowUnixTimestamp).
-		Suffix("RETURNING poll_id, option_id, user_id, epoch_unix_timestamp").
+		Suffix(`ON CONFLICT (poll_id, user_id) DO UPDATE 
+					SET option_id = EXCLUDED.option_id, epoch_unix_timestamp = EXCLUDED.epoch_unix_timestamp
+					WHERE forecaster.votes.option_id != EXCLUDED.option_id
+					RETURNING poll_id, option_id, user_id, epoch_unix_timestamp`).
 		ToSql()
 
 	if err != nil {
@@ -448,7 +451,11 @@ func (db *ForecasterDB) CreateVote(
 	err = db.db.QueryRow(ctx, voteSQL, args...).
 		Scan(&res.PollID, &res.OptionID, &res.UserID, &res.EpochUnixTimestamp)
 	if err != nil {
-		return models.Vote{}, scanFailed("insert vote", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Vote{}, domainError("insert or update vote", domain.ErrVoteWithSameOptionAlreadyExists, err)
+		}
+
+		return models.Vote{}, scanFailed("insert or update vote", err)
 	}
 
 	return res, nil
@@ -505,6 +512,10 @@ func execFailed(queryName string, err error) error {
 
 func errNotFound(queryName string, err error) error {
 	return fmt.Errorf("%s: %w: %s", queryName, domain.ErrNotFound, err.Error())
+}
+
+func domainError(queryName string, domainErr, dbErr error) error {
+	return fmt.Errorf("%s: %w: %s", queryName, domainErr, dbErr.Error())
 }
 
 func rollback(ctx context.Context, tx pgx.Tx, err error) error {
