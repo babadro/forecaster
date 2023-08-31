@@ -13,49 +13,29 @@ import (
 	"github.com/babadro/forecaster/internal/models/swagger"
 )
 
-// CalculateStatisticsOKCode is the HTTP code returned for type CalculateStatisticsOK
-const CalculateStatisticsOKCode int = 200
+// CalculateStatisticsNoContentCode is the HTTP code returned for type CalculateStatisticsNoContent
+const CalculateStatisticsNoContentCode int = 204
 
 /*
-CalculateStatisticsOK Statistics calculated successfully
+CalculateStatisticsNoContent Statistics calculated successfully
 
-swagger:response calculateStatisticsOK
+swagger:response calculateStatisticsNoContent
 */
-type CalculateStatisticsOK struct {
-
-	/*
-	  In: Body
-	*/
-	Payload *swagger.PollWithOptions `json:"body,omitempty"`
+type CalculateStatisticsNoContent struct {
 }
 
-// NewCalculateStatisticsOK creates CalculateStatisticsOK with default headers values
-func NewCalculateStatisticsOK() *CalculateStatisticsOK {
+// NewCalculateStatisticsNoContent creates CalculateStatisticsNoContent with default headers values
+func NewCalculateStatisticsNoContent() *CalculateStatisticsNoContent {
 
-	return &CalculateStatisticsOK{}
-}
-
-// WithPayload adds the payload to the calculate statistics o k response
-func (o *CalculateStatisticsOK) WithPayload(payload *swagger.PollWithOptions) *CalculateStatisticsOK {
-	o.Payload = payload
-	return o
-}
-
-// SetPayload sets the payload to the calculate statistics o k response
-func (o *CalculateStatisticsOK) SetPayload(payload *swagger.PollWithOptions) {
-	o.Payload = payload
+	return &CalculateStatisticsNoContent{}
 }
 
 // WriteResponse to the client
-func (o *CalculateStatisticsOK) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+func (o *CalculateStatisticsNoContent) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.WriteHeader(200)
-	if o.Payload != nil {
-		payload := o.Payload
-		if err := producer.Produce(rw, payload); err != nil {
-			panic(err) // let the recovery middleware deal with this
-		}
-	}
+	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
+
+	rw.WriteHeader(204)
 }
 
 // CalculateStatisticsBadRequestCode is the HTTP code returned for type CalculateStatisticsBadRequest
