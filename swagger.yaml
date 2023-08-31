@@ -376,10 +376,8 @@ paths:
             type: "integer"
             format: "int32"
         responses:
-            200:
+            204:
               description: "Statistics calculated successfully"
-              schema:
-                  $ref: "#/definitions/PollWithOptions"
             400:
               description: "Bad request"
               schema:

@@ -115,6 +115,8 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
 	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
 
+	api.CalculateStatisticsHandler = operations.CalculateStatisticsHandlerFunc(pollsAPI.CalculateStatistics)
+
 	if envs.StartTelegramBot {
 		api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(telegramAPI.ReceiveTelegramUpdates)
 	}

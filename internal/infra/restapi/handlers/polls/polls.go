@@ -30,6 +30,8 @@ type service interface {
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
 	DeleteOption(ctx context.Context, pollID int32, optionID int16) error
+
+	CalculateStatistics(ctx context.Context, pollID int32) error
 }
 
 type Polls struct {
@@ -186,4 +188,19 @@ func (p *Polls) DeleteSeries(params operations.DeleteSeriesParams) middleware.Re
 	}
 
 	return operations.NewDeleteSeriesNoContent()
+}
+
+func (p *Polls) CalculateStatistics(params operations.CalculateStatisticsParams) middleware.Responder {
+	err := p.svc.CalculateStatistics(params.HTTPRequest.Context(), params.PollID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return operations.NewCalculateStatisticsNotFound()
+		}
+
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to calculate statistics")
+
+		return operations.NewCalculateStatisticsInternalServerError()
+	}
+
+	return operations.NewCalculateStatisticsNoContent()
 }

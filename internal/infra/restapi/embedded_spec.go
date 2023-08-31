@@ -42,11 +42,8 @@ func init() {
           }
         ],
         "responses": {
-          "200": {
-            "description": "Statistics calculated successfully",
-            "schema": {
-              "$ref": "#/definitions/PollWithOptions"
-            }
+          "204": {
+            "description": "Statistics calculated successfully"
           },
           "400": {
             "description": "Bad request",
@@ -933,11 +930,8 @@ func init() {
           }
         ],
         "responses": {
-          "200": {
-            "description": "Statistics calculated successfully",
-            "schema": {
-              "$ref": "#/definitions/PollWithOptions"
-            }
+          "204": {
+            "description": "Statistics calculated successfully"
           },
           "400": {
             "description": "Bad request",
