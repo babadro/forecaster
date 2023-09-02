@@ -93,7 +93,7 @@ func (s *Service) render(
 
 	userAlreadyVoted := false
 
-	lastVote, err := s.db.GetLastVote(ctx, userID, p.ID)
+	lastVote, err := s.db.GetUserVote(ctx, userID, p.ID)
 	if err == nil {
 		userAlreadyVoted = true
 	} else if !errors.Is(err, domain.ErrNotFound) {

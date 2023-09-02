@@ -30,8 +30,8 @@ func (w Wrapper) GetPollByID(ctx context.Context, pollID int32) (swagger.PollWit
 	return p, "", nil
 }
 
-func (w Wrapper) GetLastVote(ctx context.Context, userID int64, pollID int32) (swagger.Vote, bool, error) {
-	lastVote, err := w.db.GetLastVote(ctx, userID, pollID)
+func (w Wrapper) GetUserVote(ctx context.Context, userID int64, pollID int32) (swagger.Vote, bool, error) {
+	lastVote, err := w.db.GetUserVote(ctx, userID, pollID)
 	if err != nil {
 		if !errors.Is(err, domain.ErrNotFound) {
 			return swagger.Vote{}, false,

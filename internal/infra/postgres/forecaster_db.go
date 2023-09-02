@@ -461,7 +461,7 @@ func (db *ForecasterDB) CreateVote(
 	return res, nil
 }
 
-func (db *ForecasterDB) GetLastVote(ctx context.Context, userID int64, pollID int32) (models.Vote, error) {
+func (db *ForecasterDB) GetUserVote(ctx context.Context, userID int64, pollID int32) (models.Vote, error) {
 	voteSQL, args, err := db.q.
 		Select("poll_id", "option_id", "user_id", "position", "epoch_unix_timestamp").
 		From("forecaster.votes").
@@ -495,10 +495,12 @@ WITH numbered_votes AS
 (
     SELECT user_id, ROW_NUMBER() OVER (ORDER BY epoch_unix_timestamp ASC) AS rn
     FROM forecaster.votes
-    WHERE poll_id = $1 AND option_id = (
+    WHERE poll_id = $1 AND epoch_unix_timestamp >= $2 AND epoch_unix_timestamp <= $3
+	AND option_id = (
         SELECT id FROM forecaster.options
         WHERE poll_id = $1 AND is_actual_outcome = true
     )
+	
 )
 UPDATE forecaster.votes
 SET position = numbered_votes.rn
@@ -507,12 +509,30 @@ WHERE forecaster.votes.poll_id = $1 AND forecaster.votes.user_id = numbered_vote
 `
 
 func (db *ForecasterDB) CalculateStatistics(ctx context.Context, pollID int32) error {
+	var start, finish time.Time
+	selectStartFinish := "select start, finish from forecaster.polls"
+
+	if err := db.db.QueryRow(ctx,
+		"select start, finish from forecaster.polls where polls.id = $1", pollID).
+		Scan(&start, &finish); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errNotFound(selectStartFinish, err)
+		}
+
+		return scanFailed(selectStartFinish, err)
+	}
+
+	startUnix, finishUnix := start.Unix(), finish.Unix()
 	// Update total_votes for each option
 	updateTotalVotesSQL, args, err := db.q.
 		Update("forecaster.options").
 		Set("total_votes",
-			sq.Expr("(SELECT COUNT(*) FROM forecaster.votes WHERE poll_id = ? AND option_id = forecaster.options.id)",
-				pollID,
+			sq.Expr(`(
+					SELECT COUNT(*) FROM forecaster.votes
+						WHERE poll_id = ? AND option_id = forecaster.options.id
+						AND epoch_unix_timestamp >= ? AND epoch_unix_timestamp <= ?
+					)`,
+				pollID, startUnix, finishUnix,
 			),
 		).
 		Where(sq.Eq{"poll_id": pollID}).
@@ -527,7 +547,7 @@ func (db *ForecasterDB) CalculateStatistics(ctx context.Context, pollID int32) e
 		return execFailed("update total_votes", err)
 	}
 
-	if _, err = db.db.Exec(ctx, updateVotePositionsQuery, pollID, pollID, pollID); err != nil {
+	if _, err = db.db.Exec(ctx, updateVotePositionsQuery, pollID, startUnix, finishUnix); err != nil {
 		return execFailed("update position", err)
 	}
 

@@ -44,7 +44,7 @@ func (s *Service) RenderCallback(
 
 	user := upd.CallbackQuery.From
 
-	lastVote, found, err := s.w.GetLastVote(ctx, user.ID, p.ID)
+	lastVote, found, err := s.w.GetUserVote(ctx, user.ID, p.ID)
 	if err != nil {
 		return nil, "", err
 	}
