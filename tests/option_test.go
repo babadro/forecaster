@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -108,6 +110,8 @@ func (s *APITestSuite) createPollWithOptions(optionsCount int) swagger.PollWithO
 
 	pollInput := randomModel[swagger.CreatePoll](s.T())
 	pollInput.SeriesID = 0
+	pollInput.Start = strfmt.DateTime(time.Now())
+	pollInput.Finish = strfmt.DateTime(time.Now().Add(time.Hour))
 
 	pollID := create[swagger.CreatePoll, swagger.Poll](
 		s.T(), pollInput, s.url("polls"),

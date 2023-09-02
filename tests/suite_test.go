@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/babadro/forecaster/internal/infra/postgres"
 	"github.com/babadro/forecaster/tests/db"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/strfmt"
@@ -31,7 +32,8 @@ type envVars struct {
 type APITestSuite struct {
 	suite.Suite
 
-	testDB *db.TestDB
+	testDB       *db.TestDB
+	forecasterDB *postgres.ForecasterDB
 
 	apiAddr string
 	client  *http.Client
@@ -59,6 +61,7 @@ func (s *APITestSuite) SetupSuite() {
 	}
 
 	s.testDB = db.NewTestDB(dbPool)
+	s.forecasterDB = postgres.NewForecasterDB(dbPool)
 }
 
 func (s *APITestSuite) TearDownSuite() {
@@ -253,6 +256,18 @@ func deleteOp(t *testing.T, url string) {
 	defer func() { _ = deleteResp.Body.Close() }()
 
 	require.Equal(t, http.StatusNoContent, deleteResp.StatusCode)
+}
+
+func post(t *testing.T, url string, expectedStatus int) {
+	req, err := http.NewRequest(http.MethodPost, url, nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, expectedStatus, resp.StatusCode)
 }
 
 func randomModel[T any](t *testing.T) T {
