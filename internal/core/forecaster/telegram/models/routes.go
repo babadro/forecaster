@@ -5,6 +5,7 @@ const (
 	VotePreviewRoute
 	VoteRoute
 	PollRoute
+	UserPollResultRoute
 )
 
 const (

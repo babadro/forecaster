@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
 	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -109,7 +110,7 @@ func (s *Service) render(
 			fmt.Errorf("unable to create text message: %s", err.Error())
 	}
 
-	keyboard, err := keyboardMarkup(p)
+	keyboard, err := keyboardMarkup(p, userID)
 	if err != nil {
 		return nil,
 			cantShowPollMsg,
@@ -126,8 +127,8 @@ func (s *Service) render(
 	return res, "", nil
 }
 
-func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup, error) {
-	length := len(poll.Options)
+func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.InlineKeyboardMarkup, error) {
+	length := len(poll.Options) + 1 // +1 for "show results" button
 	rowsCount := length / models.MaxCountInRow
 
 	if length%models.MaxCountInRow > 0 {
@@ -136,7 +137,27 @@ func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup
 
 	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
 
-	for i, op := range poll.Options {
+	for i := 0; i < length; i++ {
+		if i == len(poll.Options) {
+			showMyResultsData, err := proto.MarshalCallbackData(models.UserPollResultRoute, &userpollresult.UserPollResult{
+				UserId: helpers.Ptr(userID),
+				PollId: helpers.Ptr(poll.ID),
+			})
+			if err != nil {
+				return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal user poll result callback data: %w", err)
+			}
+
+			rows[i] = []tgbotapi.InlineKeyboardButton{
+				{
+					Text:         "Show My Results",
+					CallbackData: showMyResultsData,
+				},
+			}
+
+			break
+		}
+
+		op := poll.Options[i]
 		votePreview := votepreview.VotePreview{
 			PollId:   helpers.Ptr(poll.ID),
 			OptionId: helpers.Ptr[int32](int32(op.ID)),
