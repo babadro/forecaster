@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
+	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
@@ -75,7 +78,7 @@ func (s *Service) RenderCallback(
 
 	msg := s.txtMsg(txtInputModel)
 
-	markup, err := keyboardMarkup()
+	markup, err := keyboardMarkup(p.ID)
 	if err != nil {
 		return nil, "", fmt.Errorf("userpoll result: unable to create keyboard markup: %s", err.Error())
 	}
@@ -149,10 +152,13 @@ func (s *Service) txtMsg(in txtMsgInput) string {
 	return sb.String()
 }
 
-func keyboardMarkup() (tgbotapi.InlineKeyboardMarkup, error) {
-	return render.Keyboard(
-		tgbotapi.InlineKeyboardButton{
-			// todo
-		},
-	), nil
+func keyboardMarkup(pollID int32) (tgbotapi.InlineKeyboardMarkup, error) {
+	backData, err := proto.MarshalCallbackData(models.PollRoute, &poll.Poll{PollId: helpers.Ptr[int32](pollID)})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
+	}
+
+	backBtn := tgbotapi.InlineKeyboardButton{Text: "Back", CallbackData: backData}
+
+	return render.Keyboard(backBtn), nil
 }
