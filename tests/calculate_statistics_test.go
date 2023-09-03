@@ -71,6 +71,26 @@ func (s *APITestSuite) TestCalculateStatistics() {
 		s.Require().NoError(err)
 	}
 
+	// create votes with timestamp < poll start and timestamp > poll finish
+	// these votes should not be counted
+	voteBeforeStart, err := s.forecasterDB.CreateVote(ctx, swagger.CreateVote{
+		OptionID: p.Options[0].ID,
+		PollID:   p.ID,
+		UserID:   gofakeit.Int64(),
+	},
+		time.Time(p.Start).Add(-time.Second).Unix(),
+	)
+	s.Require().NoError(err)
+
+	voteAfterFinish, err := s.forecasterDB.CreateVote(ctx, swagger.CreateVote{
+		OptionID: p.Options[0].ID,
+		PollID:   p.ID,
+		UserID:   gofakeit.Int64(),
+	},
+		time.Time(p.Finish).Add(time.Second).Unix(),
+	)
+	s.Require().NoError(err)
+
 	// calculate statistics
 	post(s.T(), urlWithID(s.apiAddr, "calculate-statistics", p.ID), http.StatusNoContent)
 
@@ -100,6 +120,15 @@ func (s *APITestSuite) TestCalculateStatistics() {
 			s.Require().Zero(dbVote.Position)
 		}
 	}
+
+	// check votes positions for votes with timestamp < poll start and timestamp > poll finish
+	dbVoteBeforeStart, err := s.forecasterDB.GetUserVote(ctx, voteBeforeStart.UserID, p.ID)
+	s.Require().NoError(err)
+	s.Require().Zero(dbVoteBeforeStart.Position)
+
+	dbVoteAfterFinish, err := s.forecasterDB.GetUserVote(ctx, voteAfterFinish.UserID, p.ID)
+	s.Require().NoError(err)
+	s.Require().Zero(dbVoteAfterFinish.Position)
 
 	// check statistics for control poll
 	// control poll should not be affected by calculate statistics for other poll
