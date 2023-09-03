@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	userpollresult "github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/userpoll_result"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/vote"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -16,9 +18,10 @@ import (
 )
 
 type pageServices struct {
-	votePreview *votepreview.Service
-	vote        *vote.Service
-	poll        *poll.Service
+	votePreview    *votepreview.Service
+	vote           *vote.Service
+	poll           *poll.Service
+	userPollResult *userpollresult.Service
 }
 
 type Service struct {
@@ -31,9 +34,10 @@ type Service struct {
 
 func NewService(db models.DB, b models.TgBot, botName string) *Service {
 	pages := pageServices{
-		votePreview: votepreview.New(db),
-		vote:        vote.New(db),
-		poll:        poll.New(db),
+		votePreview:    votepreview.New(db),
+		vote:           vote.New(db),
+		poll:           poll.New(db),
+		userPollResult: userpollresult.New(db, botName),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)
@@ -90,7 +94,12 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
 		}
 	case upd.CallbackQuery != nil:
-		route := upd.CallbackQuery.Data[0]
+		decoded, err := base64.StdEncoding.DecodeString(upd.CallbackQuery.Data)
+		if err != nil {
+			return nil, "", fmt.Errorf("decode error: %s", err.Error())
+		}
+
+		route := decoded[0]
 
 		updateType = fmt.Sprintf("render callback query for route %d", route)
 

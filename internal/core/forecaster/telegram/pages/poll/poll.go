@@ -144,8 +144,8 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 	for i := 0; i < length; i++ {
 		if i == len(poll.Options) {
 			showMyResultsData, err := proto.MarshalCallbackData(models.UserPollResultRoute, &userpollresult.UserPollResult{
-				UserId: helpers.Ptr(userID),
-				PollId: helpers.Ptr(poll.ID),
+				UserId: helpers.Ptr[int64](userID),
+				PollId: helpers.Ptr[int32](poll.ID),
 			})
 			if err != nil {
 				return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal user poll result callback data: %w", err)
@@ -164,7 +164,7 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 		op := poll.Options[i]
 		votePreview := votepreview.VotePreview{
 			PollId:   helpers.Ptr(poll.ID),
-			OptionId: helpers.Ptr[int32](int32(op.ID)),
+			OptionId: helpers.Ptr(int32(op.ID)),
 		}
 
 		callbackData, err := proto.MarshalCallbackData(models.VotePreviewRoute, &votePreview)

@@ -3,9 +3,10 @@ package proto
 import (
 	"fmt"
 
+	"encoding/base64"
+
 	"github.com/babadro/forecaster/internal/helpers"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const minCallbackDataLength = 2
@@ -20,7 +21,9 @@ func MarshalCallbackData(route byte, m proto.Message) (*string, error) {
 	res = append(res, route)
 	res = append(res, binaryData...)
 
-	return helpers.Ptr(string(res)), nil
+	base64.StdEncoding.EncodeToString(res)
+
+	return helpers.Ptr(base64.StdEncoding.EncodeToString(res)), nil
 }
 
 func UnmarshalCallbackData(data string, m proto.Message) error {
@@ -30,29 +33,7 @@ func UnmarshalCallbackData(data string, m proto.Message) error {
 
 	route := data[0]
 
-	binaryData := []byte(data[1:])
-
-	if err := proto.Unmarshal(binaryData, m); err != nil {
-		return fmt.Errorf("can't unmarshal proto message for route %d: %s", route, err.Error())
-	}
-
-	return nil
-}
-
-type Req interface {
-	ProtoReflect() protoreflect.Message
-}
-
-func UnmarshalCallbackData2[T proto.Message](data string, m T) error {
-	if len(data) < minCallbackDataLength {
-		return fmt.Errorf("callback data is too short")
-	}
-
-	route := data[0]
-
-	binaryData := []byte(data[1:])
-
-	if err := proto.Unmarshal(binaryData, m); err != nil {
+	if err := proto.Unmarshal([]byte(data[1:]), m); err != nil {
 		return fmt.Errorf("can't unmarshal proto message for route %d: %s", route, err.Error())
 	}
 
