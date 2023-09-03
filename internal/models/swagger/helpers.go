@@ -19,3 +19,13 @@ func GetOutcome(options []*Option) (Option, int) {
 
 	return Option{}, -1
 }
+
+func HasOutcome(options []*Option) bool {
+	for _, op := range options {
+		if op.IsActualOutcome {
+			return true
+		}
+	}
+
+	return false
+}

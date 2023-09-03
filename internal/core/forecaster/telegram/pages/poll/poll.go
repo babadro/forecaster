@@ -128,7 +128,11 @@ func (s *Service) render(
 }
 
 func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.InlineKeyboardMarkup, error) {
-	length := len(poll.Options) + 1 // +1 for "show results" button
+	length := len(poll.Options)
+	if swagger.HasOutcome(poll.Options) {
+		length++ // ++ for "show my results" button
+	}
+
 	rowsCount := length / models.MaxCountInRow
 
 	if length%models.MaxCountInRow > 0 {
@@ -147,7 +151,9 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 				return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal user poll result callback data: %w", err)
 			}
 
-			rows[i] = []tgbotapi.InlineKeyboardButton{
+			rowIdx := i / models.MaxCountInRow
+
+			rows[rowIdx] = []tgbotapi.InlineKeyboardButton{
 				{
 					Text:         "Show My Results",
 					CallbackData: showMyResultsData,
