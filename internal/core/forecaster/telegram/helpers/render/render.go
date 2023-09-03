@@ -27,6 +27,10 @@ func (sb *StringBuilder) Printf(format string, a ...any) {
 	_, _ = fmt.Fprintf(sb, format, a...)
 }
 
+func (sb *StringBuilder) Print(a ...any) {
+	_, _ = fmt.Fprint(sb, a...)
+}
+
 func FormatTime[T time.Time | strfmt.DateTime](t T) string {
 	return time.Time(t).Format(time.RFC822)
 }

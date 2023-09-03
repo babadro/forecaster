@@ -10,12 +10,12 @@ func FindOptionByID(options []*Option, id int16) (*Option, int) {
 	return nil, -1
 }
 
-func GetOutcome(options []*Option) (Option, bool) {
-	for _, op := range options {
+func GetOutcome(options []*Option) (Option, int) {
+	for i, op := range options {
 		if op.IsActualOutcome {
-			return *op, true
+			return *op, i
 		}
 	}
 
-	return Option{}, false
+	return Option{}, -1
 }

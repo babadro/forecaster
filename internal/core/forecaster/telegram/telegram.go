@@ -29,7 +29,7 @@ type Service struct {
 	callbackHandlers [256]handlerFunc
 }
 
-func NewService(db models.DB, b models.TgBot) *Service {
+func NewService(db models.DB, b models.TgBot, botName string) *Service {
 	pages := pageServices{
 		votePreview: votepreview.New(db),
 		vote:        vote.New(db),
