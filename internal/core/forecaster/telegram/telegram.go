@@ -100,6 +100,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		}
 
 		route := decoded[0]
+		upd.CallbackQuery.Data = string(decoded)
 
 		updateType = fmt.Sprintf("render callback query for route %d", route)
 

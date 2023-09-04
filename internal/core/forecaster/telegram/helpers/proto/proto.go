@@ -21,9 +21,9 @@ func MarshalCallbackData(route byte, m proto.Message) (*string, error) {
 	res = append(res, route)
 	res = append(res, binaryData...)
 
-	base64.StdEncoding.EncodeToString(res)
+	encoded := base64.StdEncoding.EncodeToString(res)
 
-	return helpers.Ptr(base64.StdEncoding.EncodeToString(res)), nil
+	return helpers.Ptr(encoded), nil
 }
 
 func UnmarshalCallbackData(data string, m proto.Message) error {
