@@ -38,3 +38,6 @@ swag:
 
 proto:
 	protoc --go_out=./internal/core/forecaster/telegram/proto ./internal/core/forecaster/telegram/proto/*/*.proto
+
+dev-tools:
+	go install github.com/cosmtrek/air@latest

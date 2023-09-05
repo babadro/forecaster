@@ -1,0 +1,12 @@
+FROM golang:1.21.0-bookworm as builder
+
+RUN apt-get -y update \
+    && apt-get -y --no-install-recommends install make
+
+WORKDIR /app
+
+COPY Makefile
+
+RUN make dev-tools
+
+COPY go.mod go.sum ./
