@@ -44,10 +44,10 @@ services:
      start_period: 0s
 
   service:
-    build: .
+    build:
+        context: .
+        dockerfile: Dockerfile.dev
     #restart: unless-stopped
-    command:
-      - service
     depends_on:
         postgres:
           condition: service_healthy
@@ -56,13 +56,14 @@ services:
         migrate:
           condition: service_completed_successfully
     ports:
-      - "8080:8080"
+      - "8080:3000"
     env_file:
       - .env
       - .env.secrets
     environment:
       - START_TELEGRAM_BOT=${START_TELEGRAM_BOT}
-
+    volumes:
+      - ./:/app
 volumes:
   db-data-forecast:
     driver: local
