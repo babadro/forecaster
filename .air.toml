@@ -7,11 +7,11 @@ tmp_dir = "temp"
 
 [build]
 # Just plain old shell command. You could use `make` as well.
-cmd = "make build"
+cmd = "make build-debug-binary"
 # Binary file yields from `cmd`.
-bin = "release/app"
+#bin = "release/app"
 # Customize binary, can setup environment variables when run your app.
-#full_bin = "APP_ENV=dev APP_USER=air ./tmp/main"
+full_bin = "dlv exec --continue --accept-multiclient --listen=:8083 --headless=true --api-version=2 --log ./release/app"
 # Watch these filename extensions.
 include_ext = ["go", "tpl", "tmpl", "html"]
 # Ignore these filename extensions or directories.

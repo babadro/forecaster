@@ -57,6 +57,7 @@ services:
           condition: service_completed_successfully
     ports:
       - "8080:8080"
+      - "8083:8083"
     env_file:
       - .env
       - .env.secrets

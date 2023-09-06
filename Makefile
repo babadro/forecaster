@@ -5,6 +5,9 @@ SHELL := /bin/bash
 build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o release/app github.com/babadro/forecaster/cmd/server
 
+build-debug-binary:
+   	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -o release/app github.com/babadro/forecaster/cmd/server
+
 run: build
 	docker-compose down -v && docker-compose build service && docker-compose up
 
@@ -41,3 +44,4 @@ proto:
 
 dev-tools:
 	go install github.com/cosmtrek/air@latest
+	go install github.com/go-delve/delve/cmd/dlv@latest
