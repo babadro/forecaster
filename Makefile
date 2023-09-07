@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build run run-test-env test test-sleep down start-colima gen_mocks swag proto
+.PHONY: build run run-test-env run-test-env-with-bot test test-sleep down start-colima gen_mocks swag proto build-debug-binary
 
 build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o release/app github.com/babadro/forecaster/cmd/server
