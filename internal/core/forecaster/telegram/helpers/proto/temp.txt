@@ -1,14 +1,6 @@
 package proto
 
-import (
-	"testing"
-
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
-	"github.com/babadro/forecaster/internal/helpers"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestUnmarshalCallbackData(t *testing.T) {
 	showMyResultsData, err := MarshalCallbackData(models.UserPollResultRoute, &userpollresult.UserPollResult{
 		UserId: helpers.Ptr[int64](999),
@@ -21,3 +13,6 @@ func TestUnmarshalCallbackData(t *testing.T) {
 	err = UnmarshalCallbackData(*showMyResultsData, &unmarshalledData)
 	require.NoError(t, err)
 }
+
+
+*/

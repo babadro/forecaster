@@ -2,6 +2,7 @@ package telegram_test
 
 import (
 	"context"
+	"encoding/base64"
 	"regexp"
 	"strconv"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func (s *TelegramServiceSuite) TestShowPollStartCommand() {
@@ -315,8 +317,11 @@ func (s *TelegramServiceSuite) findOptionByCallbackData(
 
 	s.Require().NotNil(callbackData)
 
+	decoded, err := base64.StdEncoding.DecodeString(*callbackData)
+	require.NoError(s.T(), err)
+
 	votepreview := &votepreview2.VotePreview{}
-	err := proto.UnmarshalCallbackData(*callbackData, votepreview)
+	err = proto.UnmarshalCallbackData(string(decoded), votepreview)
 
 	s.Require().NoError(err)
 	s.Require().Equal(poll.ID, *votepreview.PollId)
