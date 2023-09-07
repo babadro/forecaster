@@ -1,18 +1,21 @@
 SHELL := /bin/bash
 
-.PHONY: build run run-test-env test test-sleep down start-colima gen_mocks swag proto
+.PHONY: build run run-test-env run-test-env-with-bot test test-sleep down start-colima gen_mocks swag proto build-debug-binary
 
 build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o release/app github.com/babadro/forecaster/cmd/server
 
-run: build
+build-debug-binary:
+   	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -o release/app github.com/babadro/forecaster/cmd/server
+
+run:
 	docker-compose down -v && docker-compose build service && docker-compose up
 
 # example: make run-test-env start-bot=true
-run-test-env: build
+run-test-env:
 	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=$(start-bot) docker-compose up
 
-run-test-env-with-bot: build
+run-test-env-with-bot:
 	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=true docker-compose up
 
 # example: make test filter=TestPolls
@@ -38,3 +41,7 @@ swag:
 
 proto:
 	protoc --go_out=./internal/core/forecaster/telegram/proto ./internal/core/forecaster/telegram/proto/*/*.proto
+
+dev-tools:
+	go install github.com/cosmtrek/air@latest
+	go install github.com/go-delve/delve/cmd/dlv@latest
