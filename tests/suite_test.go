@@ -22,8 +22,8 @@ import (
 )
 
 type envVars struct {
-	AppPort   int    `env:"APP_PORT,required"`
-	DBConn    string `env:"DB_CONN,required"`
+	AppPort   int    `env:"APP_PORT" envDefault:"8080"`
+	DBConn    string `env:"DB_CONN" envDefault:"postgres://postgres:postgres@localhost:5432/forecaster?sslmode=disable"`
 	SleepMode bool   `env:"SLEEP_MODE" envDefault:"false"`
 }
 

@@ -8,14 +8,14 @@ build:
 build-debug-binary:
    	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -o release/app github.com/babadro/forecaster/cmd/server
 
-run: build
+run:
 	docker-compose down -v && docker-compose build service && docker-compose up
 
 # example: make run-test-env start-bot=true
-run-test-env: build
+run-test-env:
 	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=$(start-bot) docker-compose up
 
-run-test-env-with-bot: build
+run-test-env-with-bot:
 	docker-compose down -v && docker-compose build service && START_TELEGRAM_BOT=true docker-compose up
 
 # example: make test filter=TestPolls
