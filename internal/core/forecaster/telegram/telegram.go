@@ -93,7 +93,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 			updateType = "show poll start command"
 			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
 		}
-	case upd.CallbackQuery != nil:
+	case upd.CallbackData() != "":
 		var decoded []byte
 		decoded, err = base64.StdEncoding.DecodeString(upd.CallbackQuery.Data)
 		if err != nil {
