@@ -142,7 +142,11 @@ func (s *Service) txtMsg(in txtMsgInput) string {
 
 	sb.Printf("<b>%s</b> you predicted that %s %d %s before!", in.userName, in.optionTitle, advanceTimeNumber, advanceTimeUnit)
 
-	sb.Printf("\nThis places you ahead of %d%% of all participants and shows that you chose the correct option earlier than %d%% of those who also chose correctly.", in.prozentOfAllVotesBehind, in.prozentOfWonVotesBehind)
+	if in.prozentOfAllVotesBehind != 0 && in.prozentOfWonVotesBehind != 0 {
+		sb.Printf("\nThis places you ahead of %d%% of all participants and shows that you chose the correct option earlier than %d%% of those who also chose correctly.", in.prozentOfAllVotesBehind, in.prozentOfWonVotesBehind)
+	} else if in.prozentOfAllVotesBehind != 0 {
+		sb.Printf("\nThis places you ahead of %d%% of all participants", in.prozentOfAllVotesBehind)
+	}
 
 	sb.Printf("\nOut of %d total participants, only %d made a correct prediction.", in.totalVotes, in.totalVotesForWonOption)
 
