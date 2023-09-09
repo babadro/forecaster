@@ -6,7 +6,7 @@ build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o release/app github.com/babadro/forecaster/cmd/server
 
 build-debug-binary:
-   	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -o release/app github.com/babadro/forecaster/cmd/server
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags="all=-N -l" -o release/app github.com/babadro/forecaster/cmd/server
 
 run:
 	docker-compose down -v && docker-compose build service && docker-compose up
