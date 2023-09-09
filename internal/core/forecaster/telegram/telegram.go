@@ -80,17 +80,24 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return sendErr
 }
 
+// update type int8 iota
+const (
+	unknownUpdateType byte = iota
+	showPollStartCommandUpdateType
+	renderCallbackUpdateType
+)
+
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	var msg tgbotapi.Chattable
 
-	var errMsg, updateType string
-
+	var errMsg string
+	var updateType, route byte
 	var err error
 
 	switch {
 	case upd.Message != nil:
 		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
-			updateType = "show poll start command"
+			updateType = showPollStartCommandUpdateType
 			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
 		}
 	case upd.CallbackData() != "":
@@ -100,21 +107,34 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 			return nil, "", fmt.Errorf("decode error: %s", err.Error())
 		}
 
-		route := decoded[0]
+		route = decoded[0]
 		upd.CallbackQuery.Data = string(decoded)
 
-		updateType = fmt.Sprintf("render callback query for route %d", route)
+		updateType = renderCallbackUpdateType
 
 		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
 	}
 
-	if updateType != "" {
+	if updateType != unknownUpdateType {
 		if err != nil {
-			return nil, errMsg, fmt.Errorf("unable to handle %s: %s", updateType, err.Error())
+			return nil, errMsg, unableToHandleUpdate(updateType, route, err)
 		}
 
 		return msg, errMsg, nil
 	}
 
 	return nil, "", errors.New("unknown update type")
+}
+
+func unableToHandleUpdate(updateType, route byte, err error) error {
+	if updateType == renderCallbackUpdateType {
+		return fmt.Errorf("unable to handle callback with route %d: %w", route, err)
+	}
+
+	uType := "unknown update type"
+	if updateType == showPollStartCommandUpdateType {
+		uType = "show poll start command update type"
+	}
+
+	return fmt.Errorf("unable to handle %s: %w", uType, err)
 }
