@@ -9,5 +9,6 @@ const (
 )
 
 const (
-	ShowPollStartCommand = "/start showpoll_"
+	ShowPollStartCommandPrefix  = "/start showpoll_"
+	ShowUserResultCommandPrefix = "/start showuserres_"
 )

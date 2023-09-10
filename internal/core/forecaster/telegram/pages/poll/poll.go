@@ -36,7 +36,7 @@ func (s *Service) NewRequest() (proto2.Message, *poll.Poll) {
 }
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	pollIDStr := upd.Message.Text[len(models.ShowPollStartCommand):]
+	pollIDStr := upd.Message.Text[len(models.ShowPollStartCommandPrefix):]
 
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {

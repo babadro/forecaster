@@ -96,7 +96,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 
 	switch {
 	case upd.Message != nil:
-		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
+		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix) {
 			updateType = showPollStartCommandUpdateType
 			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
 		}

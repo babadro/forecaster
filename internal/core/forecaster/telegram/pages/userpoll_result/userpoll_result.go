@@ -2,7 +2,10 @@ package userpollresult
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
@@ -33,10 +36,60 @@ func (s *Service) NewRequest() (proto2.Message, *userpollresult.UserPollResult) 
 	return v, v
 }
 
+func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	pollID, userID, err := parseIDs(upd.Message.Text[len(models.ShowUserResultCommandPrefix):])
+	if err != nil {
+		return nil, "", err
+	}
+
+	return s.render(
+		ctx, pollID, userID, upd.Message.Chat.ID, upd.Message.MessageID, upd.Message.From.UserName, false,
+	)
+}
+
+func parseIDs(text string) (int32, int64, error) {
+	ids := strings.Split(text, "_")
+	if length := len(ids); length != 2 {
+		return 0, 0, fmt.Errorf(
+			"userpoll result: can't parse pollID and userID from %s, expected len(ids)=2, got=%d", text, length)
+	}
+
+	pollID, err := strconv.ParseInt(ids[0], 10, 32)
+	if err != nil {
+		return 0, 0, fmt.Errorf("userpoll result: can't parse pollID from command: %s", text)
+	}
+
+	userID, err := strconv.ParseInt(ids[1], 10, 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("userpoll result: can't parse userID from command: %s", text)
+	}
+
+	return int32(pollID), userID, nil
+}
+
 func (s *Service) RenderCallback(
 	ctx context.Context, req *userpollresult.UserPollResult, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, req.GetPollId())
+	user := upd.CallbackQuery.From
+	if user == nil {
+		return nil, "", errors.New("user is nil")
+	}
+
+	chat := upd.CallbackQuery.Message.Chat
+	message := upd.CallbackQuery.Message
+
+	return s.render(ctx, req.GetPollId(), user.ID, chat.ID, message.MessageID, user.UserName, true)
+}
+
+func (s *Service) render(
+	ctx context.Context,
+	pollID int32,
+	userID, chatID int64,
+	messageID int,
+	userName string,
+	editMessage bool,
+) (tgbotapi.Chattable, string, error) {
+	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}
@@ -46,9 +99,7 @@ func (s *Service) RenderCallback(
 		return nil, "", fmt.Errorf("userpoll result: can't get outcome for pollID: %d", p.ID)
 	}
 
-	user := upd.CallbackQuery.From
-
-	userVote, found, err := s.w.GetUserVote(ctx, user.ID, p.ID)
+	userVote, found, err := s.w.GetUserVote(ctx, userID, p.ID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -64,8 +115,8 @@ func (s *Service) RenderCallback(
 	stat := getStatistic(p.Options, userVote.Position)
 
 	txtInputModel := txtMsgInput{
-		userName:                user.UserName,
-		userID:                  user.ID,
+		userName:                userName,
+		userID:                  userID,
 		pollID:                  p.ID,
 		optionTitle:             outcome.Title,
 		finishPoll:              time.Time(p.Finish),
@@ -83,9 +134,14 @@ func (s *Service) RenderCallback(
 		return nil, "", fmt.Errorf("userpoll result: unable to create keyboard markup: %s", err.Error())
 	}
 
-	origMsg := upd.CallbackQuery.Message
+	var res tgbotapi.Chattable
+	if editMessage {
+		res = render.NewEditMessageTextWithKeyboard(chatID, messageID, msg, markup)
+	} else {
+		res = render.NewMessageWithKeyboard(chatID, msg, markup)
+	}
 
-	return render.NewEditMessageTextWithKeyboard(origMsg.Chat.ID, origMsg.MessageID, msg, markup), "", nil
+	return res, "", nil
 }
 
 type statistics struct {
