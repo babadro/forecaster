@@ -43,7 +43,7 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 	}
 
 	return s.render(
-		ctx, pollID, userID, upd.Message.Chat.ID, upd.Message.MessageID, upd.Message.From.UserName, false,
+		ctx, pollID, userID, upd.Message.Chat.ID, upd.Message.MessageID, upd.Message.From.UserName, false, true,
 	)
 }
 
@@ -78,7 +78,7 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	return s.render(ctx, req.GetPollId(), user.ID, chat.ID, message.MessageID, user.UserName, true)
+	return s.render(ctx, req.GetPollId(), user.ID, chat.ID, message.MessageID, user.UserName, true, false)
 }
 
 func (s *Service) render(
@@ -88,6 +88,7 @@ func (s *Service) render(
 	messageID int,
 	userName string,
 	editMessage bool,
+	thirdPerson bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
@@ -127,7 +128,12 @@ func (s *Service) render(
 		totalVotesForWonOption:  stat.votesForWonOption,
 	}
 
-	msg := s.txtMsg(txtInputModel)
+	var msg string
+	if thirdPerson {
+		msg = s.thirdPersonTxtMsg(txtInputModel)
+	} else {
+		msg = s.txtMsg(txtInputModel)
+	}
 
 	markup, err := keyboardMarkup(p.ID)
 	if err != nil {
@@ -202,6 +208,29 @@ func (s *Service) txtMsg(in txtMsgInput) string {
 		sb.Printf("\nThis places you ahead of %d%% of all participants and shows that you chose the correct option earlier than %d%% of those who also chose correctly.", in.prozentOfAllVotesBehind, in.prozentOfWonVotesBehind)
 	} else if in.prozentOfAllVotesBehind != 0 {
 		sb.Printf("\nThis places you ahead of %d%% of all participants", in.prozentOfAllVotesBehind)
+	}
+
+	sb.Printf("\nOut of %d total participants, only %d made a correct prediction.", in.totalVotes, in.totalVotesForWonOption)
+
+	sb.Print("\nShare your results by forwarding this message or by sending the following link:")
+	sb.Printf("https://t.me/%s?start=show_user_result_%d_%d", s.botName, in.pollID, in.userID)
+
+	return sb.String()
+}
+
+func (s *Service) thirdPersonTxtMsg(in txtMsgInput) string {
+	var sb render.StringBuilder
+
+	advanceTimeNumber, advanceTimeUnit := render.GetHighestTimeUnit(in.finishPoll.Sub(time.Unix(in.voteUnixTime, 0)))
+
+	sb.Printf("<b>%s</b> predicted that %s %d %s before!", in.userName, in.optionTitle, advanceTimeNumber, advanceTimeUnit)
+
+	if in.prozentOfAllVotesBehind != 0 && in.prozentOfWonVotesBehind != 0 {
+		sb.Printf(
+			"\nThis places them ahead of %d%% of all participants and shows that %s chose the correct option earlier than %d%% of those who also chose correctly.",
+			in.prozentOfAllVotesBehind, in.userName, in.prozentOfWonVotesBehind)
+	} else if in.prozentOfAllVotesBehind != 0 {
+		sb.Printf("\nThis places them ahead of %d%% of all participants", in.prozentOfAllVotesBehind)
 	}
 
 	sb.Printf("\nOut of %d total participants, only %d made a correct prediction.", in.totalVotes, in.totalVotesForWonOption)
