@@ -85,6 +85,7 @@ const (
 	unknownUpdateType byte = iota
 	showPollStartCommandUpdateType
 	renderCallbackUpdateType
+	showUserResultStartCommandUpdateType
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
@@ -99,6 +100,9 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix) {
 			updateType = showPollStartCommandUpdateType
 			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
+		} else if strings.HasPrefix(upd.Message.Text, models.ShowUserResultCommandPrefix) {
+			updateType = showUserResultStartCommandUpdateType
+			msg, errMsg, err = s.pages.userPollResult.RenderStartCommand(ctx, upd)
 		}
 	case upd.CallbackData() != "":
 		var decoded []byte

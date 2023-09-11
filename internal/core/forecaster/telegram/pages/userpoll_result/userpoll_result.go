@@ -87,7 +87,7 @@ func (s *Service) render(
 	userID, chatID int64,
 	messageID int,
 	userName string,
-	editMessage bool,
+	isCallback bool,
 	thirdPerson bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
@@ -110,10 +110,14 @@ func (s *Service) render(
 	}
 
 	if userVote.OptionID != outcome.ID {
-		return nil, "", fmt.Errorf("userpoll result: last user's vote is not outcome for pollID: %d", p.ID)
+		if !isCallback { // it is assumed that unsuccessful vote is not possible to share via start command
+			return nil, "", fmt.Errorf("userpoll result: last user's vote is not outcome for pollID: %d", p.ID)
+		}
+
+		votesForLoseOptions, votesForWonOption := getCommonStatistic(p.Options)
 	}
 
-	stat := getStatistic(p.Options, userVote.Position)
+	stat := getUserStatistic(p.Options, userVote.Position)
 
 	txtInputModel := txtMsgInput{
 		userName:                userName,
@@ -141,7 +145,7 @@ func (s *Service) render(
 	}
 
 	var res tgbotapi.Chattable
-	if editMessage {
+	if isCallback {
 		res = render.NewEditMessageTextWithKeyboard(chatID, messageID, msg, markup)
 	} else {
 		res = render.NewMessageWithKeyboard(chatID, msg, markup)
@@ -157,16 +161,8 @@ type statistics struct {
 	totalVotes              int32
 }
 
-func getStatistic(options []*swagger.Option, userPositionAmongWonVotes int32) statistics {
-	var votesForLoseOptions, votesForWonOption int32
-
-	for _, o := range options {
-		if !o.IsActualOutcome {
-			votesForLoseOptions += o.TotalVotes
-		} else {
-			votesForWonOption = o.TotalVotes
-		}
-	}
+func getUserStatistic(options []*swagger.Option, userPositionAmongWonVotes int32) statistics {
+	votesForLoseOptions, votesForWonOption := getCommonStatistic(options)
 
 	totalVotes := votesForLoseOptions + votesForWonOption
 
@@ -184,6 +180,19 @@ func getStatistic(options []*swagger.Option, userPositionAmongWonVotes int32) st
 	}
 }
 
+func getCommonStatistic(options []*swagger.Option) (int32, int32) {
+	var votesForLoseOptions, votesForWonOption int32
+	for _, o := range options {
+		if !o.IsActualOutcome {
+			votesForLoseOptions += o.TotalVotes
+		} else {
+			votesForWonOption = o.TotalVotes
+		}
+	}
+
+	return votesForLoseOptions, votesForWonOption
+}
+
 type txtMsgInput struct {
 	userName                string
 	userID                  int64
@@ -196,6 +205,8 @@ type txtMsgInput struct {
 	totalVotes              int32
 	totalVotesForWonOption  int32
 }
+
+const showUserResultCommand = "showuserres_"
 
 func (s *Service) txtMsg(in txtMsgInput) string {
 	var sb render.StringBuilder
@@ -213,9 +224,20 @@ func (s *Service) txtMsg(in txtMsgInput) string {
 	sb.Printf("\nOut of %d total participants, only %d made a correct prediction.", in.totalVotes, in.totalVotesForWonOption)
 
 	sb.Print("\nShare your results by forwarding this message or by sending the following link:")
-	sb.Printf("https://t.me/%s?start=show_user_result_%d_%d", s.botName, in.pollID, in.userID)
+	sb.Printf("https://t.me/%s?start=%s%d_%d", s.botName, showUserResultCommand, in.pollID, in.userID)
 
 	return sb.String()
+}
+
+func (s *Service) txtMsgForWrongVotedUser(userName, votedOptionTitle string) string {
+	var sb render.StringBuilder
+
+	sb.Printf("<b>%s</b>, your prediction for '%s' didn't quite pan out this time. But don't be discouraged! Forecasting is as much about learning as it is about being right!", userName, votedOptionTitle)
+
+
+	Ready to try again? Click the link below to jump right back in!
+	<link>
+
 }
 
 func (s *Service) thirdPersonTxtMsg(in txtMsgInput) string {
@@ -234,9 +256,6 @@ func (s *Service) thirdPersonTxtMsg(in txtMsgInput) string {
 	}
 
 	sb.Printf("\nOut of %d total participants, only %d made a correct prediction.", in.totalVotes, in.totalVotesForWonOption)
-
-	sb.Print("\nShare your results by forwarding this message or by sending the following link:")
-	sb.Printf("https://t.me/%s?start=show_user_result_%d_%d", s.botName, in.pollID, in.userID)
 
 	return sb.String()
 }

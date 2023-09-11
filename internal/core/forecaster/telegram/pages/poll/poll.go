@@ -130,7 +130,7 @@ func (s *Service) render(
 func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.InlineKeyboardMarkup, error) {
 	length := len(poll.Options)
 	if swagger.HasOutcome(poll.Options) {
-		length++ // ++ for "show my results" button
+		length++ // ++ for "show results" button
 	}
 
 	rowsCount := length / models.MaxCountInRow
@@ -154,7 +154,7 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 			rowIdx := i / models.MaxCountInRow
 
 			rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
-				Text:         "Show My Results",
+				Text:         "Show Results",
 				CallbackData: showMyResultsData,
 			})
 
