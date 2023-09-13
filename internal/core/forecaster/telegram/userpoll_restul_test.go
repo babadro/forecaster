@@ -14,7 +14,7 @@ func (s *TelegramServiceSuite) TestUserPollResult_callback_happy_path() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	p, targetUserID := s.setupForUserPollResultTest()
+	p, targetUserID, _ := s.setupForUserPollResultTest(false)
 
 	update := startShowPoll(p.ID, targetUserID)
 	s.sendMessage(update)
@@ -42,7 +42,7 @@ func (s *TelegramServiceSuite) TestUserPollResult_command_happy_path() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	p, targetUserID := s.setupForUserPollResultTest()
+	p, targetUserID, _ := s.setupForUserPollResultTest(false)
 
 	// send /start showuserres_<poll_id>_<user_id> command
 	update := startShowUserRes(p.ID, targetUserID)
@@ -54,7 +54,58 @@ func (s *TelegramServiceSuite) TestUserPollResult_command_happy_path() {
 	s.Require().NotContains(userPollResultMsg.Text, "you") // in case of /start command the message is for 3rd person
 }
 
-func (s *TelegramServiceSuite) setupForUserPollResultTest() (swagger.PollWithOptions, int64) {
+func (s *TelegramServiceSuite) TestUserPollResult_user_voted_last() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	// 4 means that user voted last among right voters
+	p, targetUserID, _ := s.setupForUserPollResultTest(true)
+
+	// send /start showuserres_<poll_id>_<user_id> command
+	update := startShowUserRes(p.ID, targetUserID)
+	s.sendMessage(update)
+
+	userPollResultMsg := s.asMessage(sentMsg)
+
+	// if we calculated his position among right voters, then he should be on last position with 0% of votes behind
+	// we should verify that we don't show 0% for him, it doesn't make sense
+	s.Require().NotContains(userPollResultMsg.Text, "0%")
+}
+
+func (s *TelegramServiceSuite) TestUserPollResult_wrong_voted_user() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	p, _, votes := s.setupForUserPollResultTest(false)
+	wonOption, idx := swagger.GetOutcome(p.Options)
+	s.Require().NotEqual(-1, idx)
+
+	var targetUserID int64
+	found := false
+	for _, v := range votes {
+		if v.OptionID != wonOption.ID {
+			targetUserID, found = v.UserID, true
+			break
+		}
+	}
+	s.Require().True(found)
+
+	// send /start showuserres_<poll_id>_<user_id> command
+	update := startShowPoll(p.ID, targetUserID)
+	s.sendMessage(update)
+
+	pollMsg := s.asMessage(sentMsg)
+	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	showResultsButton := pollButtons[len(pollButtons)-1]
+	_ = s.sendCallback(showResultsButton, targetUserID)
+
+	userPollResultMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(userPollResultMsg.Text, "didn't quite pan out this time")
+}
+
+func (s *TelegramServiceSuite) setupForUserPollResultTest(setOnLastPosition bool) (swagger.PollWithOptions, int64, []swagger.Vote) {
 	p := s.createRandomPoll()
 	wonOption := p.Options[0]
 
@@ -64,20 +115,29 @@ func (s *TelegramServiceSuite) setupForUserPollResultTest() (swagger.PollWithOpt
 	// create votes
 	var counter int64
 	targetUserID := gofakeit.Int64()
+
+	var votes []swagger.Vote
 	for _, op := range p.Options {
 		for i := 0; i < 5; i++ {
 			userID := gofakeit.Int64()
 			// set target user id for won option
-			if op.ID == wonOption.ID && i == 2 {
+			votePosition := 2
+			if setOnLastPosition {
+				votePosition = 4
+			}
+
+			if op.ID == wonOption.ID && i == votePosition {
 				userID = targetUserID
 			}
 
-			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
+			v, err := s.db.CreateVote(ctx, swagger.CreateVote{
 				OptionID: op.ID,
 				PollID:   p.ID,
 				UserID:   userID,
 			}, now.Unix()+counter)
 			s.Require().NoError(err)
+
+			votes = append(votes, v)
 
 			counter++
 		}
@@ -91,7 +151,10 @@ func (s *TelegramServiceSuite) setupForUserPollResultTest() (swagger.PollWithOpt
 
 	s.Require().NoError(s.db.CalculateStatistics(ctx, p.ID))
 
-	return p, targetUserID
+	p, err = s.db.GetPollByID(ctx, p.ID)
+	s.Require().NoError(err)
+
+	return p, targetUserID, votes
 }
 
 func (s *TelegramServiceSuite) checkStatisticsForUserPollResultTest(userName, text string) {
