@@ -98,14 +98,13 @@ func (s *Service) render(
 	if idx == -1 {
 		return nil, "", fmt.Errorf("userpoll result: can't get outcome for pollID: %d", p.ID)
 	}
-
 	userVote, found, err := s.w.GetUserVote(ctx, userID, p.ID)
 	if err != nil {
 		return nil, "", err
 	}
 
 	if !found {
-		return nil, "", fmt.Errorf("userpoll result: can't find last user's vote for pollID: %d", p.ID)
+		return nil, "", fmt.Errorf("userpoll result: can't find user's vote for pollID: %d", p.ID)
 	}
 
 	markup, err := keyboardMarkup(p.ID)
@@ -115,7 +114,7 @@ func (s *Service) render(
 
 	if userVote.OptionID != outcome.ID {
 		if !isCallback { // it is assumed that unsuccessful vote is not possible to share via start command
-			return nil, "", fmt.Errorf("userpoll result: last user's vote is not outcome for pollID: %d", p.ID)
+			return nil, "", fmt.Errorf("userpoll result: user's vote is not outcome for pollID: %d", p.ID)
 		}
 
 		votesForLoseOptions, votesForWonOption := getGeneralStatistic(p.Options)

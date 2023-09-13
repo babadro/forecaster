@@ -19,7 +19,7 @@ import (
 func (s *TelegramServiceSuite) TestShowPollStartCommand() {
 	poll := s.createRandomPoll()
 
-	update := startShowPoll(poll.ID)
+	update := startShowPoll(poll.ID, 456)
 
 	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
@@ -39,7 +39,7 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand() {
 }
 
 func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
-	update := startShowPoll(999)
+	update := startShowPoll(999, 456)
 
 	var msg tgbotapi.MessageConfig
 
@@ -111,7 +111,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 	poll := s.createRandomPoll()
 
 	// send /start showpoll_<poll_id> command
-	update := startShowPoll(poll.ID)
+	update := startShowPoll(poll.ID, 456)
 	s.sendMessage(update)
 
 	pollMsg := s.asMessage(sentMsg)
@@ -122,7 +122,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// send the first option
 	firstButton := pollButtons[0]
-	s.sendCallback(firstButton)
+	s.sendCallback(firstButton, 456)
 
 	// verify the result votepreview message
 	votePreviewMsg := s.asEditMessage(sentMsg)
@@ -138,7 +138,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 	s.Require().Len(votePreviewButtons, 2)
 
 	// push the first button (yes)
-	s.sendCallback(votePreviewButtons[0])
+	s.sendCallback(votePreviewButtons[0], 456)
 
 	// verify the vote message
 	voteMsg := s.asEditMessage(sentMsg)
@@ -151,7 +151,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	backButton := voteKeyboard[0]
 	s.Contains(backButton.Text, "Back")
-	s.sendCallback(backButton)
+	s.sendCallback(backButton, 456)
 
 	// verify the poll message
 	pollMsg2 := s.asEditMessage(sentMsg)
@@ -181,7 +181,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 	// sleep for second to make sure vote timestamp (which used second precision) is different
 	time.Sleep(time.Second)
 	// push the button to vote for another option this time
-	s.sendCallback(anotherOptionButton)
+	s.sendCallback(anotherOptionButton, 456)
 
 	// verify the votepreview message
 	votePreviewMsg2 := s.asEditMessage(sentMsg)
@@ -197,7 +197,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 	s.Require().Len(votePreviewButtons, 2)
 
 	// push the first button (yes)
-	s.sendCallback(votePreviewButtons[0])
+	s.sendCallback(votePreviewButtons[0], 456)
 
 	// verify the vote message
 	voteMsg2 := s.asEditMessage(sentMsg)
@@ -210,7 +210,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	backButton = voteKeyboard[0]
 	s.Contains(backButton.Text, "Back")
-	s.sendCallback(backButton)
+	s.sendCallback(backButton, 456)
 
 	// verify the poll message
 	pollMsg3 := s.asEditMessage(sentMsg)
@@ -233,7 +233,7 @@ func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
 	poll := s.createRandomPoll()
 
 	// send /start showpoll_<poll_id> command
-	update := startShowPoll(poll.ID)
+	update := startShowPoll(poll.ID, 456)
 	s.sendMessage(update)
 
 	pollMsg := s.asMessage(sentMsg)
@@ -242,7 +242,7 @@ func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
 
 	// send the first option
 	firstButton := pollButtons[0]
-	s.sendCallback(firstButton)
+	s.sendCallback(firstButton, 456)
 
 	// verify the result votepreview message
 	votePreviewMsg := s.asEditMessage(sentMsg)
@@ -252,7 +252,7 @@ func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
 	s.Require().Len(votePreviewButtons, 2)
 
 	// push the back button
-	s.sendCallback(votePreviewButtons[1])
+	s.sendCallback(votePreviewButtons[1], 456)
 
 	// verify the poll message
 	pollMsg2 := s.asEditMessage(sentMsg)
@@ -272,7 +272,7 @@ func (s *TelegramServiceSuite) Test_expiredPoll() {
 	poll := s.createPoll(pollInput)
 
 	// send /start showpoll_<poll_id> command
-	update := startShowPoll(poll.ID)
+	update := startShowPoll(poll.ID, 456)
 	s.sendMessage(update)
 
 	pollMsg := s.asMessage(sentMsg)
@@ -281,7 +281,7 @@ func (s *TelegramServiceSuite) Test_expiredPoll() {
 
 	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
 	// send the first option
-	s.sendCallback(pollButtons[0])
+	s.sendCallback(pollButtons[0], 456)
 
 	// verify votepreview message
 	votePreviewMsg := s.asEditMessage(sentMsg)
@@ -301,14 +301,16 @@ func (s *TelegramServiceSuite) mockTelegramSender(sentMsg *interface{}) {
 		})
 }
 
-func (s *TelegramServiceSuite) sendCallback(button tgbotapi.InlineKeyboardButton) {
+func (s *TelegramServiceSuite) sendCallback(button tgbotapi.InlineKeyboardButton, userID int64) tgbotapi.Update {
 	s.T().Helper()
 
 	s.Require().NotNil(button.CallbackData)
 
-	update := callback(*button.CallbackData)
+	update := callback(*button.CallbackData, userID)
 	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
 	s.Require().NoError(err)
+
+	return update
 }
 
 func (s *TelegramServiceSuite) findOptionByCallbackData(
@@ -347,21 +349,35 @@ func getButtons(keyboard tgbotapi.InlineKeyboardMarkup) []tgbotapi.InlineKeyboar
 	return buttons
 }
 
-func startShowPoll(pollID int32) tgbotapi.Update {
+func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{
 				ID: 123,
 			},
 			From: &tgbotapi.User{
-				ID: 456,
+				ID: userID,
 			},
 			Text: "/start showpoll_" + strconv.Itoa(int(pollID)),
 		},
 	}
 }
 
-func callback(data string) tgbotapi.Update {
+func startShowUserRes(pollID int32, userID int64) tgbotapi.Update {
+	return tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: userID,
+			},
+			Text: "/start showuserres_" + strconv.Itoa(int(pollID)) + "_" + strconv.Itoa(int(userID)),
+		},
+	}
+}
+
+func callback(data string, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		CallbackQuery: &tgbotapi.CallbackQuery{
 			Message: &tgbotapi.Message{
@@ -371,7 +387,8 @@ func callback(data string) tgbotapi.Update {
 			},
 			Data: data,
 			From: &tgbotapi.User{
-				ID: 456,
+				ID:       userID,
+				UserName: "user" + strconv.Itoa(int(userID)),
 			},
 		},
 	}
