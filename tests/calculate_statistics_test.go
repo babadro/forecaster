@@ -63,7 +63,7 @@ func (s *APITestSuite) TestCalculateStatistics() {
 	}
 
 	for _, v := range votes {
-		_, err := s.forecasterDB.CreateVote(ctx, swagger.CreateVote{
+		_, err = s.forecasterDB.CreateVote(ctx, swagger.CreateVote{
 			OptionID: v.optionID,
 			PollID:   p.ID,
 			UserID:   v.userID,
@@ -108,9 +108,10 @@ func (s *APITestSuite) TestCalculateStatistics() {
 
 	// check votes positions
 	position := int32(1)
+
 	for _, v := range votes {
-		dbVote, err := s.forecasterDB.GetUserVote(ctx, v.userID, p.ID)
-		s.Require().NoError(err)
+		dbVote, getVoteErr := s.forecasterDB.GetUserVote(ctx, v.userID, p.ID)
+		s.Require().NoError(getVoteErr)
 
 		// check only votes for win option
 		if v.optionID == winOptionID {

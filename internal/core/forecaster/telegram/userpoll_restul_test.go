@@ -83,13 +83,16 @@ func (s *TelegramServiceSuite) TestUserPollResult_wrong_voted_user() {
 	s.Require().NotEqual(-1, idx)
 
 	var targetUserID int64
+
 	found := false
+
 	for _, v := range votes {
 		if v.OptionID != wonOption.ID {
 			targetUserID, found = v.UserID, true
 			break
 		}
 	}
+
 	s.Require().True(found)
 
 	// send /start showuserres_<poll_id>_<user_id> command
@@ -131,7 +134,9 @@ func (s *TelegramServiceSuite) TestBackToPollButton() {
 	s.Require().Contains(pollMsg.Text, p.Title)
 }
 
-func (s *TelegramServiceSuite) setupForUserPollResultTest(setOnLastPosition bool) (swagger.PollWithOptions, int64, []swagger.Vote) {
+func (s *TelegramServiceSuite) setupForUserPollResultTest(
+	setOnLastPosition bool,
+) (swagger.PollWithOptions, int64, []swagger.Vote) {
 	p := s.createRandomPoll()
 	wonOption := p.Options[0]
 
@@ -140,9 +145,11 @@ func (s *TelegramServiceSuite) setupForUserPollResultTest(setOnLastPosition bool
 
 	// create votes
 	var counter int64
+
 	targetUserID := gofakeit.Int64()
 
 	var votes []swagger.Vote
+
 	for _, op := range p.Options {
 		for i := 0; i < 5; i++ {
 			userID := gofakeit.Int64()

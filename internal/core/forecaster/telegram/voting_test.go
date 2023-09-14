@@ -244,5 +244,4 @@ func (s *TelegramServiceSuite) Test_attempt_to_vote_for_the_same_option_result_i
 	s.Require().Len(voteKeyboard, 1)
 	backButton := voteKeyboard[0]
 	s.Contains(backButton.Text, "Back")
-
 }

@@ -97,7 +97,8 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 		var option models.Option
 
 		err = rows.Scan(
-			&option.ID, &option.PollID, &option.Title, &option.Description, &option.IsActualOutcome, &option.TotalVotes, &option.UpdatedAt,
+			&option.ID, &option.PollID, &option.Title, &option.Description,
+			&option.IsActualOutcome, &option.TotalVotes, &option.UpdatedAt,
 		)
 		if err != nil {
 			return models.PollWithOptions{}, scanFailed("select options", err)
@@ -510,6 +511,7 @@ WHERE forecaster.votes.poll_id = $1 AND forecaster.votes.user_id = numbered_vote
 
 func (db *ForecasterDB) CalculateStatistics(ctx context.Context, pollID int32) error {
 	var start, finish time.Time
+
 	selectStartFinish := "select start, finish from forecaster.polls"
 
 	if err := db.db.QueryRow(ctx,

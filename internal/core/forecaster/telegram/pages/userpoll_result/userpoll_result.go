@@ -47,9 +47,11 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 	)
 }
 
+const idsCount = 2
+
 func parseIDs(text string) (int32, int64, error) {
 	ids := strings.Split(text, "_")
-	if length := len(ids); length != 2 {
+	if length := len(ids); length != idsCount {
 		return 0, 0, fmt.Errorf(
 			"userpoll result: can't parse pollID and userID from %s, expected len(ids)=2, got=%d", text, length)
 	}
@@ -98,7 +100,9 @@ func (s *Service) render(
 	if idx == -1 {
 		return nil, "", fmt.Errorf("userpoll result: can't get outcome for pollID: %d", p.ID)
 	}
+
 	userVote, found, err := s.w.GetUserVote(ctx, userID, p.ID)
+
 	if err != nil {
 		return nil, "", err
 	}
@@ -144,6 +148,7 @@ func (s *Service) render(
 	}
 
 	var res tgbotapi.Chattable
+
 	if isCallback {
 		msg := s.txtMsg(txtInputModel)
 		res = render.NewEditMessageTextWithKeyboard(chatID, messageID, msg, markup)
@@ -162,6 +167,8 @@ type statistics struct {
 	totalVotes              int32
 }
 
+const prozents100 = 100
+
 func getUserStatistic(options []*swagger.Option, userPositionAmongWonVotes int32) (statistics, error) {
 	votesForLoseOptions, votesForWonOption := getGeneralStatistic(options)
 
@@ -177,9 +184,10 @@ func getUserStatistic(options []*swagger.Option, userPositionAmongWonVotes int32
 
 	numberOfVotesBehind := votesForLoseOptions + votesForWonOption - userPositionAmongWonVotes
 
-	prozentOfAllVotesBehind := int8(float32(numberOfVotesBehind) / float32(totalVotes) * 100)
+	prozentOfAllVotesBehind := int8(float32(numberOfVotesBehind) / float32(totalVotes) * prozents100)
 
-	prozentOfWonVotesBehind := int8(float32(votesForWonOption-userPositionAmongWonVotes) / float32(votesForWonOption) * 100)
+	prozentOfWonVotesBehind :=
+		int8(float32(votesForWonOption-userPositionAmongWonVotes) / float32(votesForWonOption) * prozents100)
 
 	return statistics{
 		prozentOfAllVotesBehind: prozentOfAllVotesBehind,
@@ -191,6 +199,7 @@ func getUserStatistic(options []*swagger.Option, userPositionAmongWonVotes int32
 
 func getGeneralStatistic(options []*swagger.Option) (int32, int32) {
 	var votesForLoseOptions, votesForWonOption int32
+
 	for _, o := range options {
 		if !o.IsActualOutcome {
 			votesForLoseOptions += o.TotalVotes
@@ -222,10 +231,14 @@ func (s *Service) txtMsg(in txtMsgInput) string {
 
 	advanceTimeNumber, advanceTimeUnit := render.GetHighestTimeUnit(in.finishPoll.Sub(time.Unix(in.voteUnixTime, 0)))
 
-	sb.Printf("<b>%s</b> you predicted that %s %d %s before!", in.userName, in.optionTitle, advanceTimeNumber, advanceTimeUnit)
+	sb.Printf("<b>%s</b> you predicted that %s %d %s before!",
+		in.userName, in.optionTitle, advanceTimeNumber, advanceTimeUnit)
 
 	if in.prozentOfAllVotesBehind != 0 && in.prozentOfWonVotesBehind != 0 {
-		sb.Printf("\nThis places you ahead of %d%% of all participants and shows that you chose the correct option earlier than %d%% of those who also chose correctly.", in.prozentOfAllVotesBehind, in.prozentOfWonVotesBehind)
+		sb.Printf(
+			"\nThis places you ahead of %d%% of all participants "+
+				"and shows that you chose the correct option earlier than %d%% of those who also chose correctly.",
+			in.prozentOfAllVotesBehind, in.prozentOfWonVotesBehind)
 	} else if in.prozentOfAllVotesBehind != 0 {
 		sb.Printf("\nThis places you ahead of %d%% of all participants", in.prozentOfAllVotesBehind)
 	}
@@ -242,7 +255,8 @@ func (s *Service) txtMsg(in txtMsgInput) string {
 	return sb.String()
 }
 
-func (s *Service) txtMsgForWrongVotedUser(userName, votedOptionTitle string, totalVotes, votesForWonOption int32) string {
+func (s *Service) txtMsgForWrongVotedUser(
+	userName, votedOptionTitle string, totalVotes, votesForWonOption int32) string {
 	var sb render.StringBuilder
 
 	sb.Printf("<b>%s</b>, your prediction for '%s' didn't quite pan out this time.", userName, votedOptionTitle)
@@ -265,7 +279,8 @@ func (s *Service) thirdPersonTxtMsg(in txtMsgInput) string {
 
 	if in.prozentOfAllVotesBehind != 0 && in.prozentOfWonVotesBehind != 0 {
 		sb.Printf(
-			"\nThis places them ahead of %d%% of all participants and shows that %s chose the correct option earlier than %d%% of those who also chose correctly.",
+			"\nThis places them ahead of %d%% of all participants"+
+				"and shows that %s chose the correct option earlier than %d%% of those who also chose correctly.",
 			in.prozentOfAllVotesBehind, in.userName, in.prozentOfWonVotesBehind)
 	} else if in.prozentOfAllVotesBehind != 0 {
 		sb.Printf("\nThis places them ahead of %d%% of all participants", in.prozentOfAllVotesBehind)

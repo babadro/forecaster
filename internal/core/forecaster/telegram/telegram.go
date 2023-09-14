@@ -80,7 +80,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return sendErr
 }
 
-// update type int8 iota
+// update type int8 iota.
 const (
 	unknownUpdateType byte = iota
 	showPollStartCommandUpdateType
@@ -92,7 +92,9 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 	var msg tgbotapi.Chattable
 
 	var errMsg string
+
 	var updateType, route byte
+
 	var err error
 
 	switch {
@@ -107,6 +109,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 	case upd.CallbackData() != "":
 		var decoded []byte
 		decoded, err = base64.StdEncoding.DecodeString(upd.CallbackQuery.Data)
+
 		if err != nil {
 			return nil, "", fmt.Errorf("decode error: %s", err.Error())
 		}
