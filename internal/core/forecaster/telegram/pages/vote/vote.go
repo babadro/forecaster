@@ -2,12 +2,14 @@ package vote
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	poll2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	"github.com/babadro/forecaster/internal/domain"
 	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
@@ -50,26 +52,40 @@ func (s *Service) RenderCallback(
 		UserID:   upd.CallbackQuery.From.ID,
 	}, time.Now().Unix())
 
+	chatID, messageID := upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID
+	// You have already voted for this option
 	if err != nil {
+		if errors.Is(err, domain.ErrVoteWithSameOptionAlreadyExists) {
+			return tryCreateMessage(chatID, messageID, vote.PollId,
+				"You have already voted for this option", "",
+			)
+		}
+
 		return nil,
 			"Sorry, something went wrong, can't vote right now",
 			fmt.Errorf("vote: unable to create vote: %s", err.Error())
 	}
 
+	return tryCreateMessage(chatID, messageID, vote.PollId,
+		"Success!", "Vote was successful, but I cant get you back to poll due to the error")
+}
+
+func tryCreateMessage(
+	chatID int64, msgID int, pollID *int32, successText, failText string,
+) (tgbotapi.Chattable, string, error) {
 	callBackData, err := proto.MarshalCallbackData(models.PollRoute, &poll2.Poll{
-		PollId: vote.PollId,
+		PollId: pollID,
 	})
 	if err != nil {
-		return nil,
-			"Vote was successful, but I cant get you back to poll due to the error",
+		return nil, failText,
 			fmt.Errorf("vote: unable to marshal callback data: %s", err.Error())
 	}
 
 	return render.NewEditMessageTextWithKeyboard(
-		upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID,
-		"Success!",
+		chatID, msgID, successText,
 		render.Keyboard(tgbotapi.InlineKeyboardButton{
 			Text:         "Back to poll",
 			CallbackData: callBackData,
-		})), "", nil
+		}),
+	), "", nil
 }

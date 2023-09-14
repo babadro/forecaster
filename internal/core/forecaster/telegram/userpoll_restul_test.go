@@ -105,6 +105,32 @@ func (s *TelegramServiceSuite) TestUserPollResult_wrong_voted_user() {
 	s.Require().Contains(userPollResultMsg.Text, "didn't quite pan out this time")
 }
 
+func (s *TelegramServiceSuite) TestBackToPollButton() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	p, targetUserID, _ := s.setupForUserPollResultTest(false)
+
+	// send /start showuserres_<poll_id>_<user_id> command
+	update := startShowUserRes(p.ID, targetUserID)
+	s.sendMessage(update)
+
+	userPollResultMsg := s.asMessage(sentMsg)
+
+	// verify the "Back to poll" button
+	userPollResultButtons := s.buttonsFromInterface(userPollResultMsg.ReplyMarkup)
+	s.Require().NotEmpty(userPollResultButtons)
+
+	backToPollButton := userPollResultButtons[len(userPollResultButtons)-1]
+	s.Require().Contains(backToPollButton.Text, "Back")
+	_ = s.sendCallback(backToPollButton, targetUserID)
+
+	// verify that we are back to the same poll
+	pollMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(pollMsg.Text, p.Title)
+}
+
 func (s *TelegramServiceSuite) setupForUserPollResultTest(setOnLastPosition bool) (swagger.PollWithOptions, int64, []swagger.Vote) {
 	p := s.createRandomPoll()
 	wonOption := p.Options[0]
