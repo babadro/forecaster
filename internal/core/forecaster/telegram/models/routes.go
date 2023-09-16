@@ -11,4 +11,5 @@ const (
 const (
 	ShowPollStartCommandPrefix  = "/start showpoll_"
 	ShowUserResultCommandPrefix = "/start showuserres_"
+	ShowPollsStartCommand       = "/start showpolls"
 )

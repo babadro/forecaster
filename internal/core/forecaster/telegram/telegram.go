@@ -10,6 +10,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/polls"
 	userpollresult "github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/userpoll_result"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/vote"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/votepreview"
@@ -21,6 +22,7 @@ type pageServices struct {
 	votePreview    *votepreview.Service
 	vote           *vote.Service
 	poll           *poll.Service
+	polls          *polls.Service
 	userPollResult *userpollresult.Service
 }
 
@@ -86,6 +88,7 @@ const (
 	showPollStartCommandUpdateType
 	renderCallbackUpdateType
 	showUserResultStartCommandUpdateType
+	showPollsStartCommandUpdateType
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
@@ -99,25 +102,29 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 
 	switch {
 	case upd.Message != nil:
-		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix) {
+		switch {
+		case strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix):
 			updateType = showPollStartCommandUpdateType
-			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
-		} else if strings.HasPrefix(upd.Message.Text, models.ShowUserResultCommandPrefix) {
+			msg, errMsg, err = validateStartCommandInput(s.pages.poll.RenderStartCommand)(ctx, upd)
+		case strings.HasPrefix(upd.Message.Text, models.ShowUserResultCommandPrefix):
 			updateType = showUserResultStartCommandUpdateType
-			msg, errMsg, err = s.pages.userPollResult.RenderStartCommand(ctx, upd)
+			msg, errMsg, err = validateStartCommandInput(s.pages.userPollResult.RenderStartCommand)(ctx, upd)
+		case upd.Message.Text == models.ShowPollsStartCommand:
+			updateType = showPollsStartCommandUpdateType
+			msg, errMsg, err = validateStartCommandInput(s.pages.polls.RenderStartCommand)(ctx, upd)
 		}
 	case upd.CallbackData() != "":
+		updateType = renderCallbackUpdateType
+
 		var decoded []byte
 		decoded, err = base64.StdEncoding.DecodeString(upd.CallbackQuery.Data)
-
 		if err != nil {
-			return nil, "", fmt.Errorf("decode error: %s", err.Error())
+			err = fmt.Errorf("can't decode base64: %s", err.Error())
+			break
 		}
 
 		route = decoded[0]
 		upd.CallbackQuery.Data = string(decoded)
-
-		updateType = renderCallbackUpdateType
 
 		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
 	}

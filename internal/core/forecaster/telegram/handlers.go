@@ -95,3 +95,13 @@ func validateCallbackInput(next handlerFunc) handlerFunc {
 		return next(ctx, upd)
 	}
 }
+
+func validateStartCommandInput(next handlerFunc) handlerFunc {
+	return func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+		if upd.Message.Chat == nil {
+			return nil, "", fmt.Errorf("chat is nil")
+		}
+
+		return next(ctx, upd)
+	}
+}

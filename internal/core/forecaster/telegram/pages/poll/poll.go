@@ -45,14 +45,7 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 			fmt.Errorf("unable to parse poll id: %s", err.Error())
 	}
 
-	if upd.Message == nil {
-		return nil, "", errors.New("message is nil")
-	}
-
 	chat := upd.Message.Chat
-	if chat == nil {
-		return nil, "", fmt.Errorf("chat is nil")
-	}
 
 	user := upd.Message.From
 	if user == nil {
