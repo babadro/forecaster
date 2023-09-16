@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
 	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -35,7 +36,7 @@ func (s *Service) NewRequest() (proto2.Message, *poll.Poll) {
 }
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	pollIDStr := upd.Message.Text[len(models.ShowPollStartCommand):]
+	pollIDStr := upd.Message.Text[len(models.ShowPollStartCommandPrefix):]
 
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
@@ -93,7 +94,7 @@ func (s *Service) render(
 
 	userAlreadyVoted := false
 
-	lastVote, err := s.db.GetLastVote(ctx, userID, p.ID)
+	lastVote, err := s.db.GetUserVote(ctx, userID, p.ID)
 	if err == nil {
 		userAlreadyVoted = true
 	} else if !errors.Is(err, domain.ErrNotFound) {
@@ -109,7 +110,7 @@ func (s *Service) render(
 			fmt.Errorf("unable to create text message: %s", err.Error())
 	}
 
-	keyboard, err := keyboardMarkup(p)
+	keyboard, err := keyboardMarkup(p, userID)
 	if err != nil {
 		return nil,
 			cantShowPollMsg,
@@ -126,8 +127,12 @@ func (s *Service) render(
 	return res, "", nil
 }
 
-func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup, error) {
+func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.InlineKeyboardMarkup, error) {
 	length := len(poll.Options)
+	if swagger.HasOutcome(poll.Options) {
+		length++ // ++ for "show results" button
+	}
+
 	rowsCount := length / models.MaxCountInRow
 
 	if length%models.MaxCountInRow > 0 {
@@ -136,10 +141,30 @@ func keyboardMarkup(poll swagger.PollWithOptions) (tgbotapi.InlineKeyboardMarkup
 
 	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
 
-	for i, op := range poll.Options {
+	for i := 0; i < length; i++ {
+		if i == len(poll.Options) {
+			showMyResultsData, err := proto.MarshalCallbackData(models.UserPollResultRoute, &userpollresult.UserPollResult{
+				UserId: helpers.Ptr[int64](userID),
+				PollId: helpers.Ptr[int32](poll.ID),
+			})
+			if err != nil {
+				return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal user poll result callback data: %w", err)
+			}
+
+			rowIdx := i / models.MaxCountInRow
+
+			rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
+				Text:         "Show Results",
+				CallbackData: showMyResultsData,
+			})
+
+			break
+		}
+
+		op := poll.Options[i]
 		votePreview := votepreview.VotePreview{
 			PollId:   helpers.Ptr(poll.ID),
-			OptionId: helpers.Ptr[int32](int32(op.ID)),
+			OptionId: helpers.Ptr(int32(op.ID)),
 		}
 
 		callbackData, err := proto.MarshalCallbackData(models.VotePreviewRoute, &votePreview)
@@ -197,7 +222,7 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 	}
 
 	if userAlreadyVoted {
-		votedOption, idx := findOptionByID(p.Options, lastVote.OptionID)
+		votedOption, idx := swagger.FindOptionByID(p.Options, lastVote.OptionID)
 		if idx == -1 {
 			return "", fmt.Errorf("unable to find voted option %d for poll %d", lastVote.OptionID, p.ID)
 		}
@@ -206,14 +231,4 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 	}
 
 	return sb.String(), nil
-}
-
-func findOptionByID(options []*swagger.Option, id int16) (*swagger.Option, int) {
-	for i, op := range options {
-		if op.ID == id {
-			return op, i
-		}
-	}
-
-	return nil, -1
 }

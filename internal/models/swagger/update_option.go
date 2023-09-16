@@ -20,6 +20,9 @@ type UpdateOption struct {
 	// description
 	Description *string `json:"Description,omitempty"`
 
+	// is actual outcome
+	IsActualOutcome *bool `json:"IsActualOutcome,omitempty"`
+
 	// title
 	Title *string `json:"Title,omitempty"`
 }

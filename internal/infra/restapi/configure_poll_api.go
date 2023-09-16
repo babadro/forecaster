@@ -33,6 +33,7 @@ import (
 
 type envVars struct {
 	TelegramToken    string `env:"TELEGRAM_TOKEN,required"`
+	BotName          string `env:"BOT_NAME,required"`
 	DBConn           string `env:"DB_CONN,required"`
 	NgrokAgentAddr   string `env:"NGROK_AGENT_ADDR,required"`
 	StartTelegramBot bool   `env:"START_TELEGRAM_BOT" envDefault:"true"`
@@ -80,7 +81,7 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 
 	var telegramAPI *telegramhandlers.Telegram
 	if envs.StartTelegramBot {
-		telegramAPI = telegramhandlers.NewTelegram(telegram.NewService(forecastDB, tgBot))
+		telegramAPI = telegramhandlers.NewTelegram(telegram.NewService(forecastDB, tgBot, envs.BotName))
 	}
 
 	// configure the api here
@@ -114,6 +115,8 @@ func configureAPI(api *operations.PollAPIAPI) http.Handler {
 	api.DeleteSeriesHandler = operations.DeleteSeriesHandlerFunc(pollsAPI.DeleteSeries)
 	api.DeletePollHandler = operations.DeletePollHandlerFunc(pollsAPI.DeletePoll)
 	api.DeleteOptionHandler = operations.DeleteOptionHandlerFunc(pollsAPI.DeleteOption)
+
+	api.CalculateStatisticsHandler = operations.CalculateStatisticsHandlerFunc(pollsAPI.CalculateStatistics)
 
 	if envs.StartTelegramBot {
 		api.ReceiveTelegramUpdatesHandler = operations.ReceiveTelegramUpdatesHandlerFunc(telegramAPI.ReceiveTelegramUpdates)

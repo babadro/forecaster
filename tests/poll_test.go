@@ -89,6 +89,15 @@ func (s *APITestSuite) TestPolls_Options() {
 		createdOptions[i] = &createdOption
 	}
 
+	// set actual outcome to the first option
+	updateInput := swagger.UpdateOption{
+		IsActualOutcome: helpers.Ptr[bool](true),
+	}
+	updatedOption := update[swagger.UpdateOption, swagger.Option](
+		s.T(), updateInput, optionURLWithIDs(s.apiAddr, poll.ID, createdOptions[0].ID),
+	)
+	createdOptions[0] = &updatedOption
+
 	gotPollOptions := read[swagger.PollWithOptions](s.T(), urlWithID(s.apiAddr, "polls", poll.ID)).Options
 
 	NewGomegaWithT(s.T()).Expect(gotPollOptions).To(ConsistOf(createdOptions))

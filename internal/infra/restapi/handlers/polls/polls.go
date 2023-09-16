@@ -30,6 +30,8 @@ type service interface {
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
 	DeleteOption(ctx context.Context, pollID int32, optionID int16) error
+
+	CalculateStatistics(ctx context.Context, pollID int32) error
 }
 
 type Polls struct {
@@ -136,6 +138,17 @@ func (p *Polls) UpdatePoll(params operations.UpdatePollParams) middleware.Respon
 func (p *Polls) UpdateOption(params operations.UpdateOptionParams) middleware.Responder {
 	option, err := p.svc.UpdateOption(params.HTTPRequest.Context(), params.PollID, params.OptionID, *params.Option)
 	if err != nil {
+		var outcomeAlreadyExistsErr domain.OptionWithOutcomeFlagAlreadyExistsError
+		if errors.As(err, &outcomeAlreadyExistsErr) {
+			return operations.NewUpdateOptionBadRequest().WithPayload(&models.Error{
+				Code: http.StatusBadRequest,
+				Message: fmt.Sprintf(
+					"Option with IsActualOutcome=true already exists; pollID: %d, optionID: %d, "+
+						"set IsActualOutcome=false for this option before setting it to true for another option",
+					outcomeAlreadyExistsErr.PollID, outcomeAlreadyExistsErr.OptionID),
+			})
+		}
+
 		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to update option")
 
 		return operations.NewUpdateOptionInternalServerError()
@@ -175,4 +188,19 @@ func (p *Polls) DeleteSeries(params operations.DeleteSeriesParams) middleware.Re
 	}
 
 	return operations.NewDeleteSeriesNoContent()
+}
+
+func (p *Polls) CalculateStatistics(params operations.CalculateStatisticsParams) middleware.Responder {
+	err := p.svc.CalculateStatistics(params.HTTPRequest.Context(), params.PollID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return operations.NewCalculateStatisticsNotFound()
+		}
+
+		hlog.FromRequest(params.HTTPRequest).Error().Err(err).Msg("Unable to calculate statistics")
+
+		return operations.NewCalculateStatisticsInternalServerError()
+	}
+
+	return operations.NewCalculateStatisticsNoContent()
 }

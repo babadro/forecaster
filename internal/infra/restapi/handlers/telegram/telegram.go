@@ -57,7 +57,13 @@ func (p *Telegram) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdat
 	p.wg.Add(1)
 
 	go func() {
-		defer p.wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error().Msgf("Process  telegram update recovered from panic: %v", r)
+			}
+
+			p.wg.Done()
+		}()
 
 		if err = p.svc.ProcessTelegramUpdate(logger, update); err != nil {
 			logger.Error().Err(err).

@@ -53,7 +53,7 @@ func (s *TelegramServiceSuite) SetupTest() {
 	s.logOutput = bytes.Buffer{}
 	s.logger = zerolog.New(&s.logOutput)
 
-	s.telegramService = telegram.NewService(s.db, s.mockTgBot)
+	s.telegramService = telegram.NewService(s.db, s.mockTgBot, "test-bot")
 }
 
 func (s *TelegramServiceSuite) TearDownTest() {

@@ -42,6 +42,9 @@ func NewPollAPIAPI(spec *loads.Document) *PollAPIAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
+		CalculateStatisticsHandler: CalculateStatisticsHandlerFunc(func(params CalculateStatisticsParams) middleware.Responder {
+			return middleware.NotImplemented("operation CalculateStatistics has not yet been implemented")
+		}),
 		CreateOptionHandler: CreateOptionHandlerFunc(func(params CreateOptionParams) middleware.Responder {
 			return middleware.NotImplemented("operation CreateOption has not yet been implemented")
 		}),
@@ -112,6 +115,8 @@ type PollAPIAPI struct {
 	//   - application/json
 	JSONProducer runtime.Producer
 
+	// CalculateStatisticsHandler sets the operation handler for the calculate statistics operation
+	CalculateStatisticsHandler CalculateStatisticsHandler
 	// CreateOptionHandler sets the operation handler for the create option operation
 	CreateOptionHandler CreateOptionHandler
 	// CreatePollHandler sets the operation handler for the create poll operation
@@ -212,6 +217,9 @@ func (o *PollAPIAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.CalculateStatisticsHandler == nil {
+		unregistered = append(unregistered, "CalculateStatisticsHandler")
+	}
 	if o.CreateOptionHandler == nil {
 		unregistered = append(unregistered, "CreateOptionHandler")
 	}
@@ -336,6 +344,10 @@ func (o *PollAPIAPI) initHandlerCache() {
 		o.handlers = make(map[string]map[string]http.Handler)
 	}
 
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/calculate-statistics/{pollId}"] = NewCalculateStatistics(o.context, o.CalculateStatisticsHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

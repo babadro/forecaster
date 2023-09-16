@@ -25,11 +25,17 @@ type Option struct {
 	// ID
 	ID int16 `json:"ID,omitempty"`
 
+	// is actual outcome
+	IsActualOutcome bool `json:"IsActualOutcome,omitempty"`
+
 	// poll ID
 	PollID int32 `json:"PollID,omitempty"`
 
 	// title
 	Title string `json:"Title,omitempty"`
+
+	// total votes
+	TotalVotes int32 `json:"TotalVotes,omitempty"`
 
 	// updated at
 	// Format: date-time

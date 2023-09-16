@@ -32,6 +32,8 @@ type db interface {
 	DeleteSeries(ctx context.Context, id int32) error
 	DeletePoll(ctx context.Context, id int32) error
 	DeleteOption(ctx context.Context, pollID int32, optionID int16) error
+
+	CalculateStatistics(ctx context.Context, pollID int32) error
 }
 
 func (s *Service) GetSeriesByID(ctx context.Context, id int32) (models.Series, error) {
@@ -78,4 +80,8 @@ func (s *Service) DeletePoll(ctx context.Context, id int32) error {
 
 func (s *Service) DeleteOption(ctx context.Context, pollID int32, optionID int16) error {
 	return s.db.DeleteOption(ctx, pollID, optionID)
+}
+
+func (s *Service) CalculateStatistics(ctx context.Context, pollID int32) error {
+	return s.db.CalculateStatistics(ctx, pollID)
 }

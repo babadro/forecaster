@@ -33,25 +33,25 @@ func (s *Service) NewRequest() (proto.Message, *votepreview2.VotePreview) {
 func (s *Service) RenderCallback(
 	ctx context.Context, votePreview *votepreview2.VotePreview, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
-	poll, err := s.db.GetPollByID(ctx, *votePreview.PollId)
+	p, err := s.db.GetPollByID(ctx, *votePreview.PollId)
 	if err != nil {
 		return nil,
 			fmt.Sprintf("oops, can't find poll with id %d", *votePreview.PollId),
 			fmt.Errorf("unable to get poll by id: %s", err.Error())
 	}
 
-	op, idx := render.FindOptionByID(poll.Options, int16(*votePreview.OptionId))
+	op, idx := swagger.FindOptionByID(p.Options, int16(*votePreview.OptionId))
 	if idx == -1 {
 		return nil,
 			"Sorry, something went wrong, I can't show this option right now",
 			fmt.Errorf("votepreview: unable to find option with id %d", *votePreview.OptionId)
 	}
 
-	expired := time.Now().After(time.Time(poll.Finish))
+	expired := time.Now().After(time.Time(p.Finish))
 
 	msg := txtMsg(expired, *op)
 
-	markup, err := keyboardMarkup(poll.ID, op.ID, expired)
+	markup, err := keyboardMarkup(p.ID, op.ID, expired)
 	if err != nil {
 		return nil,
 			"Sorry, something went wrong, I can't show this option right now",

@@ -24,6 +24,8 @@ CREATE TABLE forecaster.options (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    is_actual_outcome BOOLEAN NOT NULL DEFAULT FALSE,
+    total_votes INT NOT NULL DEFAULT 0,
     FOREIGN KEY (poll_id) REFERENCES forecaster.polls(id) ON DELETE CASCADE,
     PRIMARY KEY (poll_id, id)
 );
@@ -33,6 +35,7 @@ CREATE TABLE forecaster.votes (
     user_id BIGINT NOT NULL,
     option_id INT NOT NULL,
     epoch_unix_timestamp BIGINT NOT NULL,
+    position INT NOT NULL DEFAULT 0,
     FOREIGN KEY (poll_id, option_id) REFERENCES forecaster.options(poll_id, id) ON DELETE CASCADE,
-    PRIMARY KEY (poll_id, user_id, option_id, epoch_unix_timestamp)
+    PRIMARY KEY (poll_id, user_id)
 );

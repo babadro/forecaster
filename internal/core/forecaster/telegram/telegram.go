@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
+	userpollresult "github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/userpoll_result"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/vote"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/votepreview"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -16,9 +18,10 @@ import (
 )
 
 type pageServices struct {
-	votePreview *votepreview.Service
-	vote        *vote.Service
-	poll        *poll.Service
+	votePreview    *votepreview.Service
+	vote           *vote.Service
+	poll           *poll.Service
+	userPollResult *userpollresult.Service
 }
 
 type Service struct {
@@ -29,11 +32,12 @@ type Service struct {
 	callbackHandlers [256]handlerFunc
 }
 
-func NewService(db models.DB, b models.TgBot) *Service {
+func NewService(db models.DB, b models.TgBot, botName string) *Service {
 	pages := pageServices{
-		votePreview: votepreview.New(db),
-		vote:        vote.New(db),
-		poll:        poll.New(db),
+		votePreview:    votepreview.New(db),
+		vote:           vote.New(db),
+		poll:           poll.New(db),
+		userPollResult: userpollresult.New(db, botName),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)
@@ -76,34 +80,68 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return sendErr
 }
 
+// update type int8 iota.
+const (
+	unknownUpdateType byte = iota
+	showPollStartCommandUpdateType
+	renderCallbackUpdateType
+	showUserResultStartCommandUpdateType
+)
+
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	var msg tgbotapi.Chattable
 
-	var errMsg, updateType string
+	var errMsg string
+
+	var updateType, route byte
 
 	var err error
 
 	switch {
 	case upd.Message != nil:
-		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommand) {
-			updateType = "show poll start command"
+		if strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix) {
+			updateType = showPollStartCommandUpdateType
 			msg, errMsg, err = s.pages.poll.RenderStartCommand(ctx, upd)
+		} else if strings.HasPrefix(upd.Message.Text, models.ShowUserResultCommandPrefix) {
+			updateType = showUserResultStartCommandUpdateType
+			msg, errMsg, err = s.pages.userPollResult.RenderStartCommand(ctx, upd)
 		}
-	case upd.CallbackQuery != nil:
-		route := upd.CallbackQuery.Data[0]
+	case upd.CallbackData() != "":
+		var decoded []byte
+		decoded, err = base64.StdEncoding.DecodeString(upd.CallbackQuery.Data)
 
-		updateType = fmt.Sprintf("render callback query for route %d", route)
+		if err != nil {
+			return nil, "", fmt.Errorf("decode error: %s", err.Error())
+		}
+
+		route = decoded[0]
+		upd.CallbackQuery.Data = string(decoded)
+
+		updateType = renderCallbackUpdateType
 
 		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
 	}
 
-	if updateType != "" {
+	if updateType != unknownUpdateType {
 		if err != nil {
-			return nil, errMsg, fmt.Errorf("unable to handle %s: %s", updateType, err.Error())
+			return nil, errMsg, unableToHandleUpdate(updateType, route, err)
 		}
 
 		return msg, errMsg, nil
 	}
 
 	return nil, "", errors.New("unknown update type")
+}
+
+func unableToHandleUpdate(updateType, route byte, err error) error {
+	if updateType == renderCallbackUpdateType {
+		return fmt.Errorf("unable to handle callback with route %d: %w", route, err)
+	}
+
+	uType := "unknown update type"
+	if updateType == showPollStartCommandUpdateType {
+		uType = "show poll start command update type"
+	}
+
+	return fmt.Errorf("unable to handle %s: %w", uType, err)
 }

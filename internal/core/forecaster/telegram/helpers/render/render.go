@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/babadro/forecaster/internal/models/swagger"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -25,6 +25,10 @@ func (sb *StringBuilder) WriteStringLn(s string) {
 
 func (sb *StringBuilder) Printf(format string, a ...any) {
 	_, _ = fmt.Fprintf(sb, format, a...)
+}
+
+func (sb *StringBuilder) Print(a ...any) {
+	_, _ = fmt.Fprint(sb, a...)
 }
 
 func FormatTime[T time.Time | strfmt.DateTime](t T) string {
@@ -56,12 +60,17 @@ func Keyboard(buttons ...tgbotapi.InlineKeyboardButton) tgbotapi.InlineKeyboardM
 	}}
 }
 
-func FindOptionByID(options []*swagger.Option, id int16) (*swagger.Option, int) {
-	for i, op := range options {
-		if op.ID == id {
-			return op, i
-		}
+func GetHighestTimeUnit(d time.Duration) (int, string) {
+	switch {
+	case d.Hours()/models.Hours24/models.Days365 >= 1:
+		return int(d.Hours() / models.Hours24 / models.Days365), "years"
+	case d.Hours()/models.Hours24 >= 1:
+		return int(d.Hours() / models.Hours24), "days"
+	case d.Hours() >= 1:
+		return int(d.Hours()), "hours"
+	case d.Minutes() >= 1:
+		return int(d.Minutes()), "minutes"
+	default:
+		return int(d.Seconds()), "seconds"
 	}
-
-	return nil, -1
 }

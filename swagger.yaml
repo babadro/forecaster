@@ -363,6 +363,35 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/error"
+  /calculate-statistics/{pollId}:
+    post:
+        summary: "Calculate statistics for a Poll"
+        operationId: "CalculateStatistics"
+        produces:
+            - application/json
+        parameters:
+          - in: "path"
+            name: "pollId"
+            required: true
+            type: "integer"
+            format: "int32"
+        responses:
+            204:
+              description: "Statistics calculated successfully"
+            400:
+              description: "Bad request"
+              schema:
+                  $ref: "#/definitions/error"
+            404:
+              description: "Poll not found"
+            500:
+              description: "Internal server error"
+              schema:
+                  $ref: "#/definitions/error"
+            default:
+              description: error
+              schema:
+                  $ref: "#/definitions/error"
 definitions:
   error:
     type: object
@@ -514,6 +543,9 @@ definitions:
       Description:
         type: "string"
         x-nullable: true
+      IsActualOutcome:
+        type: "boolean"
+        x-nullable: true
   Option:
     type: "object"
     properties:
@@ -527,6 +559,11 @@ definitions:
         type: "string"
       Description:
         type: "string"
+      IsActualOutcome:
+        type: "boolean"
+      TotalVotes:
+        type: "integer"
+        format: "int32"
       UpdatedAt:
         type: "string"
         format: "date-time"
@@ -557,3 +594,6 @@ definitions:
       EpochUnixTimestamp:
         type: "integer"
         format: "int64"
+      Position:
+        type: "integer"
+        format: "int32"
