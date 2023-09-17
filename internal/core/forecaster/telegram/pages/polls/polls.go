@@ -55,7 +55,8 @@ const pageSize = 10
 func (s *Service) render(
 	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	pollsArr, totalCount, err := s.db.GetPolls(ctx, currentPage, pageSize)
+	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
+	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit)
 	if err != nil {
 		errMsgForUser, errToLog := "", fmt.Errorf("unable to get polls: %s", err.Error())
 		if errors.Is(err, domain.ErrNotFound) {
