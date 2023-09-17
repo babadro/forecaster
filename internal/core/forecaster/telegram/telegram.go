@@ -40,6 +40,7 @@ func NewService(db models.DB, b models.TgBot, botName string) *Service {
 		vote:           vote.New(db),
 		poll:           poll.New(db),
 		userPollResult: userpollresult.New(db, botName),
+		polls:          polls.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)

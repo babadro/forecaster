@@ -30,6 +30,7 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	handlers[models.VoteRoute] = unmarshalMiddleware[*vote.Vote](svc.vote)
 	handlers[models.PollRoute] = unmarshalMiddleware[*poll.Poll](svc.poll)
 	handlers[models.UserPollResultRoute] = unmarshalMiddleware[*userpollresult.UserPollResult](svc.userPollResult)
+	handlers[models.PollsRoute] = unmarshalMiddleware[*userpollresult.UserPollResult](svc.userPollResult)
 
 	defaultHandler := func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		return nil, "", fmt.Errorf("handler for route %d is not implemented", upd.CallbackQuery.Data[0])
@@ -40,11 +41,9 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 			handlers[i] = chainMiddlewares(handlers[i],
 				validateCallbackInput,
 			)
-
-			continue
+		} else {
+			handlers[i] = defaultHandler
 		}
-
-		handlers[i] = defaultHandler
 	}
 
 	return handlers

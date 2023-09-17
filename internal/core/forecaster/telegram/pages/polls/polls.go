@@ -34,11 +34,12 @@ func (s *Service) NewRequest() (proto2.Message, *polls.Polls) {
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	currentPageStr := upd.Message.Text[len(models.ShowPollsStartCommandPrefix):]
+	currentPage, err := strconv.Atoi(currentPageStr)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to parse current page: %s", err.Error())
+	}
 
-	_ = currentPageStr
-
-	return nil, "", nil
-	//	return s.render()
+	return s.render(ctx, int32(currentPage), upd.Message.Chat.ID, upd.Message.MessageID, false)
 }
 
 func (s *Service) RenderCallback(
