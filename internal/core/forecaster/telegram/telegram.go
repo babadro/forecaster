@@ -147,8 +147,13 @@ func unableToHandleUpdate(updateType, route byte, err error) error {
 	}
 
 	uType := "unknown update type"
-	if updateType == showPollStartCommandUpdateType {
+	switch updateType {
+	case showPollStartCommandUpdateType:
 		uType = "show poll start command update type"
+	case showUserResultStartCommandUpdateType:
+		uType = "show user result start command update type"
+	case showPollsStartCommandUpdateType:
+		uType = "show polls start command update type"
 	}
 
 	return fmt.Errorf("unable to handle %s: %w", uType, err)
