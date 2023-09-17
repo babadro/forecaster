@@ -6,10 +6,11 @@ const (
 	VoteRoute
 	PollRoute
 	UserPollResultRoute
+	PollsRoute
 )
 
 const (
 	ShowPollStartCommandPrefix  = "/start showpoll_"
 	ShowUserResultCommandPrefix = "/start showuserres_"
-	ShowPollsStartCommand       = "/start showpolls"
+	ShowPollsStartCommandPrefix = "/start showpolls_"
 )

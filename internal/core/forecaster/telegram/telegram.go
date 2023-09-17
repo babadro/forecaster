@@ -109,7 +109,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		case strings.HasPrefix(upd.Message.Text, models.ShowUserResultCommandPrefix):
 			updateType = showUserResultStartCommandUpdateType
 			msg, errMsg, err = validateStartCommandInput(s.pages.userPollResult.RenderStartCommand)(ctx, upd)
-		case upd.Message.Text == models.ShowPollsStartCommand:
+		case strings.HasPrefix(upd.Message.Text, models.ShowPollsStartCommandPrefix):
 			updateType = showPollsStartCommandUpdateType
 			msg, errMsg, err = validateStartCommandInput(s.pages.polls.RenderStartCommand)(ctx, upd)
 		}
