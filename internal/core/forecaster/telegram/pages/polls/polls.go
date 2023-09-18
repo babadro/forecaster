@@ -2,7 +2,6 @@ package polls
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
-	"github.com/babadro/forecaster/internal/domain"
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -59,12 +57,7 @@ func (s *Service) render(
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
 	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit)
 	if err != nil {
-		errMsgForUser, errToLog := "", fmt.Errorf("unable to get polls: %s", err.Error())
-		if errors.Is(err, domain.ErrNotFound) {
-			errMsgForUser = "Polls not found"
-		}
-
-		return nil, errMsgForUser, errToLog
+		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}
 
 	keyboardIn := keyboardInput{
@@ -88,6 +81,10 @@ func (s *Service) render(
 }
 
 func txtMsg(pollsArr []swagger.Poll) string {
+	if len(pollsArr) == 0 {
+		return "There are no polls yet"
+	}
+
 	var sb render.StringBuilder
 	for i, p := range pollsArr {
 		sb.Printf("%d. %s\n", i+1, p.Title)

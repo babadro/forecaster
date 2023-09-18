@@ -130,7 +130,7 @@ func (db *ForecasterDB) GetPolls(
 		Select(
 			"id", "series_id", "title", "description", "start", "finish", "created_at", "updated_at",
 		).
-		From("forecaster.polls").OrderBy("create_at DESC").
+		From("forecaster.polls").OrderBy("created_at DESC").
 		Limit(limit).Offset(offset).ToSql()
 
 	if err != nil {

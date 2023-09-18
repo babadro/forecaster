@@ -3,7 +3,6 @@ package telegram
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -85,11 +84,11 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 
 // update type int8 iota.
 const (
-	unknownUpdateType byte = iota
-	showPollStartCommandUpdateType
-	renderCallbackUpdateType
-	showUserResultStartCommandUpdateType
-	showPollsStartCommandUpdateType
+	unknownUpdateType                    = "unknown_update_type"
+	showPollStartCommandUpdateType       = "show_poll_start_command_update_type"
+	renderCallbackUpdateType             = "render_callback_update_type"
+	showUserResultStartCommandUpdateType = "show_user_result_start_command_update_type"
+	showPollsStartCommandUpdateType      = "show_polls_start_command_update_type"
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
@@ -97,9 +96,11 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 
 	var errMsg string
 
-	var updateType, route byte
+	var route byte
 
 	var err error
+
+	updateType := unknownUpdateType
 
 	switch {
 	case upd.Message != nil:
@@ -130,31 +131,9 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
 	}
 
-	if updateType != unknownUpdateType {
-		if err != nil {
-			return nil, errMsg, unableToHandleUpdate(updateType, route, err)
-		}
-
-		return msg, errMsg, nil
+	if err != nil {
+		return nil, errMsg, fmt.Errorf("unable to handle %s: %w", updateType, err)
 	}
 
-	return nil, "", errors.New("unknown update type")
-}
-
-func unableToHandleUpdate(updateType, route byte, err error) error {
-	if updateType == renderCallbackUpdateType {
-		return fmt.Errorf("unable to handle callback with route %d: %w", route, err)
-	}
-
-	uType := "unknown update type"
-	switch updateType {
-	case showPollStartCommandUpdateType:
-		uType = "show poll start command update type"
-	case showUserResultStartCommandUpdateType:
-		uType = "show user result start command update type"
-	case showPollsStartCommandUpdateType:
-		uType = "show polls start command update type"
-	}
-
-	return fmt.Errorf("unable to handle %s: %w", uType, err)
+	return msg, errMsg, nil
 }
