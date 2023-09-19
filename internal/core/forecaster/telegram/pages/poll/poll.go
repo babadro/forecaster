@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
 	proto2 "google.golang.org/protobuf/proto"
 
@@ -126,35 +127,15 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 		length++ // ++ for "show results" button
 	}
 
-	rowsCount := length / models.MaxCountInRow
+	rowsCount := len(poll.Options) / models.MaxCountInRow
 
 	if length%models.MaxCountInRow > 0 {
 		rowsCount++
 	}
 
-	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
+	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount+1) // +1 for navi buttons row
 
-	for i := 0; i < length; i++ {
-		if i == len(poll.Options) {
-			showMyResultsData, err := proto.MarshalCallbackData(models.UserPollResultRoute, &userpollresult.UserPollResult{
-				UserId: helpers.Ptr[int64](userID),
-				PollId: helpers.Ptr[int32](poll.ID),
-			})
-			if err != nil {
-				return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal user poll result callback data: %w", err)
-			}
-
-			rowIdx := i / models.MaxCountInRow
-
-			rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
-				Text:         "Show Results",
-				CallbackData: showMyResultsData,
-			})
-
-			break
-		}
-
-		op := poll.Options[i]
+	for i, op := range poll.Options {
 		votePreview := votepreview.VotePreview{
 			PollId:   helpers.Ptr(poll.ID),
 			OptionId: helpers.Ptr(int32(op.ID)),
@@ -171,6 +152,35 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 			CallbackData: callbackData,
 		})
 	}
+
+	lastRow := len(rows) - 1
+
+	if swagger.HasOutcome(poll.Options) {
+		showMyResultsData, err := proto.MarshalCallbackData(models.UserPollResultRoute, &userpollresult.UserPollResult{
+			UserId: helpers.Ptr[int64](userID),
+			PollId: helpers.Ptr[int32](poll.ID),
+		})
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal user poll result callback data: %w", err)
+		}
+
+		rows[lastRow] = append(rows[lastRow], tgbotapi.InlineKeyboardButton{
+			Text:         "Show Results",
+			CallbackData: showMyResultsData,
+		})
+	}
+
+	pollsButton, err := proto.MarshalCallbackData(models.PollsRoute, &polls.Polls{
+		CurrentPage: helpers.Ptr[int32](1),
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal polls callback data: %w", err)
+	}
+
+	rows[lastRow] = append(rows[lastRow], tgbotapi.InlineKeyboardButton{
+		Text:         "All Polls",
+		CallbackData: pollsButton,
+	})
 
 	var keyboard tgbotapi.InlineKeyboardMarkup
 	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, rows...)
