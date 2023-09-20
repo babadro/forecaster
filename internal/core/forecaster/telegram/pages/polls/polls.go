@@ -32,7 +32,8 @@ func (s *Service) NewRequest() (proto2.Message, *polls.Polls) {
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	currentPageStr := upd.Message.Text[len(models.ShowPollsStartCommandPrefix):]
-	currentPage, err := strconv.Atoi(currentPageStr)
+
+	currentPage, err := strconv.ParseInt(currentPageStr, 10, 32)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to parse current page: %s", err.Error())
 	}
@@ -55,6 +56,7 @@ func (s *Service) render(
 	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
+
 	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
@@ -103,6 +105,7 @@ func keyboardMarkup(in keyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 	var firstRow []tgbotapi.InlineKeyboardButton
 
 	var err error
+
 	firstRow, err = appendNaviButton(firstRow, in.prev, in.currentPage-1, "Prev")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
@@ -127,7 +130,9 @@ func keyboardMarkup(in keyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 
 	for i := range in.pollsArr {
 		p := in.pollsArr[i]
+
 		var pollData *string
+
 		pollData, err = proto.MarshalCallbackData(models.PollRoute, &poll.Poll{
 			PollId: helpers.Ptr(p.ID),
 		})
@@ -149,7 +154,9 @@ func keyboardMarkup(in keyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 	return keyboard, nil
 }
 
-func appendNaviButton(row []tgbotapi.InlineKeyboardButton, exists bool, page int32, name string) ([]tgbotapi.InlineKeyboardButton, error) {
+func appendNaviButton(
+	row []tgbotapi.InlineKeyboardButton, exists bool, page int32, name string,
+) ([]tgbotapi.InlineKeyboardButton, error) {
 	if !exists {
 		return row, nil
 	}

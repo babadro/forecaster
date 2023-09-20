@@ -119,6 +119,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		updateType = renderCallbackUpdateType
 
 		var decoded []byte
+
 		decoded, err = base64.StdEncoding.DecodeString(upd.CallbackQuery.Data)
 		if err != nil {
 			err = fmt.Errorf("can't decode base64: %s", err.Error())

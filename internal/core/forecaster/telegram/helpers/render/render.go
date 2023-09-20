@@ -42,6 +42,7 @@ func NewMessageWithKeyboard(
 	if len(keyboard.InlineKeyboard) > 0 {
 		msg.ReplyMarkup = &keyboard
 	}
+
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	return msg
@@ -53,6 +54,7 @@ func NewEditMessageTextWithKeyboard(
 	if len(keyboard.InlineKeyboard) > 0 {
 		msg.ReplyMarkup = &keyboard
 	}
+
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	return msg

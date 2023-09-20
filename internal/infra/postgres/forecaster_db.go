@@ -145,6 +145,7 @@ func (db *ForecasterDB) GetPolls(
 	defer rows.Close()
 
 	polls := make([]models.Poll, 0, limit)
+
 	for rows.Next() {
 		var poll models.Poll
 
