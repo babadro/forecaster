@@ -230,8 +230,14 @@ func (s *TelegramServiceSuite) asEditMessage(sentMsg interface{}) tgbotapi.EditM
 func (s *TelegramServiceSuite) buttonsFromInterface(in interface{}) []tgbotapi.InlineKeyboardButton {
 	s.T().Helper()
 
-	keyboard, ok := in.(tgbotapi.InlineKeyboardMarkup)
-	s.Require().True(ok)
+	switch keyboard := in.(type) {
+	case tgbotapi.InlineKeyboardMarkup:
+		return getButtons(keyboard)
+	case *tgbotapi.InlineKeyboardMarkup:
+		return getButtons(*keyboard)
+	default:
+		s.Fail("unexpected type %T", in)
+	}
 
-	return getButtons(keyboard)
+	return nil
 }

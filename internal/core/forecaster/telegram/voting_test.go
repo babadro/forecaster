@@ -25,7 +25,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
 	// each keyboard button is a poll option
-	s.Require().Len(pollButtons, len(poll.Options))
+	s.Require().Len(pollButtons, len(poll.Options)+1) // +1 for "All Polls" button
 
 	// send the first option
 	firstButton := pollButtons[0]
@@ -70,7 +70,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// each keyboard button is a poll option
 	pollButtons2 := getButtons(*pollMsg2.ReplyMarkup)
-	s.Require().Len(pollButtons2, len(poll.Options))
+	s.Require().Len(pollButtons2, len(poll.Options)+1) // +1 for "All Polls" button
 
 	// chose option I didn't vote earlier
 	anotherOptionButton, found := tgbotapi.InlineKeyboardButton{}, false
@@ -129,7 +129,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// each keyboard button is a poll option
 	pollButtons3 := getButtons(*pollMsg3.ReplyMarkup)
-	s.Require().Len(pollButtons3, len(poll.Options))
+	s.Require().Len(pollButtons3, len(poll.Options)+1) // +1 for "All Polls" button
 }
 
 func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
