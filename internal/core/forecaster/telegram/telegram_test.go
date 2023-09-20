@@ -16,7 +16,7 @@ import (
 )
 
 func (s *TelegramServiceSuite) TestShowPollStartCommand() {
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	update := startShowPoll(poll.ID, 456)
 
@@ -63,7 +63,19 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 	s.mockTgBot.AssertExpectations(s.T())
 }
 
-func (s *TelegramServiceSuite) createRandomPoll() swagger.PollWithOptions {
+func (s *TelegramServiceSuite) createRandomPolls(count int) []swagger.PollWithOptions {
+	s.T().Helper()
+
+	polls := make([]swagger.PollWithOptions, count)
+
+	for i := range polls {
+		polls[i] = s.createRandomPoll(time.Now().Add(time.Second * time.Duration(i)))
+	}
+
+	return polls
+}
+
+func (s *TelegramServiceSuite) createRandomPoll(now time.Time) swagger.PollWithOptions {
 	s.T().Helper()
 
 	pollInput := randomModel[swagger.CreatePoll](s.T())
@@ -71,15 +83,15 @@ func (s *TelegramServiceSuite) createRandomPoll() swagger.PollWithOptions {
 	pollInput.Start = strfmt.DateTime(time.Now().Add(-time.Hour))
 	pollInput.Finish = strfmt.DateTime(time.Now().Add(time.Hour))
 
-	return s.createPoll(pollInput)
+	return s.createPoll(pollInput, now)
 }
 
-func (s *TelegramServiceSuite) createPoll(pollInput swagger.CreatePoll) swagger.PollWithOptions {
+func (s *TelegramServiceSuite) createPoll(pollInput swagger.CreatePoll, now time.Time) swagger.PollWithOptions {
 	s.T().Helper()
 
 	ctx := context.Background()
 
-	poll, err := s.db.CreatePoll(ctx, pollInput, time.Now())
+	poll, err := s.db.CreatePoll(ctx, pollInput, now)
 	s.Require().NoError(err)
 
 	createdOptions := make([]*swagger.Option, 3)
@@ -167,6 +179,20 @@ func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
 				ID: userID,
 			},
 			Text: "/start showpoll_" + strconv.Itoa(int(pollID)),
+		},
+	}
+}
+
+func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
+	return tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: userID,
+			},
+			Text: "/start showpolls_" + strconv.Itoa(int(currentPage)),
 		},
 	}
 }

@@ -136,7 +136,7 @@ func (s *TelegramServiceSuite) TestBackToPollButton() {
 func (s *TelegramServiceSuite) setupForUserPollResultTest(
 	setOnLastPosition bool,
 ) (swagger.PollWithOptions, int64, []swagger.Vote) {
-	p := s.createRandomPoll()
+	p := s.createRandomPoll(time.Now())
 	wonOption := p.Options[0]
 
 	ctx := context.Background()

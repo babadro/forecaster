@@ -15,7 +15,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	// send /start showpoll_<poll_id> command
 	update := startShowPoll(poll.ID, 456)
@@ -137,7 +137,7 @@ func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	// send /start showpoll_<poll_id> command
 	update := startShowPoll(poll.ID, 456)
@@ -176,7 +176,7 @@ func (s *TelegramServiceSuite) Test_expiredPoll() {
 	pollInput.SeriesID = 0
 	pollInput.Finish = strfmt.DateTime(time.Now().Add(-time.Hour)) // expired
 
-	poll := s.createPoll(pollInput)
+	poll := s.createPoll(pollInput, time.Now())
 
 	// send /start showpoll_<poll_id> command
 	update := startShowPoll(poll.ID, 456)
@@ -205,7 +205,7 @@ func (s *TelegramServiceSuite) Test_attempt_to_vote_for_the_same_option_result_i
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	userID := int64(456)
 
