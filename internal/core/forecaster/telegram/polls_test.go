@@ -127,3 +127,52 @@ func (s *TelegramServiceSuite) buttonsContainsText(buttons []tgbotapi.InlineKeyb
 
 	s.Fail("buttons does not contain text: " + text)
 }
+
+// create several polls, chose the first poll, go to the poll page, and then go back to the polls page
+func (s *TelegramServiceSuite) TestPolls_chose_poll() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	polls := s.createRandomPolls(2)
+	// polls should be sorted by created_at desc
+	sort.Slice(polls, func(i, j int) bool {
+		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
+	})
+
+	// send /start showpolls_1 command
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	update := startShowPolls(1, userID)
+
+	s.sendMessage(update)
+
+	pollsPageStartCommand := s.asMessage(sentMsg)
+
+	firstPollButton, found := tgbotapi.InlineKeyboardButton{}, false
+	for _, button := range s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup) {
+		if button.Text == "1" {
+			firstPollButton = button
+			found = true
+		}
+	}
+
+	s.Require().True(found)
+
+	s.sendCallback(firstPollButton, userID)
+
+	// verify the poll message
+	pollMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(pollMsg.Text, polls[0].Title)
+
+	// verify AllPolls button
+	buttons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	allPollButtons := buttons[len(buttons)-1]
+	s.Require().Contains(allPollButtons.Text, "All Polls")
+
+	// send AllPolls button
+	s.sendCallback(allPollButtons, userID)
+
+	// verify the polls page
+	pollsMessage := s.asEditMessage(sentMsg)
+	s.verifyPollsPage(pollsMessage.Text, s.buttonsFromInterface(pollsMessage.ReplyMarkup), polls, 1, 2, false, false)
+}
