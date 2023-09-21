@@ -3,10 +3,13 @@ package telegram_test
 import (
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/brianvoe/gofakeit/v6"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // create several polls, go to the last page, and then go back to the first page
@@ -28,14 +31,59 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 
 	s.sendMessage(update)
 
-	pollsMsg := s.asMessage(sentMsg)
+	pollsPageStartCommand := s.asMessage(sentMsg)
+	txt, buttons := pollsPageStartCommand.Text, s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup)
 
-	// verify the message contains the first 10 polls
-	s.checkPolls(pollsMsg.Text, polls, 1, 10, false, true)
+	// verify the first page
+	s.verifyPollsPage(txt, buttons, polls, 1, 10, false, true)
+
+	// send "Next" button
+	nextButton := buttons[0]
+	s.Require().Contains(nextButton.Text, "Next")
+	s.sendCallback(nextButton, userID)
+
+	pollsPage2 := s.asEditMessage(sentMsg)
+	txt, buttons = pollsPage2.Text, s.buttonsFromInterface(pollsPage2.ReplyMarkup)
+
+	// verify the second page
+	s.verifyPollsPage(txt, buttons, polls, 11, 20, true, true)
+
+	// send "Next" button
+	nextButton = buttons[1]
+	s.Require().Contains(nextButton.Text, "Next")
+	s.sendCallback(nextButton, userID)
+
+	pollsPage3 := s.asEditMessage(sentMsg)
+	txt, buttons = pollsPage3.Text, s.buttonsFromInterface(pollsPage3.ReplyMarkup)
+
+	// verify the third page
+	s.verifyPollsPage(txt, buttons, polls, 21, 24, true, false)
+
+	// send "Prev" button
+	prevButton := buttons[0]
+	s.Require().Contains(prevButton.Text, "Prev")
+	s.sendCallback(prevButton, userID)
+
+	pollsPage2 = s.asEditMessage(sentMsg)
+	txt, buttons = pollsPage2.Text, s.buttonsFromInterface(pollsPage2.ReplyMarkup)
+
+	// verify the second page
+	s.verifyPollsPage(txt, buttons, polls, 11, 20, true, true)
+
+	// send "Prev" button
+	prevButton = buttons[0]
+	s.Require().Contains(prevButton.Text, "Prev")
+	s.sendCallback(prevButton, userID)
+
+	pollsPage1 := s.asEditMessage(sentMsg)
+	txt, buttons = pollsPage1.Text, s.buttonsFromInterface(pollsPage1.ReplyMarkup)
+
+	// verify the first page
+	s.verifyPollsPage(txt, buttons, polls, 1, 10, false, true)
 }
 
 // check page contains expected polls and keyboard contains expected buttons
-func (s *TelegramServiceSuite) checkPolls(txt string, allPolls []swagger.PollWithOptions, firstPoll, lastPoll int, prevButton, nextButton bool) {
+func (s *TelegramServiceSuite) verifyPollsPage(txt string, buttons []tgbotapi.InlineKeyboardButton, allPolls []swagger.PollWithOptions, firstPoll, lastPoll int, prevButton, nextButton bool) {
 	s.T().Helper()
 
 	for i, poll := range allPolls {
@@ -46,4 +94,36 @@ func (s *TelegramServiceSuite) checkPolls(txt string, allPolls []swagger.PollWit
 			s.Require().NotContains(txt, poll.Title)
 		}
 	}
+
+	pollsCount := lastPoll - firstPoll + 1
+
+	expectedButtonsCount := pollsCount
+
+	if prevButton {
+		expectedButtonsCount++
+
+		s.buttonsContainsText(buttons, "Prev")
+	}
+
+	if nextButton {
+		expectedButtonsCount++
+
+		s.buttonsContainsText(buttons, "Next")
+	}
+
+	s.Require().Len(buttons, expectedButtonsCount)
+
+	for i := 0; i < pollsCount; i++ {
+		s.buttonsContainsText(buttons, strconv.Itoa(i+1))
+	}
+}
+
+func (s *TelegramServiceSuite) buttonsContainsText(buttons []tgbotapi.InlineKeyboardButton, text string) {
+	for _, b := range buttons {
+		if strings.Contains(b.Text, text) {
+			return
+		}
+	}
+
+	s.Fail("buttons does not contain text: " + text)
 }
