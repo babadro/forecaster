@@ -13,7 +13,7 @@ import (
 )
 
 // create several polls, go to the last page, and then go back to the first page
-// every page check that text contains expected polls and keyboard contains expected buttons
+// every page check that text contains expected polls and keyboard contains expected buttons...
 func (s *TelegramServiceSuite) TestPolls_pagination() {
 	var sentMsg interface{}
 
@@ -82,8 +82,11 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.verifyPollsPage(txt, buttons, polls, 1, 10, false, true)
 }
 
-// check page contains expected polls and keyboard contains expected buttons
-func (s *TelegramServiceSuite) verifyPollsPage(txt string, buttons []tgbotapi.InlineKeyboardButton, allPolls []swagger.PollWithOptions, firstPoll, lastPoll int, prevButton, nextButton bool) {
+// check page contains expected polls and keyboard contains expected buttons...
+func (s *TelegramServiceSuite) verifyPollsPage(
+	txt string, buttons []tgbotapi.InlineKeyboardButton, allPolls []swagger.PollWithOptions,
+	firstPoll, lastPoll int, prevButton, nextButton bool,
+) {
 	s.T().Helper()
 
 	for i, poll := range allPolls {
@@ -128,7 +131,7 @@ func (s *TelegramServiceSuite) buttonsContainsText(buttons []tgbotapi.InlineKeyb
 	s.Fail("buttons does not contain text: " + text)
 }
 
-// create several polls, chose the first poll, go to the poll page, and then go back to the polls page
+// create several polls, chose the first poll, go to the poll page, and then go back to the polls page...
 func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 	var sentMsg interface{}
 
@@ -149,6 +152,7 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 	pollsPageStartCommand := s.asMessage(sentMsg)
 
 	firstPollButton, found := tgbotapi.InlineKeyboardButton{}, false
+
 	for _, button := range s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup) {
 		if button.Text == "1" {
 			firstPollButton = button
