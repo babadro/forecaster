@@ -15,7 +15,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	// send /start showpoll_<poll_id> command
 	update := startShowPoll(poll.ID, 456)
@@ -25,7 +25,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
 	// each keyboard button is a poll option
-	s.Require().Len(pollButtons, len(poll.Options))
+	s.Require().Len(pollButtons, len(poll.Options)+1) // +1 for "All Polls" button
 
 	// send the first option
 	firstButton := pollButtons[0]
@@ -70,7 +70,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// each keyboard button is a poll option
 	pollButtons2 := getButtons(*pollMsg2.ReplyMarkup)
-	s.Require().Len(pollButtons2, len(poll.Options))
+	s.Require().Len(pollButtons2, len(poll.Options)+1) // +1 for "All Polls" button
 
 	// chose option I didn't vote earlier
 	anotherOptionButton, found := tgbotapi.InlineKeyboardButton{}, false
@@ -129,7 +129,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// each keyboard button is a poll option
 	pollButtons3 := getButtons(*pollMsg3.ReplyMarkup)
-	s.Require().Len(pollButtons3, len(poll.Options))
+	s.Require().Len(pollButtons3, len(poll.Options)+1) // +1 for "All Polls" button
 }
 
 func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
@@ -137,7 +137,7 @@ func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	// send /start showpoll_<poll_id> command
 	update := startShowPoll(poll.ID, 456)
@@ -176,7 +176,7 @@ func (s *TelegramServiceSuite) Test_expiredPoll() {
 	pollInput.SeriesID = 0
 	pollInput.Finish = strfmt.DateTime(time.Now().Add(-time.Hour)) // expired
 
-	poll := s.createPoll(pollInput)
+	poll := s.createPoll(pollInput, time.Now())
 
 	// send /start showpoll_<poll_id> command
 	update := startShowPoll(poll.ID, 456)
@@ -205,7 +205,7 @@ func (s *TelegramServiceSuite) Test_attempt_to_vote_for_the_same_option_result_i
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll()
+	poll := s.createRandomPoll(time.Now())
 
 	userID := int64(456)
 

@@ -39,7 +39,10 @@ func NewMessageWithKeyboard(
 	chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup,
 ) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ReplyMarkup = keyboard
+	if len(keyboard.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = &keyboard
+	}
+
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	return msg
@@ -48,7 +51,10 @@ func NewMessageWithKeyboard(
 func NewEditMessageTextWithKeyboard(
 	chatID int64, messageID int, text string, keyboard tgbotapi.InlineKeyboardMarkup) tgbotapi.EditMessageTextConfig {
 	msg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	msg.ReplyMarkup = &keyboard
+	if len(keyboard.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = &keyboard
+	}
+
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	return msg

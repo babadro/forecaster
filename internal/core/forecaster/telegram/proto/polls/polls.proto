@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package poll;
+
+option go_package = "./polls";
+
+message Polls {
+  required int32 current_page = 1;
+}

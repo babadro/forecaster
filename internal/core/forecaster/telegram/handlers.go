@@ -7,6 +7,7 @@ import (
 	proto2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/vote"
 	votepreviewproto "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
@@ -30,6 +31,7 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	handlers[models.VoteRoute] = unmarshalMiddleware[*vote.Vote](svc.vote)
 	handlers[models.PollRoute] = unmarshalMiddleware[*poll.Poll](svc.poll)
 	handlers[models.UserPollResultRoute] = unmarshalMiddleware[*userpollresult.UserPollResult](svc.userPollResult)
+	handlers[models.PollsRoute] = unmarshalMiddleware[*polls.Polls](svc.polls)
 
 	defaultHandler := func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		return nil, "", fmt.Errorf("handler for route %d is not implemented", upd.CallbackQuery.Data[0])
@@ -40,11 +42,9 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 			handlers[i] = chainMiddlewares(handlers[i],
 				validateCallbackInput,
 			)
-
-			continue
+		} else {
+			handlers[i] = defaultHandler
 		}
-
-		handlers[i] = defaultHandler
 	}
 
 	return handlers
@@ -90,6 +90,16 @@ func validateCallbackInput(next handlerFunc) handlerFunc {
 
 		if upd.CallbackQuery.From == nil {
 			return nil, "", fmt.Errorf("callbackQuery.from is nil")
+		}
+
+		return next(ctx, upd)
+	}
+}
+
+func validateStartCommandInput(next handlerFunc) handlerFunc {
+	return func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+		if upd.Message.Chat == nil {
+			return nil, "", fmt.Errorf("chat is nil")
 		}
 
 		return next(ctx, upd)

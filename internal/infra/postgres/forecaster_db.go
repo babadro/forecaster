@@ -114,6 +114,59 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 	return poll, nil
 }
 
+func (db *ForecasterDB) GetPolls(
+	ctx context.Context, offset, limit uint64,
+) ([]models.Poll, int32, error) {
+	var rowsCount sql.NullInt32
+
+	err := db.db.
+		QueryRow(ctx, "SELECT count(*) FROM forecaster.polls").
+		Scan(&rowsCount)
+	if err != nil {
+		return nil, 0, scanFailed("select count(*) from forecaster.polls", err)
+	}
+
+	pollsSQL, args, err := db.q.
+		Select(
+			"id", "series_id", "title", "description", "start", "finish", "created_at", "updated_at",
+		).
+		From("forecaster.polls").OrderBy("created_at DESC").
+		Limit(limit).Offset(offset).ToSql()
+
+	if err != nil {
+		return nil, 0, buildingQueryFailed("select polls", err)
+	}
+
+	rows, err := db.db.Query(ctx, pollsSQL, args...)
+	if err != nil {
+		return nil, 0, queryFailed("select polls", err)
+	}
+
+	defer rows.Close()
+
+	polls := make([]models.Poll, 0, limit)
+
+	for rows.Next() {
+		var poll models.Poll
+
+		err = rows.Scan(
+			&poll.ID, &poll.SeriesID, &poll.Title, &poll.Description,
+			&poll.Start, &poll.Finish, &poll.CreatedAt, &poll.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, scanFailed("select polls", err)
+		}
+
+		polls = append(polls, poll)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, rowsError("select polls", err)
+	}
+
+	return polls, rowsCount.Int32, nil
+}
+
 func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error) {
 	seriesSQL, args, err := db.q.
 		Insert("forecaster.series").Columns("title", "description", "updated_at", "created_at").
