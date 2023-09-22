@@ -6,10 +6,14 @@ SHELL := /bin/bash
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
     GOARCH := amd64
-endif
-ifeq ($(UNAME_M),arm64)
+else ifeq ($(UNAME_M),arm64)
     GOARCH := arm64
+else ifeq ($(UNAME_M),aarch64)
+	GOARCH := arm64
+else
+	GOARCH := unsupported_platform
 endif
+
 
 build:
 	GOOS=linux GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o release/app github.com/babadro/forecaster/cmd/server
