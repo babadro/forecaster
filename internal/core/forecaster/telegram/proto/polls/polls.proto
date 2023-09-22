@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package poll;
+package polls;
 
 option go_package = "./polls";
 
