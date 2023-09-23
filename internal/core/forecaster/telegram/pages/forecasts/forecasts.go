@@ -6,6 +6,8 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
+	"github.com/babadro/forecaster/internal/helpers"
+	models2 "github.com/babadro/forecaster/internal/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 	"strconv"
@@ -57,23 +59,95 @@ func (s *Service) render(
 		return nil, "", fmt.Errorf("unable to get forecasts: %s", err.Error())
 	}
 
-	keyboardIn := keyboardInput{
-		pollsArr:    pollsArr,
-		currentPage: currentPage,
-		prev:        currentPage > 1,
-		next:        currentPage*pageSize < totalCount,
+	keyboardIn := render.KeyboardInput{
+		IDs:         forecastIDs(forecastArr),
+		CurrentPage: currentPage,
+		Prev:        currentPage > 1,
+		Next:        currentPage*pageSize < totalCount,
+		Route:       models.ForecastsRoute,
+		ProtoMessage: func(page int32) proto2.Message {
+			return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
+		},
 	}
 
-	keyboard, err := keyboardMarkup(keyboardIn)
+	keyboard, err := render.KeyboardMarkup(keyboardIn)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard: %s", err.Error())
 	}
 
+	txt, err := txtMsg(forecastArr)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create text message: %s", err.Error())
+	}
+
 	if editMessage {
-		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txtMsg(pollsArr), keyboard),
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard),
 			"", nil
 	}
 
-	return render.NewMessageWithKeyboard(chatID, txtMsg(pollsArr), keyboard), "", nil
+	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
+}
 
+func txtMsg(forecastsArr []models2.Forecast) (string, error) {
+	if len(forecastsArr) == 0 {
+		return "There are no polls yet", nil
+	}
+
+	var sb render.StringBuilder
+	for i, f := range forecastsArr {
+		sb.Printf("%d. %s\n", i+1, f.PollTitle)
+
+		s, err := calculateStatistic(f.Options)
+		if err != nil {
+			return "", fmt.Errorf(
+				"unable to calculate options statistics for pollID %d: %s", f.PollID, err.Error())
+		}
+
+		sb.Printf("<b>%s</b>\n", f.PollTitle)
+		sb.Printf("Most popular option (%d%% votes):\n", s.topOptionPercentage)
+		sb.Printf("<b>%s</b>\n", s.topOption.Title)
+	}
+
+	return sb.String(), nil
+}
+
+type stat struct {
+	topOption           models2.ForecastOption
+	totalVotes          int32
+	topOptionPercentage int
+}
+
+func calculateStatistic(options []models2.ForecastOption) (stat, error) {
+	if len(options) == 0 {
+		return stat{}, fmt.Errorf("options is empty")
+	}
+
+	topOptionIDx, total := 0, 0
+
+	for i, f := range options {
+		total++
+
+		if f.TotalVotes > options[topOptionIDx].TotalVotes {
+			topOptionIDx = i
+		}
+	}
+
+	if total == 0 {
+		return stat{}, fmt.Errorf("total is zero")
+	}
+
+	return stat{
+		topOption:  options[topOptionIDx],
+		totalVotes: int32(total),
+	}, nil
+}
+
+func forecastIDs(forecastArr []models2.Forecast) []int32 {
+	res := make([]int32, len(forecastArr))
+
+	for i, forecast := range forecastArr {
+		res[i] = forecast.PollID
+	}
+
+	return res
 }

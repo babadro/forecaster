@@ -7,6 +7,7 @@ const (
 	PollRoute
 	UserPollResultRoute
 	PollsRoute
+	ForecastsRoute
 )
 
 const (

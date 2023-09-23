@@ -12,27 +12,27 @@ import (
 	proto2 "google.golang.org/protobuf/proto"
 )
 
-type keyboardInput struct {
-	ids          []int32
-	currentPage  int32
-	prev, next   bool
-	route        byte
-	protoMessage func(page int32) proto2.Message
+type KeyboardInput struct {
+	IDs          []int32
+	CurrentPage  int32
+	Prev, Next   bool
+	Route        byte
+	ProtoMessage func(page int32) proto2.Message
 }
 
-func keyboardMarkup(in keyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
+func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 	var firstRow []tgbotapi.InlineKeyboardButton
 
 	var err error
 
-	firstRow, err = appendNaviButton(in.route, in.protoMessage,
-		firstRow, in.prev, in.currentPage-1, "Prev")
+	firstRow, err = appendNaviButton(in.Route, in.ProtoMessage,
+		firstRow, in.Prev, in.CurrentPage-1, "Prev")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}
 
-	firstRow, err = appendNaviButton(in.route, in.protoMessage,
-		firstRow, in.next, in.currentPage+1, "Next")
+	firstRow, err = appendNaviButton(in.Route, in.ProtoMessage,
+		firstRow, in.Next, in.CurrentPage+1, "Next")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}
@@ -42,15 +42,14 @@ func keyboardMarkup(in keyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 		keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, firstRow)
 	}
 
-	rowsCount := len(in.ids) / models.MaxCountInRow
-	if len(in.ids)%models.MaxCountInRow > 0 {
+	rowsCount := len(in.IDs) / models.MaxCountInRow
+	if len(in.IDs)%models.MaxCountInRow > 0 {
 		rowsCount++
 	}
 
 	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
 
-	for i, id := range in.ids {
-
+	for i, id := range in.IDs {
 		var pollData *string
 
 		pollData, err = proto.MarshalCallbackData(models.PollRoute, &poll.Poll{
