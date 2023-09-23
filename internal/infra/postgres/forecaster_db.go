@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	models2 "github.com/babadro/forecaster/internal/models"
 	"time"
+
+	models2 "github.com/babadro/forecaster/internal/models"
 
 	"github.com/babadro/forecaster/internal/domain"
 	models "github.com/babadro/forecaster/internal/models/swagger"
@@ -127,6 +128,10 @@ func (db *ForecasterDB) GetPolls(
 		return nil, 0, scanFailed("select count(*) from forecaster.polls", err)
 	}
 
+	if rowsCount.Int32 == 0 {
+		return nil, 0, nil
+	}
+
 	pollsSQL, args, err := db.q.
 		Select(
 			"id", "series_id", "title", "description", "start", "finish", "created_at", "updated_at",
@@ -171,6 +176,37 @@ func (db *ForecasterDB) GetPolls(
 func (db *ForecasterDB) GetForecasts(
 	ctx context.Context, offset, limit uint64,
 ) ([]models2.Forecast, int32, error) {
+	var rowsCount sql.NullInt32
+
+	err := db.db.
+		QueryRow(ctx, `
+			SELECT count(distinct p.id) FROM forecaster.polls p
+			    INNER JOIN forecaster.options o ON p.id = o.poll_id
+			    WHERE o.total_votes > 0`).
+		Scan(&rowsCount)
+	if err != nil {
+		return nil, 0, scanFailed("select count(*) from forecaster.polls", err)
+	}
+
+	if rowsCount.Int32 == 0 {
+		return nil, 0, nil
+	}
+
+	sql, args, err := db.q.
+		Select("o.poll_id", "p.title", "p.description", "p.created_at").
+		From("forecaster.options o").
+		Join("forecaster.polls p ON o.poll_id = p.id").
+		Where("o.total_votes > 0").
+		Distinct(). // todo will it work for several columns?
+		OrderBy("p.created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		ToSql()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil, 0, nil
 }
 
