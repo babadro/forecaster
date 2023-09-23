@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	models2 "github.com/babadro/forecaster/internal/models"
 	"time"
 
 	"github.com/babadro/forecaster/internal/domain"
@@ -165,6 +166,12 @@ func (db *ForecasterDB) GetPolls(
 	}
 
 	return polls, rowsCount.Int32, nil
+}
+
+func (db *ForecasterDB) GetForecasts(
+	ctx context.Context, offset, limit uint64,
+) ([]models2.Forecast, int32, error) {
+	return nil, 0, nil
 }
 
 func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error) {
