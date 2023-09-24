@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecasts"
 	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
@@ -23,6 +24,7 @@ type pageServices struct {
 	poll           *poll.Service
 	polls          *polls.Service
 	userPollResult *userpollresult.Service
+	forecasts      *forecasts.Service
 }
 
 type Service struct {
@@ -40,6 +42,7 @@ func NewService(db models.DB, b models.TgBot, botName string) *Service {
 		poll:           poll.New(db),
 		userPollResult: userpollresult.New(db, botName),
 		polls:          polls.New(db),
+		forecasts:      forecasts.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)
@@ -89,6 +92,7 @@ const (
 	renderCallbackUpdateType             = "render_callback_update_type"
 	showUserResultStartCommandUpdateType = "show_user_result_start_command_update_type"
 	showPollsStartCommandUpdateType      = "show_polls_start_command_update_type"
+	showForecastsStartCommandUpdateType  = "show_forecasts_start_command_update_type"
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
@@ -114,6 +118,9 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		case strings.HasPrefix(upd.Message.Text, models.ShowPollsStartCommandPrefix):
 			updateType = showPollsStartCommandUpdateType
 			msg, errMsg, err = validateStartCommandInput(s.pages.polls.RenderStartCommand)(ctx, upd)
+		case strings.HasPrefix(upd.Message.Text, models.ShowForecastsStartCommandPrefix):
+			updateType = showForecastsStartCommandUpdateType
+			msg, errMsg, err = validateStartCommandInput(s.pages.forecasts.RenderStartCommand)(ctx, upd)
 		}
 	case upd.CallbackData() != "":
 		updateType = renderCallbackUpdateType

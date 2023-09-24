@@ -28,7 +28,7 @@ func (s *Service) NewRequest() (proto2.Message, *forecasts.Forecasts) {
 }
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	currentPageStr := upd.Message.Text[len(models.ShowForecastsStartCommand):]
+	currentPageStr := upd.Message.Text[len(models.ShowForecastsStartCommandPrefix):]
 
 	currentPage, err := strconv.ParseInt(currentPageStr, 10, 32)
 	if err != nil {
