@@ -3,6 +3,8 @@ package forecasts
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
@@ -10,7 +12,6 @@ import (
 	models2 "github.com/babadro/forecaster/internal/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
-	"strconv"
 )
 
 type Service struct {
@@ -125,7 +126,7 @@ func calculateStatistic(options []models2.ForecastOption) (stat, error) {
 	topOptionIDx, total := 0, 0
 
 	for i, f := range options {
-		total++
+		total += int(f.TotalVotes)
 
 		if f.TotalVotes > options[topOptionIDx].TotalVotes {
 			topOptionIDx = i
@@ -137,8 +138,9 @@ func calculateStatistic(options []models2.ForecastOption) (stat, error) {
 	}
 
 	return stat{
-		topOption:  options[topOptionIDx],
-		totalVotes: int32(total),
+		topOption:           options[topOptionIDx],
+		totalVotes:          int32(total),
+		topOptionPercentage: int(float64(options[topOptionIDx].TotalVotes) / float64(total) * 100),
 	}, nil
 }
 

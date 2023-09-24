@@ -2,11 +2,12 @@ package telegram_test
 
 import (
 	"context"
-	"github.com/babadro/forecaster/internal/models/swagger"
 	"math"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/babadro/forecaster/internal/models/swagger"
 
 	"github.com/brianvoe/gofakeit/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -27,16 +28,24 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
 
+	ctx := context.Background()
+
 	// vote in each poll so that every poll has votes
 	for _, p := range polls {
 		op := p.Options[0]
 
-		_, err := s.db.CreateVote(context.Background(), swagger.CreateVote{
+		_, err := s.db.CreateVote(ctx, swagger.CreateVote{
 			OptionID: op.ID,
 			PollID:   p.ID,
 			UserID:   userID,
 		}, time.Now().Unix())
 
+		s.Require().NoError(err)
+	}
+
+	// calculate statistic to fill total_votes field
+	for _, p := range polls {
+		err := s.db.CalculateStatistics(ctx, p.ID)
 		s.Require().NoError(err)
 	}
 

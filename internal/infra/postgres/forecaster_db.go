@@ -193,7 +193,7 @@ func (db *ForecasterDB) GetForecasts(
 	}
 
 	forecastsSQL, args, err := db.q.
-		Select("o.poll_id", "p.title").
+		Select("o.poll_id, p.title, created_at").
 		From("forecaster.options o").
 		Join("forecaster.polls p ON o.poll_id = p.id").
 		Where("o.total_votes > 0").
@@ -217,7 +217,7 @@ func (db *ForecasterDB) GetForecasts(
 	forecasts := make([]models2.Forecast, 0, limit)
 	for rows.Next() {
 		var forecast models2.Forecast
-		err = rows.Scan(&forecast.PollID, &forecast.PollTitle)
+		err = rows.Scan(&forecast.PollID, &forecast.PollTitle, nil)
 		if err != nil {
 			return nil, 0, scanFailed("select forecasts", err)
 		}
