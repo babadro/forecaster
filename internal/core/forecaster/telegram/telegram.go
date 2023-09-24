@@ -85,7 +85,6 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 	return sendErr
 }
 
-// update type int8 iota.
 const (
 	unknownUpdateType                    = "unknown_update_type"
 	showPollStartCommandUpdateType       = "show_poll_start_command_update_type"
@@ -104,7 +103,7 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 
 	var err error
 
-	updateType := unknownUpdateType
+	var updateType string
 
 	switch {
 	case upd.Message != nil:
@@ -141,6 +140,11 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 
 	if err != nil {
 		return nil, errMsg, fmt.Errorf("unable to handle %s: %w", updateType, err)
+	}
+
+	if updateType == "" {
+		// todo
+		// create page that shows "I don't know this command" and render go to main menu button
 	}
 
 	return msg, errMsg, nil
