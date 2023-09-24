@@ -197,6 +197,20 @@ func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
 	}
 }
 
+func startShowForecasts(currentPage int32, userID int64) tgbotapi.Update {
+	return tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: userID,
+			},
+			Text: "/start showforecasts_" + strconv.Itoa(int(currentPage)),
+		},
+	}
+}
+
 func startShowUserRes(pollID int32, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
@@ -262,7 +276,7 @@ func (s *TelegramServiceSuite) buttonsFromInterface(in interface{}) []tgbotapi.I
 	case *tgbotapi.InlineKeyboardMarkup:
 		return getButtons(*keyboard)
 	default:
-		s.Fail("unexpected type %T", in)
+		s.Failf("can't get buttons from interface", "unexpected type %T", in)
 	}
 
 	return nil
