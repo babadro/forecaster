@@ -192,22 +192,82 @@ func (db *ForecasterDB) GetForecasts(
 		return nil, 0, nil
 	}
 
-	sql, args, err := db.q.
-		Select("o.poll_id", "p.title", "p.description", "p.created_at").
+	forecastsSQL, args, err := db.q.
+		Select("o.poll_id", "p.title").
 		From("forecaster.options o").
 		Join("forecaster.polls p ON o.poll_id = p.id").
 		Where("o.total_votes > 0").
-		Distinct(). // todo will it work for several columns?
+		Distinct().
 		OrderBy("p.created_at DESC").
 		Offset(offset).
 		Limit(limit).
 		ToSql()
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, 0, buildingQueryFailed("select forecasts", err)
 	}
 
-	return nil, 0, nil
+	rows, err := db.db.Query(ctx, forecastsSQL, args...)
+	if err != nil {
+		return nil, 0, queryFailed("select forecasts", err)
+	}
+
+	defer rows.Close()
+
+	forecasts := make([]models2.Forecast, 0, limit)
+	for rows.Next() {
+		var forecast models2.Forecast
+		err = rows.Scan(&forecast.PollID, &forecast.PollTitle)
+		if err != nil {
+			return nil, 0, scanFailed("select forecasts", err)
+		}
+
+		forecasts = append(forecasts, forecast)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, rowsError("select forecasts", err)
+	}
+
+	pollIDs := make([]int32, len(forecasts))
+	for i := range forecasts {
+		pollIDs[i] = forecasts[i].PollID
+	}
+
+	optionsSQL, args, err := db.q.Select("poll_id", "id", "title", "total_votes").
+		From("forecaster.options").Where(sq.Eq{"poll_id": pollIDs}).ToSql()
+	if err != nil {
+		return nil, 0, buildingQueryFailed("select forecast options", err)
+	}
+
+	rows, err = db.db.Query(ctx, optionsSQL, args...)
+	if err != nil {
+		return nil, 0, queryFailed("select forecast options", err)
+	}
+
+	defer rows.Close()
+
+	pollIDToForecastIDx := make(map[int32]int, len(forecasts))
+	for i := range forecasts {
+		pollIDToForecastIDx[forecasts[i].PollID] = i
+	}
+
+	for rows.Next() {
+		pollID, option := int32(0), models2.ForecastOption{}
+		err = rows.Scan(&pollID, &option.ID, &option.Title, &option.TotalVotes)
+		if err != nil {
+			return nil, 0, scanFailed("select forecast options", err)
+		}
+
+		forecastIDx := pollIDToForecastIDx[pollID]
+		forecasts[forecastIDx].Options = append(forecasts[forecastIDx].Options, option)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, rowsError("select forecast options", err)
+	}
+
+	return forecasts, rowsCount.Int32, nil
 }
 
 func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error) {
