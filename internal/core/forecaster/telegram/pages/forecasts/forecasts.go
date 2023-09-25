@@ -66,9 +66,12 @@ func (s *Service) render(
 		Prev:        currentPage > 1,
 		Next:        currentPage*pageSize < totalCount,
 		Route:       models.ForecastsRoute,
-		ProtoMessage: func(page int32) proto2.Message {
+		AllItemsProtoMessage: func(page int32) proto2.Message {
 			return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
 		},
+		//SingleItemProtoMessage: func(itemID int32) proto2.Message {
+		//	return &Foreca
+		//},
 	}
 
 	keyboard, err := render.KeyboardMarkup(keyboardIn)

@@ -5,6 +5,7 @@ import (
 	"math"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
@@ -32,15 +33,16 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 
 	// vote in each poll so that every poll has votes
 	for _, p := range polls {
-		op := p.Options[0]
+		// vote for each option
+		for _, op := range p.Options {
+			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
+				OptionID: op.ID,
+				PollID:   p.ID,
+				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
+			}, time.Now().Unix())
 
-		_, err := s.db.CreateVote(ctx, swagger.CreateVote{
-			OptionID: op.ID,
-			PollID:   p.ID,
-			UserID:   userID,
-		}, time.Now().Unix())
-
-		s.Require().NoError(err)
+			s.Require().NoError(err)
+		}
 	}
 
 	// calculate statistic to fill total_votes field
@@ -113,6 +115,7 @@ func (s *TelegramServiceSuite) verifyForecastsPage(
 ) {
 	s.T().Helper()
 
+	// check polls title
 	for i, forecast := range allPolls {
 		idx := i + 1
 		if idx >= first && idx <= last {
@@ -124,6 +127,12 @@ func (s *TelegramServiceSuite) verifyForecastsPage(
 
 	forecastsCount := last - first + 1
 
+	// check statistics
+	// each poll has 3 options and each option has 1 vote,
+	// so expected percentage for each option is 33%
+	s.Require().Equal(strings.Count(txt, "33%"), forecastsCount)
+
+	// check buttons
 	expectedButtonsCount := forecastsCount
 
 	if prevButton {
@@ -158,7 +167,29 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
 	})
 
-	// send /start showpolls_1 command
+	ctx := context.Background()
+
+	// vote in each poll so that every poll has votes
+	for _, p := range polls {
+		// vote for each option
+		for _, op := range p.Options {
+			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
+				OptionID: op.ID,
+				PollID:   p.ID,
+				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
+			}, time.Now().Unix())
+
+			s.Require().NoError(err)
+		}
+	}
+
+	// calculate statistic to fill total_votes field
+	for _, p := range polls {
+		err := s.db.CalculateStatistics(ctx, p.ID)
+		s.Require().NoError(err)
+	}
+
+	// send /start showforecasts_1 command
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
 	update := startShowForecasts(1, userID)
 
@@ -166,33 +197,33 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	forecastsPageStartCommand := s.asMessage(sentMsg)
 
-	firstPollButton, found := tgbotapi.InlineKeyboardButton{}, false
+	firstForecastButton, found := tgbotapi.InlineKeyboardButton{}, false
 
 	for _, button := range s.buttonsFromInterface(forecastsPageStartCommand.ReplyMarkup) {
 		if button.Text == "1" {
-			firstPollButton = button
+			firstForecastButton = button
 			found = true
 		}
 	}
 
 	s.Require().True(found)
 
-	s.sendCallback(firstPollButton, userID)
+	s.sendCallback(firstForecastButton, userID)
 
-	// verify the poll message
-	pollMsg := s.asEditMessage(sentMsg)
-	s.Require().Contains(pollMsg.Text, polls[0].Title)
+	// verify the forecast message
+	forecastMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(forecastMsg.Text, polls[0].Title)
 
-	// verify AllPolls button
-	buttons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
-	allPollButtons := buttons[len(buttons)-1]
-	s.Require().Contains(allPollButtons.Text, "All Polls")
+	// verify AllForecasts button
+	buttons := s.buttonsFromInterface(forecastMsg.ReplyMarkup)
+	allForecastsButtons := buttons[len(buttons)-1]
+	s.Require().Contains(allForecastsButtons.Text, "All Forecasts")
 
 	// send AllPolls button
-	s.sendCallback(allPollButtons, userID)
+	s.sendCallback(allForecastsButtons, userID)
 
-	// verify the polls page
-	pollsMessage := s.asEditMessage(sentMsg)
-	s.verifyPollsPage(pollsMessage.Text, s.buttonsFromInterface(pollsMessage.ReplyMarkup), polls, 1, 2, false, false)
+	// verify the forecasts page
+	forecastsMessage := s.asEditMessage(sentMsg)
+	s.verifyPollsPage(forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls, 1, 2, false, false)
 }
 */

@@ -3,8 +3,9 @@ package polls
 import (
 	"context"
 	"fmt"
-	"github.com/babadro/forecaster/internal/helpers"
 	"strconv"
+
+	"github.com/babadro/forecaster/internal/helpers"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
@@ -66,7 +67,7 @@ func (s *Service) render(
 		Prev:        currentPage > 1,
 		Next:        currentPage*pageSize < totalCount,
 		Route:       models.PollRoute,
-		ProtoMessage: func(page int32) proto2.Message {
+		AllItemsProtoMessage: func(page int32) proto2.Message {
 			return &polls.Polls{
 				CurrentPage: helpers.Ptr(page),
 			}

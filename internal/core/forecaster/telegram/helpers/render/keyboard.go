@@ -2,22 +2,23 @@ package render
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/helpers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"strconv"
 
 	proto2 "google.golang.org/protobuf/proto"
 )
 
 type KeyboardInput struct {
-	IDs          []int32
-	CurrentPage  int32
-	Prev, Next   bool
-	Route        byte
-	ProtoMessage func(page int32) proto2.Message
+	IDs                  []int32
+	CurrentPage          int32
+	Prev, Next           bool
+	Route                byte
+	AllItemsProtoMessage func(page int32) proto2.Message
 }
 
 func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
@@ -25,13 +26,13 @@ func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 
 	var err error
 
-	firstRow, err = appendNaviButton(in.Route, in.ProtoMessage,
+	firstRow, err = appendNaviButton(in.Route, in.AllItemsProtoMessage,
 		firstRow, in.Prev, in.CurrentPage-1, "Prev")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}
 
-	firstRow, err = appendNaviButton(in.Route, in.ProtoMessage,
+	firstRow, err = appendNaviButton(in.Route, in.AllItemsProtoMessage,
 		firstRow, in.Next, in.CurrentPage+1, "Next")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
