@@ -8,6 +8,7 @@ const (
 	UserPollResultRoute
 	PollsRoute
 	ForecastsRoute
+	ForecastRoute
 )
 
 const (
@@ -15,4 +16,5 @@ const (
 	ShowUserResultCommandPrefix     = "/start showuserres_"
 	ShowPollsStartCommandPrefix     = "/start showpolls_"
 	ShowForecastsStartCommandPrefix = "/start showforecasts_"
+	ShowForecastStartCommandPrefix  = "/start showforecast_"
 )

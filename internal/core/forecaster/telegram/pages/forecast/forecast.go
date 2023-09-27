@@ -1,9 +1,10 @@
-package poll
+package forecast
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -76,12 +77,8 @@ func (s *Service) RenderCallback(
 	return s.render(ctx, req.GetPollId(), forecastsPage, user.ID, chat.ID, message.MessageID, true)
 }
 
-const (
-	cantShowForecastMsg = "Sorry, something went wrong, I can't show this forecast right now"
-)
-
 func (s *Service) render(
-	ctx context.Context, pollID, referrerForecastsPage int32, userID int64, chatID int64, messageID int, editMessage bool,
+	ctx context.Context, pollID, referrerForecastsPage int32, userID, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
@@ -99,14 +96,17 @@ func (s *Service) render(
 		return nil, "This poll already has outcome", fmt.Errorf("poll %d already has outcome", p.ID)
 	}
 
-	markup, err := keyboardMarkup(p.ID)
+	markup, err := keyboardMarkup(p.ID, referrerForecastsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("userpoll result: unable to create keyboard markup: %s", err.Error())
 	}
 
-	var res tgbotapi.Chattable
-	msg := s.txtMsg(txtInputModel)
+	msg, err := txtMsg(p, userVoteFound, userVote, swagger.TotalVotes(p.Options))
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create text message: %s", err.Error())
+	}
 
+	var res tgbotapi.Chattable
 	if editMessage {
 		res = render.NewEditMessageTextWithKeyboard(chatID, messageID, msg, markup)
 	} else {
@@ -140,7 +140,7 @@ func keyboardMarkup(pollID, forecastsPage int32) (tgbotapi.InlineKeyboardMarkup,
 	return render.Keyboard(forecastsBtn, pollBtn), nil
 }
 
-func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.Vote) (string, error) {
+func txtMsg(p swagger.PollWithOptions, userVoteFound bool, userVote swagger.Vote, totalVotes int32) (string, error) {
 	var sb render.StringBuilder
 
 	start, finish := render.FormatTime(p.Start), render.FormatTime(p.Finish)
@@ -166,20 +166,21 @@ func txtMsg(p swagger.PollWithOptions, userAlreadyVoted bool, lastVote swagger.V
 
 	sb.WriteString("<b>Options:</b>\n")
 
+	sort.Slice(p.Options, func(i, j int) bool {
+		return p.Options[i].TotalVotes > p.Options[j].TotalVotes
+	})
+
 	for i, op := range p.Options {
-		sb.Printf("	%d. %s\n", i+1, op.Title)
+		percentage := int(float64(op.TotalVotes) / float64(totalVotes) * 100)
+		sb.Printf("	<b>%d. %s:</b> %d%% (%d votes)\n", i+1, op.Title, percentage, op.TotalVotes)
 	}
 
 	sb.WriteString("\n")
 
-	if timeToGo <= 0 {
-		sb.WriteString("<b>This poll has expired!</b>\n")
-	}
-
-	if userAlreadyVoted {
-		votedOption, idx := swagger.FindOptionByID(p.Options, lastVote.OptionID)
+	if userVoteFound {
+		votedOption, idx := swagger.FindOptionByID(p.Options, userVote.OptionID)
 		if idx == -1 {
-			return "", fmt.Errorf("unable to find voted option %d for poll %d", lastVote.OptionID, p.ID)
+			return "", fmt.Errorf("unable to find voted option %d for poll %d", userVote.OptionID, p.ID)
 		}
 
 		sb.Printf("<b>Last time you voted for: %d. </b> %s\n", idx, votedOption.Title)
