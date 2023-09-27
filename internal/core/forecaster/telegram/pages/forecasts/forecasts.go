@@ -55,8 +55,11 @@ var allForecasts = func(page int32) proto2.Message {
 	return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
 }
 
-var singleForecast = func(itemID int32) proto2.Message {
-	return &forecast.Forecast{PollId: helpers.Ptr(itemID)}
+var singleForecast = func(itemID, referrerForecastsPage int32) proto2.Message {
+	return &forecast.Forecast{
+		PollId:                helpers.Ptr(itemID),
+		ReferrerForecastsPage: helpers.Ptr(referrerForecastsPage),
+	}
 }
 
 func (s *Service) render(

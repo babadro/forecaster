@@ -18,7 +18,7 @@ type KeyboardInput struct {
 	AllItemsRoute          byte
 	SingleItemRoute        byte
 	AllItemsProtoMessage   func(page int32) proto2.Message
-	SingleItemProtoMessage func(itemID int32) proto2.Message
+	SingleItemProtoMessage func(itemID, referrerAllItemsPage int32) proto2.Message
 }
 
 func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
@@ -53,7 +53,7 @@ func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 	for i, id := range in.IDs {
 		var pollData *string
 
-		pollData, err = proto.MarshalCallbackData(in.SingleItemRoute, in.SingleItemProtoMessage(id))
+		pollData, err = proto.MarshalCallbackData(in.SingleItemRoute, in.SingleItemProtoMessage(id, in.CurrentPage))
 		if err != nil {
 			return tgbotapi.InlineKeyboardMarkup{},
 				fmt.Errorf("unable to marshal poll callback data: %s", err.Error())

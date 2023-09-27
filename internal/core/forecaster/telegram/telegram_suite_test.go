@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram"
 	"github.com/babadro/forecaster/internal/infra/postgres"
@@ -19,7 +20,8 @@ import (
 )
 
 type envVars struct {
-	DBConn string `env:"DB_CONN" envDefault:"postgres://postgres:postgres@localhost:5432/forecaster?sslmode=disable"`
+	DBConn    string `env:"DB_CONN" envDefault:"postgres://postgres:postgres@localhost:5432/forecaster?sslmode=disable"`
+	SleepMode bool   `env:"SLEEP_MODE" envDefault:"false"`
 }
 
 type TelegramServiceSuite struct {
@@ -31,6 +33,8 @@ type TelegramServiceSuite struct {
 	telegramService *telegram.Service
 	logOutput       bytes.Buffer
 	logger          zerolog.Logger
+
+	sleepMode bool
 }
 
 func (s *TelegramServiceSuite) SetupSuite() {
@@ -43,6 +47,8 @@ func (s *TelegramServiceSuite) SetupSuite() {
 
 	s.testDB = db.NewTestDB(dbPool)
 	s.db = postgres.NewForecasterDB(dbPool)
+
+	s.sleepMode = envs.SleepMode
 }
 
 func (s *TelegramServiceSuite) SetupTest() {
@@ -57,6 +63,10 @@ func (s *TelegramServiceSuite) SetupTest() {
 }
 
 func (s *TelegramServiceSuite) TearDownTest() {
+	if s.sleepMode {
+		time.Sleep(time.Hour * 10_000)
+	}
+
 	s.cleanAllTables()
 }
 

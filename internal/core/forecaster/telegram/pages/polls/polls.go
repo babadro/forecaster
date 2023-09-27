@@ -56,8 +56,10 @@ var allPolls = func(page int32) proto2.Message {
 	return &polls.Polls{CurrentPage: helpers.Ptr(page)}
 }
 
-var singlePoll = func(itemID int32) proto2.Message {
-	return &poll.Poll{PollId: helpers.Ptr(itemID)}
+var singlePoll = func(itemID, _ int32) proto2.Message {
+	return &poll.Poll{
+		PollId: helpers.Ptr(itemID),
+	}
 }
 
 func (s *Service) render(
