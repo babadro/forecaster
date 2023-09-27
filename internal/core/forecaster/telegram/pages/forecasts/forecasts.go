@@ -7,6 +7,7 @@ import (
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
 	"github.com/babadro/forecaster/internal/helpers"
 	models2 "github.com/babadro/forecaster/internal/models"
@@ -50,6 +51,14 @@ func (s *Service) RenderCallback(
 
 const pageSize = 10
 
+var allForecasts = func(page int32) proto2.Message {
+	return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
+}
+
+var singleForecast = func(itemID int32) proto2.Message {
+	return &forecast.Forecast{PollId: helpers.Ptr(itemID)}
+}
+
 func (s *Service) render(
 	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
@@ -61,17 +70,14 @@ func (s *Service) render(
 	}
 
 	keyboardIn := render.KeyboardInput{
-		IDs:         forecastIDs(forecastArr),
-		CurrentPage: currentPage,
-		Prev:        currentPage > 1,
-		Next:        currentPage*pageSize < totalCount,
-		Route:       models.ForecastsRoute,
-		AllItemsProtoMessage: func(page int32) proto2.Message {
-			return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
-		},
-		//SingleItemProtoMessage: func(itemID int32) proto2.Message {
-		//	return &Foreca
-		//},
+		IDs:                    forecastIDs(forecastArr),
+		CurrentPage:            currentPage,
+		Prev:                   currentPage > 1,
+		Next:                   currentPage*pageSize < totalCount,
+		AllItemsRoute:          models.ForecastsRoute,
+		SingleItemRoute:        models.ForecastRoute,
+		AllItemsProtoMessage:   allForecasts,
+		SingleItemProtoMessage: singleForecast,
 	}
 
 	keyboard, err := render.KeyboardMarkup(keyboardIn)
@@ -150,8 +156,8 @@ func calculateStatistic(options []models2.ForecastOption) (stat, error) {
 func forecastIDs(forecastArr []models2.Forecast) []int32 {
 	res := make([]int32, len(forecastArr))
 
-	for i, forecast := range forecastArr {
-		res[i] = forecast.PollID
+	for i, f := range forecastArr {
+		res[i] = f.PollID
 	}
 
 	return res

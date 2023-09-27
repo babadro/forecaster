@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/helpers"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
@@ -51,6 +52,14 @@ func (s *Service) RenderCallback(
 
 const pageSize = 10
 
+var allPolls = func(page int32) proto2.Message {
+	return &polls.Polls{CurrentPage: helpers.Ptr(page)}
+}
+
+var singlePoll = func(itemID int32) proto2.Message {
+	return &poll.Poll{PollId: helpers.Ptr(itemID)}
+}
+
 func (s *Service) render(
 	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
@@ -62,16 +71,14 @@ func (s *Service) render(
 	}
 
 	keyboardIn := render.KeyboardInput{
-		IDs:         pollsIDs(pollsArr),
-		CurrentPage: currentPage,
-		Prev:        currentPage > 1,
-		Next:        currentPage*pageSize < totalCount,
-		Route:       models.PollRoute,
-		AllItemsProtoMessage: func(page int32) proto2.Message {
-			return &polls.Polls{
-				CurrentPage: helpers.Ptr(page),
-			}
-		},
+		IDs:                    pollsIDs(pollsArr),
+		CurrentPage:            currentPage,
+		Prev:                   currentPage > 1,
+		Next:                   currentPage*pageSize < totalCount,
+		AllItemsRoute:          models.PollsRoute,
+		SingleItemRoute:        models.PollRoute,
+		AllItemsProtoMessage:   allPolls,
+		SingleItemProtoMessage: singlePoll,
 	}
 
 	keyboard, err := render.KeyboardMarkup(keyboardIn)
@@ -100,10 +107,10 @@ func txtMsg(pollsArr []swagger.Poll) string {
 	return sb.String()
 }
 
-func pollsIDs(p []swagger.Poll) []int32 {
-	ids := make([]int32, len(p))
-	for i, poll := range p {
-		ids[i] = poll.ID
+func pollsIDs(pollsArr []swagger.Poll) []int32 {
+	ids := make([]int32, len(pollsArr))
+	for i, p := range pollsArr {
+		ids[i] = p.ID
 	}
 
 	return ids

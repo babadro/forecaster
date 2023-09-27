@@ -6,19 +6,19 @@ import (
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
-	"github.com/babadro/forecaster/internal/helpers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	proto2 "google.golang.org/protobuf/proto"
 )
 
 type KeyboardInput struct {
-	IDs                  []int32
-	CurrentPage          int32
-	Prev, Next           bool
-	Route                byte
-	AllItemsProtoMessage func(page int32) proto2.Message
+	IDs                    []int32
+	CurrentPage            int32
+	Prev, Next             bool
+	AllItemsRoute          byte
+	SingleItemRoute        byte
+	AllItemsProtoMessage   func(page int32) proto2.Message
+	SingleItemProtoMessage func(itemID int32) proto2.Message
 }
 
 func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
@@ -26,13 +26,13 @@ func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 
 	var err error
 
-	firstRow, err = appendNaviButton(in.Route, in.AllItemsProtoMessage,
+	firstRow, err = appendNaviButton(in.AllItemsRoute, in.AllItemsProtoMessage,
 		firstRow, in.Prev, in.CurrentPage-1, "Prev")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}
 
-	firstRow, err = appendNaviButton(in.Route, in.AllItemsProtoMessage,
+	firstRow, err = appendNaviButton(in.AllItemsRoute, in.AllItemsProtoMessage,
 		firstRow, in.Next, in.CurrentPage+1, "Next")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
@@ -53,9 +53,7 @@ func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 	for i, id := range in.IDs {
 		var pollData *string
 
-		pollData, err = proto.MarshalCallbackData(models.PollRoute, &poll.Poll{
-			PollId: helpers.Ptr(id),
-		})
+		pollData, err = proto.MarshalCallbackData(in.SingleItemRoute, in.SingleItemProtoMessage(id))
 		if err != nil {
 			return tgbotapi.InlineKeyboardMarkup{},
 				fmt.Errorf("unable to marshal poll callback data: %s", err.Error())
