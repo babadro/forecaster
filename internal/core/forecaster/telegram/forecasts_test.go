@@ -154,7 +154,6 @@ func (s *TelegramServiceSuite) verifyForecastsPage(
 	}
 }
 
-/*
 // create several polls, chose the first poll, go to the poll page, and then go back to the polls page...
 func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 	var sentMsg interface{}
@@ -216,14 +215,13 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	// verify AllForecasts button
 	buttons := s.buttonsFromInterface(forecastMsg.ReplyMarkup)
-	allForecastsButtons := buttons[len(buttons)-1]
+	allForecastsButtons := buttons[len(buttons)-2]
 	s.Require().Contains(allForecastsButtons.Text, "All Forecasts")
 
-	// send AllPolls button
+	// send AllForecasts button
 	s.sendCallback(allForecastsButtons, userID)
 
 	// verify the forecasts page
 	forecastsMessage := s.asEditMessage(sentMsg)
 	s.verifyPollsPage(forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls, 1, 2, false, false)
 }
-*/
