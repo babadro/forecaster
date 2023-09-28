@@ -51,7 +51,7 @@ func (s *Service) RenderCallback(
 
 	msg := txtMsg(expired, *op)
 
-	markup, err := keyboardMarkup(p.ID, op.ID, expired)
+	markup, err := keyboardMarkup(p.ID, votePreview.GetReferrerForecastsPage(), op.ID, expired)
 	if err != nil {
 		return nil,
 			"Sorry, something went wrong, I can't show this option right now",
@@ -78,8 +78,12 @@ func txtMsg(expired bool, option swagger.Option) string {
 	return sb.String()
 }
 
-func keyboardMarkup(pollID int32, optionID int16, voteNotAllowed bool) (tgbotapi.InlineKeyboardMarkup, error) {
-	backData, err := proto2.MarshalCallbackData(models.PollRoute, &poll.Poll{PollId: helpers.Ptr[int32](pollID)})
+func keyboardMarkup(pollID, referrerForecastsPage int32, optionID int16, voteNotAllowed bool) (tgbotapi.InlineKeyboardMarkup, error) {
+	pollMsg := &poll.Poll{PollId: helpers.Ptr(pollID)}
+	if referrerForecastsPage > 0 {
+		pollMsg.ReferrerForecastsPage = helpers.Ptr(referrerForecastsPage)
+	}
+	backData, err := proto2.MarshalCallbackData(models.PollRoute, pollMsg)
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
 	}
@@ -90,10 +94,15 @@ func keyboardMarkup(pollID int32, optionID int16, voteNotAllowed bool) (tgbotapi
 		return render.Keyboard(backBtn), nil
 	}
 
-	data, err := proto2.MarshalCallbackData(models.VoteRoute, &vote.Vote{
-		PollId:   helpers.Ptr[int32](pollID),
-		OptionId: helpers.Ptr[int32](int32(optionID)),
-	})
+	voteMsg := &vote.Vote{
+		PollId:   helpers.Ptr(pollID),
+		OptionId: helpers.Ptr(int32(optionID)),
+	}
+	if referrerForecastsPage > 0 {
+		voteMsg.ReferrerForecastsPage = helpers.Ptr(referrerForecastsPage)
+	}
+
+	data, err := proto2.MarshalCallbackData(models.VoteRoute, voteMsg)
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall vote callback data: %s", err.Error())
 	}

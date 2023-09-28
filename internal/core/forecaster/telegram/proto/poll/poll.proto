@@ -6,4 +6,5 @@ option go_package = "./poll";
 
 message Poll {
   required int32 poll_id = 1;
+  optional int32 referrer_forecasts_page = 2;
 }

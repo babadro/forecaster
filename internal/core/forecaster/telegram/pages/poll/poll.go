@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/userpollresult"
@@ -54,7 +55,7 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 	}
 
 	return s.render(
-		ctx, int32(pollID), user.ID, chat.ID,
+		ctx, int32(pollID), 0, user.ID, chat.ID,
 		upd.Message.MessageID, false)
 }
 
@@ -68,7 +69,7 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	return s.render(ctx, *req.PollId, user.ID, chat.ID, message.MessageID, true)
+	return s.render(ctx, *req.PollId, req.GetReferrerForecastsPage(), user.ID, chat.ID, message.MessageID, true)
 }
 
 const (
@@ -76,7 +77,7 @@ const (
 )
 
 func (s *Service) render(
-	ctx context.Context, pollID int32, userID int64, chatID int64, messageID int, editMessage bool,
+	ctx context.Context, pollID, referrerForecastsPage int32, userID int64, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, err := s.db.GetPollByID(ctx, pollID)
 
@@ -104,7 +105,7 @@ func (s *Service) render(
 			fmt.Errorf("unable to create text message: %s", err.Error())
 	}
 
-	keyboard, err := keyboardMarkup(p, userID)
+	keyboard, err := keyboardMarkup(p, userID, referrerForecastsPage)
 	if err != nil {
 		return nil,
 			cantShowPollMsg,
@@ -121,7 +122,7 @@ func (s *Service) render(
 	return res, "", nil
 }
 
-func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.InlineKeyboardMarkup, error) {
+func keyboardMarkup(poll swagger.PollWithOptions, userID int64, referrerForecastsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
 	length := len(poll.Options)
 	if swagger.HasOutcome(poll.Options) {
 		length++ // ++ for "show results" button
@@ -167,6 +168,21 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64) (tgbotapi.Inline
 		rows[lastRow] = append(rows[lastRow], tgbotapi.InlineKeyboardButton{
 			Text:         "Show Results",
 			CallbackData: showMyResultsData,
+		})
+	} else {
+		forecastMsg := &forecast.Forecast{PollId: helpers.Ptr(poll.ID)}
+		if referrerForecastsPage > 0 {
+			forecastMsg.ReferrerForecastsPage = helpers.Ptr(referrerForecastsPage)
+		}
+
+		showForecastData, err := proto.MarshalCallbackData(models.ForecastRoute, forecastMsg)
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal forecast callback data: %w", err)
+		}
+
+		rows[lastRow] = append(rows[lastRow], tgbotapi.InlineKeyboardButton{
+			Text:         "Show Forecast",
+			CallbackData: showForecastData,
 		})
 	}
 
