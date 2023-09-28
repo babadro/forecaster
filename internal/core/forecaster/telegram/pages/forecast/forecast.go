@@ -55,7 +55,7 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 	}
 
 	return s.render(
-		ctx, int32(pollID), 1, user.ID, chat.ID,
+		ctx, int32(pollID), 0, user.ID, chat.ID,
 		upd.Message.MessageID, false)
 }
 
@@ -69,12 +69,7 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	forecastsPage := req.GetReferrerForecastsPage()
-	if forecastsPage == 0 {
-		forecastsPage = 1
-	}
-
-	return s.render(ctx, req.GetPollId(), forecastsPage, user.ID, chat.ID, message.MessageID, true)
+	return s.render(ctx, req.GetPollId(), req.GetReferrerForecastsPage(), user.ID, chat.ID, message.MessageID, true)
 }
 
 func (s *Service) render(
@@ -117,20 +112,24 @@ func (s *Service) render(
 }
 
 func keyboardMarkup(pollID, forecastsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
-	forecastsData, err := proto.MarshalCallbackData(models.ForecastsRoute,
-		&forecasts.Forecasts{
-			CurrentPage: helpers.Ptr(forecastsPage),
-		},
-	)
+	forecastsMsg := &forecasts.Forecasts{CurrentPage: helpers.Ptr(forecastsPage)}
+	if forecastsPage == 0 {
+		forecastsMsg.CurrentPage = helpers.Ptr[int32](1)
+	}
+
+	forecastsData, err := proto.MarshalCallbackData(models.ForecastsRoute, forecastsMsg)
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
 	}
 
 	forecastsBtn := tgbotapi.InlineKeyboardButton{Text: "All Forecasts", CallbackData: forecastsData}
 
-	pollData, err := proto.MarshalCallbackData(models.PollRoute,
-		&poll.Poll{PollId: helpers.Ptr(pollID)},
-	)
+	pollMsg := &poll.Poll{PollId: helpers.Ptr(pollID)}
+	if forecastsPage > 0 {
+		pollMsg.ReferrerForecastsPage = helpers.Ptr(forecastsPage)
+	}
+
+	pollData, err := proto.MarshalCallbackData(models.PollRoute, pollMsg)
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
 	}

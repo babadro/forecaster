@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
@@ -17,7 +18,6 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/votepreview"
-	"github.com/babadro/forecaster/internal/domain"
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -25,10 +25,11 @@ import (
 
 type Service struct {
 	db models.DB
+	w  dbwrapper.Wrapper
 }
 
 func New(db models.DB) *Service {
-	return &Service{db: db}
+	return &Service{db: db, w: dbwrapper.New(db)}
 }
 
 func (s *Service) NewRequest() (proto2.Message, *poll.Poll) {
@@ -79,26 +80,17 @@ const (
 func (s *Service) render(
 	ctx context.Context, pollID, referrerForecastsPage int32, userID int64, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, err := s.db.GetPollByID(ctx, pollID)
-
+	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
-		return nil,
-			fmt.Sprintf("oops, can't find poll with id %d", pollID),
-			fmt.Errorf("unable to get poll by id: %s", err.Error())
+		return nil, errMsg, err
 	}
 
-	userAlreadyVoted := false
-
-	lastVote, err := s.db.GetUserVote(ctx, userID, p.ID)
-	if err == nil {
-		userAlreadyVoted = true
-	} else if !errors.Is(err, domain.ErrNotFound) {
-		return nil,
-			cantShowPollMsg,
-			fmt.Errorf("unable to get last vote: %s", err.Error())
+	userVote, userVoteFound, err := s.w.GetUserVote(ctx, userID, p.ID)
+	if err != nil {
+		return nil, "", err
 	}
 
-	txt, err := txtMsg(p, userAlreadyVoted, lastVote)
+	txt, err := txtMsg(p, userVoteFound, userVote)
 	if err != nil {
 		return nil,
 			cantShowPollMsg,
