@@ -133,6 +133,9 @@ func keyboardMarkup(poll swagger.PollWithOptions, userID int64, referrerForecast
 			PollId:   helpers.Ptr(poll.ID),
 			OptionId: helpers.Ptr(int32(op.ID)),
 		}
+		if referrerForecastsPage > 0 {
+			votePreview.ReferrerForecastsPage = helpers.Ptr(referrerForecastsPage)
+		}
 
 		callbackData, err := proto.MarshalCallbackData(models.VotePreviewRoute, &votePreview)
 		if err != nil {
