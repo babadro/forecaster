@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"time"
@@ -38,7 +39,7 @@ func (s *Service) NewRequest() (proto2.Message, *forecast.Forecast) {
 }
 
 func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	pollIDStr := upd.Message.Text[len(models.ShowPollStartCommandPrefix):]
+	pollIDStr := upd.Message.Text[len(models.ShowForecastStartCommandPrefix):]
 
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
@@ -170,7 +171,7 @@ func txtMsg(p swagger.PollWithOptions, userVoteFound bool, userVote swagger.Vote
 	})
 
 	for i, op := range p.Options {
-		percentage := int(float64(op.TotalVotes) / float64(totalVotes) * 100)
+		percentage := int(math.Round(float64(op.TotalVotes) / float64(totalVotes) * 100))
 		sb.Printf("	<b>%d. %s:</b> %d%% (%d votes)\n", i+1, op.Title, percentage, op.TotalVotes)
 	}
 

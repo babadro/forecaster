@@ -21,38 +21,10 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	polls := s.createRandomPolls(24)
-	// polls should be sorted by created_at desc
-	sort.Slice(polls, func(i, j int) bool {
-		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
-	})
-
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
-
-	ctx := context.Background()
-
-	// vote in each poll so that every poll has votes
-	for _, p := range polls {
-		// vote for each option
-		for _, op := range p.Options {
-			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
-				OptionID: op.ID,
-				PollID:   p.ID,
-				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
-			}, time.Now().Unix())
-
-			s.Require().NoError(err)
-		}
-	}
-
-	// calculate statistic to fill total_votes field
-	for _, p := range polls {
-		err := s.db.CalculateStatistics(ctx, p.ID)
-		s.Require().NoError(err)
-	}
+	polls := s.createForecasts(24)
 
 	// send /start showforecasts_1 command
-
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
 	update := startShowForecasts(1, userID)
 
 	s.sendMessage(update)
@@ -160,33 +132,7 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	polls := s.createRandomPolls(2)
-	// polls should be sorted by created_at desc
-	sort.Slice(polls, func(i, j int) bool {
-		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
-	})
-
-	ctx := context.Background()
-
-	// vote in each poll so that every poll has votes
-	for _, p := range polls {
-		// vote for each option
-		for _, op := range p.Options {
-			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
-				OptionID: op.ID,
-				PollID:   p.ID,
-				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
-			}, time.Now().Unix())
-
-			s.Require().NoError(err)
-		}
-	}
-
-	// calculate statistic to fill total_votes field
-	for _, p := range polls {
-		err := s.db.CalculateStatistics(ctx, p.ID)
-		s.Require().NoError(err)
-	}
+	polls := s.createForecasts(2)
 
 	// send /start showforecasts_1 command
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
@@ -223,5 +169,98 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	// verify the forecasts page
 	forecastsMessage := s.asEditMessage(sentMsg)
-	s.verifyPollsPage(forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls, 1, 2, false, false)
+	s.verifyForecastsPage(forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls, 1, 2, false, false)
+}
+
+func (s *TelegramServiceSuite) TestShowForecastStartCommand() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	poll := s.createRandomPoll(time.Now())
+
+	for optionIDx, votesCount := range []int{3, 2, 1} {
+		for i := 0; i < votesCount; i++ {
+			_, err := s.db.CreateVote(context.Background(), swagger.CreateVote{
+				OptionID: poll.Options[optionIDx].ID,
+				PollID:   poll.ID,
+				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
+			}, time.Now().Unix())
+
+			s.Require().NoError(err)
+		}
+	}
+
+	s.Require().NoError(s.db.CalculateStatistics(context.Background(), poll.ID))
+
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	update := startShowForecast(poll.ID, userID)
+
+	s.sendMessage(update)
+
+	forecastMsg := s.asMessage(sentMsg)
+
+	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+}
+
+func (s *TelegramServiceSuite) verifyForecastPage(
+	gotText string, gotButtons []tgbotapi.InlineKeyboardButton, p swagger.PollWithOptions,
+) {
+	s.Require().Contains(gotText, p.Title)
+
+	// verify options
+	for _, op := range p.Options {
+		s.Require().Contains(gotText, op.Title)
+	}
+
+	// verify statistics
+	// first option has 3 votes, second option has 2 votes, third option has 1 vote
+	s.Require().Contains(gotText, "50%")
+	s.Require().Contains(gotText, "3 votes")
+	s.Require().Contains(gotText, "33%")
+	s.Require().Contains(gotText, "2 votes")
+	s.Require().Contains(gotText, "17%")
+	s.Require().Contains(gotText, "1 vote")
+
+	// verify AllForecasts button
+	allForecastsButtons := gotButtons[len(gotButtons)-2]
+	s.Require().Contains(allForecastsButtons.Text, "All Forecasts")
+
+	// verify ShowPoll button
+	showPollButtons := gotButtons[len(gotButtons)-1]
+	s.Require().Contains(showPollButtons.Text, "Show Poll")
+}
+
+func (s *TelegramServiceSuite) createForecasts(count int) []swagger.PollWithOptions {
+	s.T().Helper()
+
+	polls := s.createRandomPolls(count)
+	// polls should be sorted by created_at desc
+	sort.Slice(polls, func(i, j int) bool {
+		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
+	})
+
+	ctx := context.Background()
+
+	// vote in each poll so that every poll has votes
+	for _, p := range polls {
+		// vote for each option
+		for _, op := range p.Options {
+			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
+				OptionID: op.ID,
+				PollID:   p.ID,
+				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
+			}, time.Now().Unix())
+
+			s.Require().NoError(err)
+		}
+	}
+
+	// calculate statistic to fill total_votes field
+	for _, p := range polls {
+		err := s.db.CalculateStatistics(ctx, p.ID)
+		s.Require().NoError(err)
+	}
+
+	return polls
 }

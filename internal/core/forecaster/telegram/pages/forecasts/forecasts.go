@@ -3,6 +3,7 @@ package forecasts
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
@@ -152,7 +153,7 @@ func calculateStatistic(options []models2.ForecastOption) (stat, error) {
 	return stat{
 		topOption:           options[topOptionIDx],
 		totalVotes:          int32(total),
-		topOptionPercentage: int(float64(options[topOptionIDx].TotalVotes) / float64(total) * 100),
+		topOptionPercentage: int(math.Round(float64(options[topOptionIDx].TotalVotes) / float64(total) * 100)),
 	}, nil
 }
 
