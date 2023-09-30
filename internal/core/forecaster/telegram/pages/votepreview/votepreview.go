@@ -78,11 +78,14 @@ func txtMsg(expired bool, option swagger.Option) string {
 	return sb.String()
 }
 
-func keyboardMarkup(pollID, referrerForecastsPage int32, optionID int16, voteNotAllowed bool) (tgbotapi.InlineKeyboardMarkup, error) {
+func keyboardMarkup(
+	pollID, referrerForecastsPage int32, optionID int16, voteNotAllowed bool,
+) (tgbotapi.InlineKeyboardMarkup, error) {
 	pollMsg := &poll.Poll{PollId: helpers.Ptr(pollID)}
 	if referrerForecastsPage > 0 {
 		pollMsg.ReferrerForecastsPage = helpers.Ptr(referrerForecastsPage)
 	}
+
 	backData, err := proto2.MarshalCallbackData(models.PollRoute, pollMsg)
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())

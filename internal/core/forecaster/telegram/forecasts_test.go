@@ -25,7 +25,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 
 	// send /start showforecasts_1 command
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
-	update := startShowForecasts(1, userID)
+	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
 
@@ -136,7 +136,7 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	// send /start showforecasts_1 command
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
-	update := startShowForecasts(1, userID)
+	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
 
@@ -164,7 +164,10 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	// verify the forecasts page
 	forecastsMessage := s.asEditMessage(sentMsg)
-	s.verifyForecastsPage(forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls, 1, 2, false, false)
+	s.verifyForecastsPage(
+		forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls,
+		1, 2, false, false,
+	)
 }
 
 func (s *TelegramServiceSuite) TestShowForecastStartCommand() {
@@ -192,7 +195,7 @@ func (s *TelegramServiceSuite) TestForecastRenderCallback() {
 	poll := s.createForecast()
 
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
-	update := startShowForecasts(1, userID)
+	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
 
@@ -351,7 +354,7 @@ func (s *TelegramServiceSuite) TestForecasts_polls_without_total_votes_should_no
 
 	// send /start showforecasts_1 command
 	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
-	update := startShowForecasts(1, userID)
+	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
 

@@ -114,7 +114,9 @@ func (s *Service) render(
 	return res, "", nil
 }
 
-func keyboardMarkup(poll swagger.PollWithOptions, userID int64, referrerForecastsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
+func keyboardMarkup(
+	poll swagger.PollWithOptions, userID int64, referrerForecastsPage int32,
+) (tgbotapi.InlineKeyboardMarkup, error) {
 	length := len(poll.Options)
 	if swagger.HasOutcome(poll.Options) {
 		length++ // ++ for "show results" button

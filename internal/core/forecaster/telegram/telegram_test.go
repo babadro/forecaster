@@ -163,7 +163,7 @@ func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
 	}
 }
 
-func startShowForecasts(currentPage int32, userID int64) tgbotapi.Update {
+func startShowForecasts(userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{
@@ -172,7 +172,7 @@ func startShowForecasts(currentPage int32, userID int64) tgbotapi.Update {
 			From: &tgbotapi.User{
 				ID: userID,
 			},
-			Text: "/start showforecasts_" + strconv.Itoa(int(currentPage)),
+			Text: "/start showforecasts_1",
 		},
 	}
 }

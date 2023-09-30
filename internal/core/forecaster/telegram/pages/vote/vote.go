@@ -47,13 +47,14 @@ func (s *Service) RenderCallback(
 			fmt.Errorf("vote: poll is expired")
 	}
 
+	chatID, messageID := upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID
+
 	_, err = s.db.CreateVote(ctx, swagger.CreateVote{
 		PollID:   *vote.PollId,
 		OptionID: int16(*vote.OptionId),
 		UserID:   upd.CallbackQuery.From.ID,
 	}, time.Now().Unix())
 
-	chatID, messageID := upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID
 	if err != nil {
 		// You have already voted for this option
 		if errors.Is(err, domain.ErrVoteWithSameOptionAlreadyExists) {

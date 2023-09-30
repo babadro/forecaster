@@ -17,11 +17,23 @@ import (
 )
 
 type Service struct {
-	db models.DB
+	db         models.DB
+	allPolls   func(page int32) proto2.Message
+	singlePoll func(itemID, _ int32) proto2.Message
 }
 
 func New(db models.DB) *Service {
-	return &Service{db: db}
+	return &Service{
+		db: db,
+		allPolls: func(page int32) proto2.Message {
+			return &polls.Polls{CurrentPage: helpers.Ptr(page)}
+		},
+		singlePoll: func(itemID, _ int32) proto2.Message {
+			return &poll.Poll{
+				PollId: helpers.Ptr(itemID),
+			}
+		},
+	}
 }
 
 func (s *Service) NewRequest() (proto2.Message, *polls.Polls) {
@@ -52,16 +64,6 @@ func (s *Service) RenderCallback(
 
 const pageSize = 10
 
-var allPolls = func(page int32) proto2.Message {
-	return &polls.Polls{CurrentPage: helpers.Ptr(page)}
-}
-
-var singlePoll = func(itemID, _ int32) proto2.Message {
-	return &poll.Poll{
-		PollId: helpers.Ptr(itemID),
-	}
-}
-
 func (s *Service) render(
 	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
@@ -79,8 +81,8 @@ func (s *Service) render(
 		Next:                   currentPage*pageSize < totalCount,
 		AllItemsRoute:          models.PollsRoute,
 		SingleItemRoute:        models.PollRoute,
-		AllItemsProtoMessage:   allPolls,
-		SingleItemProtoMessage: singlePoll,
+		AllItemsProtoMessage:   s.allPolls,
+		SingleItemProtoMessage: s.singlePoll,
 	}
 
 	keyboard, err := render.KeyboardMarkup(keyboardIn)

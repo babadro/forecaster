@@ -17,11 +17,24 @@ import (
 )
 
 type Service struct {
-	db models.DB
+	db             models.DB
+	allForecasts   func(page int32) proto2.Message
+	singleForecast func(itemID, referrerForecastsPage int32) proto2.Message
 }
 
 func New(db models.DB) *Service {
-	return &Service{db: db}
+	return &Service{
+		db: db,
+		allForecasts: func(page int32) proto2.Message {
+			return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
+		},
+		singleForecast: func(itemID, referrerForecastsPage int32) proto2.Message {
+			return &forecast.Forecast{
+				PollId:                helpers.Ptr(itemID),
+				ReferrerForecastsPage: helpers.Ptr(referrerForecastsPage),
+			}
+		},
+	}
 }
 
 func (s *Service) NewRequest() (proto2.Message, *forecasts.Forecasts) {
@@ -52,17 +65,6 @@ func (s *Service) RenderCallback(
 
 const pageSize = 10
 
-var allForecasts = func(page int32) proto2.Message {
-	return &forecasts.Forecasts{CurrentPage: helpers.Ptr(page)}
-}
-
-var singleForecast = func(itemID, referrerForecastsPage int32) proto2.Message {
-	return &forecast.Forecast{
-		PollId:                helpers.Ptr(itemID),
-		ReferrerForecastsPage: helpers.Ptr(referrerForecastsPage),
-	}
-}
-
 func (s *Service) render(
 	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
@@ -80,8 +82,8 @@ func (s *Service) render(
 		Next:                   currentPage*pageSize < totalCount,
 		AllItemsRoute:          models.ForecastsRoute,
 		SingleItemRoute:        models.ForecastRoute,
-		AllItemsProtoMessage:   allForecasts,
-		SingleItemProtoMessage: singleForecast,
+		AllItemsProtoMessage:   s.allForecasts,
+		SingleItemProtoMessage: s.singleForecast,
 	}
 
 	keyboard, err := render.KeyboardMarkup(keyboardIn)
@@ -153,7 +155,7 @@ func calculateStatistic(options []models2.ForecastOption) (stat, error) {
 	return stat{
 		topOption:           options[topOptionIDx],
 		totalVotes:          int32(total),
-		topOptionPercentage: int(math.Round(float64(options[topOptionIDx].TotalVotes) / float64(total) * 100)),
+		topOptionPercentage: int(math.Round(float64(options[topOptionIDx].TotalVotes) / float64(total) * models.Percent100)),
 	}, nil
 }
 

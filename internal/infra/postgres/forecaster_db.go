@@ -215,8 +215,10 @@ func (db *ForecasterDB) GetForecasts(
 	defer rows.Close()
 
 	forecasts := make([]models2.Forecast, 0, limit)
+
 	for rows.Next() {
 		var forecast models2.Forecast
+
 		err = rows.Scan(&forecast.PollID, &forecast.PollTitle, nil)
 		if err != nil {
 			return nil, 0, scanFailed("select forecasts", err)
@@ -254,6 +256,7 @@ func (db *ForecasterDB) GetForecasts(
 
 	for rows.Next() {
 		pollID, option := int32(0), models2.ForecastOption{}
+
 		err = rows.Scan(&pollID, &option.ID, &option.Title, &option.TotalVotes)
 		if err != nil {
 			return nil, 0, scanFailed("select forecast options", err)

@@ -2,8 +2,9 @@ package models
 
 import (
 	"context"
-	"github.com/babadro/forecaster/internal/models"
 	"time"
+
+	"github.com/babadro/forecaster/internal/models"
 
 	swModels "github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,6 +16,8 @@ const (
 	Days365     = 365
 	Hours24     = 24
 	Seconds3600 = 3600
+
+	Percent100 = 100
 )
 
 type DB interface {

@@ -171,7 +171,7 @@ func txtMsg(p swagger.PollWithOptions, userVoteFound bool, userVote swagger.Vote
 	})
 
 	for i, op := range p.Options {
-		percentage := int(math.Round(float64(op.TotalVotes) / float64(totalVotes) * 100))
+		percentage := int(math.Round(float64(op.TotalVotes) / float64(totalVotes) * models.Percent100))
 		sb.Printf("	<b>%d. %s:</b> %d%% (%d votes)\n", i+1, op.Title, percentage, op.TotalVotes)
 	}
 

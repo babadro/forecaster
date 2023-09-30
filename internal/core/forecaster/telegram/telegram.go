@@ -148,10 +148,5 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		return nil, errMsg, fmt.Errorf("unable to handle %s: %w", updateType, err)
 	}
 
-	if updateType == "" {
-		// todo
-		// create page that shows "I don't know this command" and render go to main menu button
-	}
-
 	return msg, errMsg, nil
 }
