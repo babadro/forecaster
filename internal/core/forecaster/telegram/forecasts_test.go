@@ -276,6 +276,70 @@ func (s *TelegramServiceSuite) verifyForecastPage(
 	s.Require().Contains(showPollButtons.Text, "Show Poll")
 }
 
+// go to poll from the forecast and get back to the forecast...
+func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	poll := s.createForecast()
+
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	update := startShowForecast(poll.ID, userID)
+
+	s.sendMessage(update)
+
+	forecastMsg := s.asMessage(sentMsg)
+
+	// verify ShowPoll button
+	showPollButton := findItemByCriteria(s,
+		s.buttonsFromInterface(forecastMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "Show Poll"
+		})
+
+	s.sendCallback(showPollButton, userID)
+
+	// verify the poll message
+	pollMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(pollMsg.Text, poll.Title)
+
+	// vote for the first option
+	firstOptionButton := findItemByCriteria(s,
+		s.buttonsFromInterface(pollMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "1"
+		})
+
+	s.sendCallback(firstOptionButton, userID)
+
+	// verify the vote message
+	voteMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(voteMsg.Text, "Vote for this option?")
+
+	// get back to poll
+	backToPollButton := findItemByCriteria(s,
+		s.buttonsFromInterface(voteMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "Back"
+		})
+
+	s.sendCallback(backToPollButton, userID)
+
+	// verify the poll message
+	pollMsg = s.asEditMessage(sentMsg)
+	s.Require().Contains(pollMsg.Text, poll.Title)
+
+	// get back to forecast
+	backToForecastButton := findItemByCriteria(s,
+		s.buttonsFromInterface(pollMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "Show Forecast"
+		})
+
+	s.sendCallback(backToForecastButton, userID)
+
+	// verify the forecast message
+	forecastEditMsg := s.asEditMessage(sentMsg)
+	s.Require().Contains(forecastEditMsg.Text, poll.Title)
+}
+
 func (s *TelegramServiceSuite) createForecasts(count int) []swagger.PollWithOptions {
 	s.T().Helper()
 
