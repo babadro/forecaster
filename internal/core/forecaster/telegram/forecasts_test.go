@@ -221,7 +221,9 @@ func findItemByCriteria[T any](s *TelegramServiceSuite, items []T, f func(item T
 
 	s.Fail("item not found")
 
-	return items[0]
+	var zero T
+
+	return zero
 }
 
 func (s *TelegramServiceSuite) createForecast() swagger.PollWithOptions {
