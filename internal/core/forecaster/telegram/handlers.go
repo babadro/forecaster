@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
+
 	proto2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
@@ -32,6 +35,8 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	handlers[models.PollRoute] = unmarshalMiddleware[*poll.Poll](svc.poll)
 	handlers[models.UserPollResultRoute] = unmarshalMiddleware[*userpollresult.UserPollResult](svc.userPollResult)
 	handlers[models.PollsRoute] = unmarshalMiddleware[*polls.Polls](svc.polls)
+	handlers[models.ForecastsRoute] = unmarshalMiddleware[*forecasts.Forecasts](svc.forecasts)
+	handlers[models.ForecastRoute] = unmarshalMiddleware[*forecast.Forecast](svc.forecast)
 
 	defaultHandler := func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		return nil, "", fmt.Errorf("handler for route %d is not implemented", upd.CallbackQuery.Data[0])

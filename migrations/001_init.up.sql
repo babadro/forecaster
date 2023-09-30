@@ -30,6 +30,8 @@ CREATE TABLE forecaster.options (
     PRIMARY KEY (poll_id, id)
 );
 
+CREATE INDEX idx_options_total_votes ON forecaster.options(total_votes);
+
 CREATE TABLE forecaster.votes (
     poll_id INT NOT NULL,
     user_id BIGINT NOT NULL,

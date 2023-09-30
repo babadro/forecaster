@@ -10,6 +10,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	poll2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/domain"
+	"github.com/babadro/forecaster/internal/helpers"
 	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
@@ -46,17 +47,18 @@ func (s *Service) RenderCallback(
 			fmt.Errorf("vote: poll is expired")
 	}
 
+	chatID, messageID := upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID
+
 	_, err = s.db.CreateVote(ctx, swagger.CreateVote{
 		PollID:   *vote.PollId,
 		OptionID: int16(*vote.OptionId),
 		UserID:   upd.CallbackQuery.From.ID,
 	}, time.Now().Unix())
 
-	chatID, messageID := upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID
-	// You have already voted for this option
 	if err != nil {
+		// You have already voted for this option
 		if errors.Is(err, domain.ErrVoteWithSameOptionAlreadyExists) {
-			return tryCreateMessage(chatID, messageID, vote.PollId,
+			return tryCreateMessage(chatID, messageID, vote.PollId, vote.GetReferrerForecastsPage(),
 				"You have already voted for this option", "",
 			)
 		}
@@ -66,16 +68,19 @@ func (s *Service) RenderCallback(
 			fmt.Errorf("vote: unable to create vote: %s", err.Error())
 	}
 
-	return tryCreateMessage(chatID, messageID, vote.PollId,
+	return tryCreateMessage(chatID, messageID, vote.PollId, vote.GetReferrerForecastsPage(),
 		"Success!", "Vote was successful, but I cant get you back to poll due to the error")
 }
 
 func tryCreateMessage(
-	chatID int64, msgID int, pollID *int32, successText, failText string,
+	chatID int64, msgID int, pollID *int32, referrerForecastsPage int32, successText, failText string,
 ) (tgbotapi.Chattable, string, error) {
-	callBackData, err := proto.MarshalCallbackData(models.PollRoute, &poll2.Poll{
-		PollId: pollID,
-	})
+	pollMsg := &poll2.Poll{PollId: pollID}
+	if referrerForecastsPage > 0 {
+		pollMsg.ReferrerForecastsPage = helpers.Ptr(referrerForecastsPage)
+	}
+
+	callBackData, err := proto.MarshalCallbackData(models.PollRoute, pollMsg)
 	if err != nil {
 		return nil, failText,
 			fmt.Errorf("vote: unable to marshal callback data: %s", err.Error())

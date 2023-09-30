@@ -29,3 +29,13 @@ func HasOutcome(options []*Option) bool {
 
 	return false
 }
+
+func TotalVotes(options []*Option) int32 {
+	var totalVotes int32
+
+	for _, op := range options {
+		totalVotes += op.TotalVotes
+	}
+
+	return totalVotes
+}

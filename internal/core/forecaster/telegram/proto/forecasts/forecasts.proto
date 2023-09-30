@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package forecasts;
+
+option go_package = "./forecasts";
+
+message Forecasts {
+  required int32 current_page = 1;
+}

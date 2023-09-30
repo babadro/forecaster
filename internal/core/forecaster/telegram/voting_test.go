@@ -25,7 +25,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
 	// each keyboard button is a poll option
-	s.Require().Len(pollButtons, len(poll.Options)+1) // +1 for "All Polls" button
+	s.Require().Len(pollButtons, len(poll.Options)+2) // +2 for "All Polls" and "Show Forecast" buttons
 
 	// send the first option
 	firstButton := pollButtons[0]
@@ -70,20 +70,14 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// each keyboard button is a poll option
 	pollButtons2 := getButtons(*pollMsg2.ReplyMarkup)
-	s.Require().Len(pollButtons2, len(poll.Options)+1) // +1 for "All Polls" button
+	s.Require().Len(pollButtons2, len(poll.Options)+2) // +2 for "All Polls" and "Show Forecast" buttons
 
 	// chose option I didn't vote earlier
-	anotherOptionButton, found := tgbotapi.InlineKeyboardButton{}, false
-
-	for _, button := range pollButtons2 {
-		op := s.findOptionByCallbackData(poll, button.CallbackData)
-		if op.ID != option.ID {
-			anotherOptionButton, found = button, true
-			break
-		}
-	}
-
-	s.Require().True(found)
+	anotherOptionButton := findItemByCriteria(s,
+		pollButtons2, func(button tgbotapi.InlineKeyboardButton) bool {
+			op := s.findOptionByCallbackData(poll, button.CallbackData)
+			return op.ID != option.ID
+		})
 
 	// sleep for second to make sure vote timestamp (which used second precision) is different
 	time.Sleep(time.Second)
@@ -129,7 +123,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	// each keyboard button is a poll option
 	pollButtons3 := getButtons(*pollMsg3.ReplyMarkup)
-	s.Require().Len(pollButtons3, len(poll.Options)+1) // +1 for "All Polls" button
+	s.Require().Len(pollButtons3, len(poll.Options)+2) // +2 for "All Polls" and "Show Forecast" buttons
 }
 
 func (s *TelegramServiceSuite) TestVotePreview_BackButton() {

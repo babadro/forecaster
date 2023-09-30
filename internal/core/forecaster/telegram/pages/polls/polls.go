@@ -5,23 +5,35 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
+	"github.com/babadro/forecaster/internal/helpers"
+
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
-	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
 
 type Service struct {
-	db models.DB
+	db         models.DB
+	allPolls   func(page int32) proto2.Message
+	singlePoll func(itemID, _ int32) proto2.Message
 }
 
 func New(db models.DB) *Service {
-	return &Service{db: db}
+	return &Service{
+		db: db,
+		allPolls: func(page int32) proto2.Message {
+			return &polls.Polls{CurrentPage: helpers.Ptr(page)}
+		},
+		singlePoll: func(itemID, _ int32) proto2.Message {
+			return &poll.Poll{
+				PollId: helpers.Ptr(itemID),
+			}
+		},
+	}
 }
 
 func (s *Service) NewRequest() (proto2.Message, *polls.Polls) {
@@ -62,14 +74,18 @@ func (s *Service) render(
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}
 
-	keyboardIn := keyboardInput{
-		pollsArr:    pollsArr,
-		currentPage: currentPage,
-		prev:        currentPage > 1,
-		next:        currentPage*pageSize < totalCount,
+	keyboardIn := render.KeyboardInput{
+		IDs:                    pollsIDs(pollsArr),
+		CurrentPage:            currentPage,
+		Prev:                   currentPage > 1,
+		Next:                   currentPage*pageSize < totalCount,
+		AllItemsRoute:          models.PollsRoute,
+		SingleItemRoute:        models.PollRoute,
+		AllItemsProtoMessage:   s.allPolls,
+		SingleItemProtoMessage: s.singlePoll,
 	}
 
-	keyboard, err := keyboardMarkup(keyboardIn)
+	keyboard, err := render.KeyboardMarkup(keyboardIn)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard: %s", err.Error())
 	}
@@ -95,83 +111,11 @@ func txtMsg(pollsArr []swagger.Poll) string {
 	return sb.String()
 }
 
-type keyboardInput struct {
-	pollsArr    []swagger.Poll
-	currentPage int32
-	prev, next  bool
-}
-
-func keyboardMarkup(in keyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
-	var firstRow []tgbotapi.InlineKeyboardButton
-
-	var err error
-
-	firstRow, err = appendNaviButton(firstRow, in.prev, in.currentPage-1, "Prev")
-	if err != nil {
-		return tgbotapi.InlineKeyboardMarkup{}, err
+func pollsIDs(pollsArr []swagger.Poll) []int32 {
+	ids := make([]int32, len(pollsArr))
+	for i, p := range pollsArr {
+		ids[i] = p.ID
 	}
 
-	firstRow, err = appendNaviButton(firstRow, in.next, in.currentPage+1, "Next")
-	if err != nil {
-		return tgbotapi.InlineKeyboardMarkup{}, err
-	}
-
-	keyboard := tgbotapi.InlineKeyboardMarkup{}
-	if len(firstRow) > 0 {
-		keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, firstRow)
-	}
-
-	rowsCount := len(in.pollsArr) / models.MaxCountInRow
-	if len(in.pollsArr)%models.MaxCountInRow > 0 {
-		rowsCount++
-	}
-
-	rows := make([][]tgbotapi.InlineKeyboardButton, rowsCount)
-
-	for i := range in.pollsArr {
-		p := in.pollsArr[i]
-
-		var pollData *string
-
-		pollData, err = proto.MarshalCallbackData(models.PollRoute, &poll.Poll{
-			PollId: helpers.Ptr(p.ID),
-		})
-		if err != nil {
-			return tgbotapi.InlineKeyboardMarkup{},
-				fmt.Errorf("unable to marshal poll callback data: %s", err.Error())
-		}
-
-		rowIdx := i / models.MaxCountInRow
-
-		rows[rowIdx] = append(rows[rowIdx], tgbotapi.InlineKeyboardButton{
-			Text:         strconv.Itoa(i + 1),
-			CallbackData: pollData,
-		})
-	}
-
-	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, rows...)
-
-	return keyboard, nil
-}
-
-func appendNaviButton(
-	row []tgbotapi.InlineKeyboardButton, exists bool, page int32, name string,
-) ([]tgbotapi.InlineKeyboardButton, error) {
-	if !exists {
-		return row, nil
-	}
-
-	data, err := proto.MarshalCallbackData(models.PollsRoute, &polls.Polls{
-		CurrentPage: helpers.Ptr(page),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal %s callback data: %s", name, err.Error())
-	}
-
-	row = append(row, tgbotapi.InlineKeyboardButton{
-		Text:         name,
-		CallbackData: data,
-	})
-
-	return row, nil
+	return ids
 }

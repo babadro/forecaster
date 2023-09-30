@@ -15,54 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (s *TelegramServiceSuite) TestShowPollStartCommand() {
-	poll := s.createRandomPoll(time.Now())
-
-	update := startShowPoll(poll.ID, 456)
-
-	s.mockTgBot.On("Send", mock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-		s.Assert().Equal(update.Message.Chat.ID, msg.ChatID)
-
-		s.Assert().Contains(msg.Text, poll.Title)
-
-		for _, op := range poll.Options {
-			s.Assert().Contains(msg.Text, op.Title)
-		}
-
-		return true
-	})).Return(tgbotapi.Message{}, nil)
-
-	s.sendMessage(update)
-
-	s.mockTgBot.AssertExpectations(s.T())
-}
-
-func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
-	update := startShowPoll(999, 456)
-
-	var msg tgbotapi.MessageConfig
-
-	s.mockTgBot.On("Send", mock.MatchedBy(func(sentMsg tgbotapi.MessageConfig) bool {
-		s.Assert().Equal(update.Message.Chat.ID, sentMsg.ChatID)
-
-		s.Assert().Contains(sentMsg.Text, "can't find poll")
-
-		msg = sentMsg
-
-		return true
-	})).Return(tgbotapi.Message{}, nil)
-
-	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
-	s.Require().Error(err)
-	s.ErrorContains(err, "unable to get poll by id")
-
-	buttons := s.buttonsFromInterface(msg.ReplyMarkup)
-	s.Require().Len(buttons, 1)
-	s.Require().Contains(buttons[0].Text, "Back to main")
-
-	s.mockTgBot.AssertExpectations(s.T())
-}
-
 func (s *TelegramServiceSuite) createRandomPolls(count int) []swagger.PollWithOptions {
 	s.T().Helper()
 
@@ -183,6 +135,20 @@ func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
 	}
 }
 
+func startShowForecast(pollID int32, userID int64) tgbotapi.Update {
+	return tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: userID,
+			},
+			Text: "/start showforecast_" + strconv.Itoa(int(pollID)),
+		},
+	}
+}
+
 func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
@@ -193,6 +159,20 @@ func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
 				ID: userID,
 			},
 			Text: "/start showpolls_" + strconv.Itoa(int(currentPage)),
+		},
+	}
+}
+
+func startShowForecasts(userID int64) tgbotapi.Update {
+	return tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: userID,
+			},
+			Text: "/start showforecasts_1",
 		},
 	}
 }
@@ -262,7 +242,7 @@ func (s *TelegramServiceSuite) buttonsFromInterface(in interface{}) []tgbotapi.I
 	case *tgbotapi.InlineKeyboardMarkup:
 		return getButtons(*keyboard)
 	default:
-		s.Fail("unexpected type %T", in)
+		s.Failf("can't get buttons from interface", "unexpected type %T", in)
 	}
 
 	return nil

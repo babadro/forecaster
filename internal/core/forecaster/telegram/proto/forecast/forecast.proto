@@ -1,10 +1,10 @@
 syntax = "proto2";
 
-package poll;
+package forecast;
 
-option go_package = "./poll";
+option go_package = "./forecast";
 
-message Poll {
+message Forecast {
   required int32 poll_id = 1;
   optional int32 referrer_forecasts_page = 2;
 }
