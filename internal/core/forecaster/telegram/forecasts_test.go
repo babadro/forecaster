@@ -340,6 +340,27 @@ func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
 	s.Require().Contains(forecastEditMsg.Text, poll.Title)
 }
 
+func (s *TelegramServiceSuite) TestForecasts_polls_without_total_votes_should_not_be_shown() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	pollWithStatistic := s.createForecast()
+
+	pollWithoutStatistic := s.createRandomPoll(time.Now())
+
+	// send /start showforecasts_1 command
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	update := startShowForecasts(1, userID)
+
+	s.sendMessage(update)
+
+	forecastsPageStartCommand := s.asMessage(sentMsg)
+
+	s.Require().Contains(forecastsPageStartCommand.Text, pollWithStatistic.Title)
+	s.Require().NotContains(forecastsPageStartCommand.Text, pollWithoutStatistic.Title)
+}
+
 func (s *TelegramServiceSuite) createForecasts(count int) []swagger.PollWithOptions {
 	s.T().Helper()
 
