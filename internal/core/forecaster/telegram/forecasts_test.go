@@ -142,16 +142,11 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 
 	forecastsPageStartCommand := s.asMessage(sentMsg)
 
-	firstForecastButton, found := tgbotapi.InlineKeyboardButton{}, false
-
-	for _, button := range s.buttonsFromInterface(forecastsPageStartCommand.ReplyMarkup) {
-		if button.Text == "1" {
-			firstForecastButton = button
-			found = true
-		}
-	}
-
-	s.Require().True(found)
+	firstForecastButton := findItemByCriteria(s,
+		s.buttonsFromInterface(forecastsPageStartCommand.ReplyMarkup),
+		func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "1"
+		})
 
 	s.sendCallback(firstForecastButton, userID)
 
@@ -177,6 +172,61 @@ func (s *TelegramServiceSuite) TestShowForecastStartCommand() {
 
 	s.mockTelegramSender(&sentMsg)
 
+	poll := s.createForecast()
+
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	update := startShowForecast(poll.ID, userID)
+
+	s.sendMessage(update)
+
+	forecastMsg := s.asMessage(sentMsg)
+
+	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+}
+
+func (s *TelegramServiceSuite) TestForecastRenderCallback() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	poll := s.createForecast()
+
+	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	update := startShowForecasts(1, userID)
+
+	s.sendMessage(update)
+
+	forecastsPage := s.asMessage(sentMsg)
+
+	firstForecastButton := findItemByCriteria(s,
+		s.buttonsFromInterface(forecastsPage.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "1"
+		})
+
+	s.sendCallback(firstForecastButton, userID)
+
+	forecastMsg := s.asEditMessage(sentMsg)
+
+	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+}
+
+func findItemByCriteria[T any](s *TelegramServiceSuite, items []T, f func(item T) bool) T {
+	s.T().Helper()
+
+	for _, item := range items {
+		if f(item) {
+			return item
+		}
+	}
+
+	s.Fail("item not found")
+
+	return items[0]
+}
+
+func (s *TelegramServiceSuite) createForecast() swagger.PollWithOptions {
+	s.T().Helper()
+
 	poll := s.createRandomPoll(time.Now())
 
 	for optionIDx, votesCount := range []int{3, 2, 1} {
@@ -193,14 +243,7 @@ func (s *TelegramServiceSuite) TestShowForecastStartCommand() {
 
 	s.Require().NoError(s.db.CalculateStatistics(context.Background(), poll.ID))
 
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
-	update := startShowForecast(poll.ID, userID)
-
-	s.sendMessage(update)
-
-	forecastMsg := s.asMessage(sentMsg)
-
-	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+	return poll
 }
 
 func (s *TelegramServiceSuite) verifyForecastPage(

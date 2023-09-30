@@ -73,17 +73,11 @@ func (s *TelegramServiceSuite) TestVoting() {
 	s.Require().Len(pollButtons2, len(poll.Options)+2) // +2 for "All Polls" and "Show Forecast" buttons
 
 	// chose option I didn't vote earlier
-	anotherOptionButton, found := tgbotapi.InlineKeyboardButton{}, false
-
-	for _, button := range pollButtons2 {
-		op := s.findOptionByCallbackData(poll, button.CallbackData)
-		if op.ID != option.ID {
-			anotherOptionButton, found = button, true
-			break
-		}
-	}
-
-	s.Require().True(found)
+	anotherOptionButton := findItemByCriteria(s,
+		pollButtons2, func(button tgbotapi.InlineKeyboardButton) bool {
+			op := s.findOptionByCallbackData(poll, button.CallbackData)
+			return op.ID != option.ID
+		})
 
 	// sleep for second to make sure vote timestamp (which used second precision) is different
 	time.Sleep(time.Second)

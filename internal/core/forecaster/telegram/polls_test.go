@@ -151,16 +151,11 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 
 	pollsPageStartCommand := s.asMessage(sentMsg)
 
-	firstPollButton, found := tgbotapi.InlineKeyboardButton{}, false
-
-	for _, button := range s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup) {
-		if button.Text == "1" {
-			firstPollButton = button
-			found = true
-		}
-	}
-
-	s.Require().True(found)
+	firstPollButton := findItemByCriteria(s,
+		s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup),
+		func(button tgbotapi.InlineKeyboardButton) bool {
+			return button.Text == "1"
+		})
 
 	s.sendCallback(firstPollButton, userID)
 

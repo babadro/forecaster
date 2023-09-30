@@ -81,18 +81,9 @@ func (s *TelegramServiceSuite) TestUserPollResult_wrong_voted_user() {
 	wonOption, idx := swagger.GetOutcome(p.Options)
 	s.Require().NotEqual(-1, idx)
 
-	var targetUserID int64
-
-	found := false
-
-	for _, v := range votes {
-		if v.OptionID != wonOption.ID {
-			targetUserID, found = v.UserID, true
-			break
-		}
-	}
-
-	s.Require().True(found)
+	targetUserID := findItemByCriteria(s, votes, func(v swagger.Vote) bool {
+		return v.OptionID != wonOption.ID
+	}).UserID
 
 	// send /start showuserres_<poll_id>_<user_id> command
 	update := startShowPoll(p.ID, targetUserID)
