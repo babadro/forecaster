@@ -12,6 +12,7 @@ const (
 )
 
 const (
+	ShowMainStartCommandPrefix      = "/start main"
 	ShowPollStartCommandPrefix      = "/start showpoll_"
 	ShowUserResultCommandPrefix     = "/start showuserres_"
 	ShowPollsStartCommandPrefix     = "/start showpolls_"

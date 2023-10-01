@@ -6,6 +6,7 @@ import (
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
 
 	proto2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
@@ -30,6 +31,7 @@ type pageService[T proto.Message] interface {
 func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	var handlers [256]handlerFunc
 
+	handlers[models.MainPageRoute] = unmarshalMiddleware[*mainpage.MainPage](svc.main)
 	handlers[models.VotePreviewRoute] = unmarshalMiddleware[*votepreviewproto.VotePreview](svc.votePreview)
 	handlers[models.VoteRoute] = unmarshalMiddleware[*vote.Vote](svc.vote)
 	handlers[models.PollRoute] = unmarshalMiddleware[*poll.Poll](svc.poll)

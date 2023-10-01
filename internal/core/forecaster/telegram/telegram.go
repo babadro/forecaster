@@ -10,6 +10,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecasts"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/mainpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/polls"
 	userpollresult "github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/userpoll_result"
@@ -20,6 +21,7 @@ import (
 )
 
 type pageServices struct {
+	main           *mainpage.Service
 	votePreview    *votepreview.Service
 	vote           *vote.Service
 	poll           *poll.Service
@@ -39,6 +41,7 @@ type Service struct {
 
 func NewService(db models.DB, b models.TgBot, botName string) *Service {
 	pages := pageServices{
+		main:           mainpage.New(db),
 		votePreview:    votepreview.New(db),
 		vote:           vote.New(db),
 		poll:           poll.New(db),
@@ -89,6 +92,7 @@ func (s *Service) ProcessTelegramUpdate(logger *zerolog.Logger, upd tgbotapi.Upd
 }
 
 const (
+	showMainStartCommandUpdateType       = "show_main_start_command_update_type"
 	showPollStartCommandUpdateType       = "show_poll_start_command_update_type"
 	renderCallbackUpdateType             = "render_callback_update_type"
 	showUserResultStartCommandUpdateType = "show_user_result_start_command_update_type"
@@ -111,6 +115,9 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 	switch {
 	case upd.Message != nil:
 		switch {
+		case strings.HasPrefix(upd.Message.Text, models.ShowMainStartCommandPrefix):
+			updateType = showMainStartCommandUpdateType
+			msg, errMsg, err = validateStartCommandInput(s.pages.main.RenderStartCommand)(ctx, upd)
 		case strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix):
 			updateType = showPollStartCommandUpdateType
 			msg, errMsg, err = validateStartCommandInput(s.pages.poll.RenderStartCommand)(ctx, upd)
