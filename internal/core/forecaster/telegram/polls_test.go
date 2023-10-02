@@ -38,8 +38,9 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.verifyPollsPage(txt, buttons, polls, 1, 10, false, true)
 
 	// send "Next" button
-	nextButton := buttons[0]
-	s.Require().Contains(nextButton.Text, "Next")
+	nextButton := findItemByCriteria(s, buttons, func(button tgbotapi.InlineKeyboardButton) bool {
+		return strings.Contains(button.Text, "Next")
+	})
 	s.sendCallback(nextButton, userID)
 
 	pollsPage2 := s.asEditMessage(sentMsg)
@@ -49,8 +50,9 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.verifyPollsPage(txt, buttons, polls, 11, 20, true, true)
 
 	// send "Next" button
-	nextButton = buttons[1]
-	s.Require().Contains(nextButton.Text, "Next")
+	nextButton = findItemByCriteria(s, buttons, func(button tgbotapi.InlineKeyboardButton) bool {
+		return strings.Contains(button.Text, "Next")
+	})
 	s.sendCallback(nextButton, userID)
 
 	pollsPage3 := s.asEditMessage(sentMsg)
@@ -60,8 +62,9 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.verifyPollsPage(txt, buttons, polls, 21, 24, true, false)
 
 	// send "Prev" button
-	prevButton := buttons[0]
-	s.Require().Contains(prevButton.Text, "Prev")
+	prevButton := findItemByCriteria(s, buttons, func(button tgbotapi.InlineKeyboardButton) bool {
+		return strings.Contains(button.Text, "Prev")
+	})
 	s.sendCallback(prevButton, userID)
 
 	pollsPage2 = s.asEditMessage(sentMsg)
@@ -71,8 +74,9 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.verifyPollsPage(txt, buttons, polls, 11, 20, true, true)
 
 	// send "Prev" button
-	prevButton = buttons[0]
-	s.Require().Contains(prevButton.Text, "Prev")
+	prevButton = findItemByCriteria(s, buttons, func(button tgbotapi.InlineKeyboardButton) bool {
+		return strings.Contains(button.Text, "Prev")
+	})
 	s.sendCallback(prevButton, userID)
 
 	pollsPage1 := s.asEditMessage(sentMsg)
@@ -100,7 +104,7 @@ func (s *TelegramServiceSuite) verifyPollsPage(
 
 	pollsCount := lastPoll - firstPoll + 1
 
-	expectedButtonsCount := pollsCount
+	expectedButtonsCount := pollsCount + 1 // +1 for Main Menu button
 
 	if prevButton {
 		expectedButtonsCount++
