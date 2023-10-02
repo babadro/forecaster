@@ -135,6 +135,10 @@ func startCommand(command string, userID int64) tgbotapi.Update {
 	}
 }
 
+func startMainPage(userID int64) tgbotapi.Update {
+	return startCommand("/start main", userID)
+}
+
 func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
 	return startCommand("/start showpoll_"+strconv.Itoa(int(pollID)), userID)
 }
