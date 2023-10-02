@@ -102,15 +102,12 @@ const (
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	var msg tgbotapi.Chattable
-
-	var errMsg string
-
-	var route byte
-
-	var err error
-
-	var updateType string
+	var (
+		msg                tgbotapi.Chattable
+		errMsg, updateType string
+		route              byte
+		err                error
+	)
 
 	switch {
 	case upd.Message != nil:
@@ -151,7 +148,19 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 		msg, errMsg, err = s.callbackHandlers[route](ctx, upd)
 	}
 
+	if updateType == "" {
+		if upd.Message != nil {
+			return nil, "I don't know this command", fmt.Errorf("unknown command %s", upd.Message.Text)
+		}
+
+		return nil, "", fmt.Errorf("unknown update type")
+	}
+
 	if err != nil {
+		if updateType == renderCallbackUpdateType {
+			return nil, errMsg, fmt.Errorf("unable to handle %s with route %d: %w", updateType, route, err)
+		}
+
 		return nil, errMsg, fmt.Errorf("unable to handle %s: %w", updateType, err)
 	}
 

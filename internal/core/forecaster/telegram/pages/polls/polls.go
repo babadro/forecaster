@@ -74,7 +74,7 @@ func (s *Service) render(
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}
 
-	keyboardIn := render.KeyboardInput{
+	keyboardIn := render.ManyItemsKeyboardInput{
 		IDs:                    pollsIDs(pollsArr),
 		CurrentPage:            currentPage,
 		Prev:                   currentPage > 1,
@@ -85,7 +85,7 @@ func (s *Service) render(
 		SingleItemProtoMessage: s.singlePoll,
 	}
 
-	keyboard, err := render.KeyboardMarkup(keyboardIn)
+	keyboard, err := render.ManyItemsKeyboardMarkup(keyboardIn)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard: %s", err.Error())
 	}
