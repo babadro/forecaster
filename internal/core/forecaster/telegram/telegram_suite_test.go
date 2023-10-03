@@ -3,6 +3,7 @@ package telegram_test
 import (
 	"bytes"
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -95,6 +96,10 @@ func randomModel[T any](t *testing.T) T {
 	require.NoError(t, gofakeit.Struct(&model))
 
 	return model
+}
+
+func randomPositiveInt64() int64 {
+	return int64(gofakeit.IntRange(1, math.MaxInt64))
 }
 
 func TestTelegram(t *testing.T) {

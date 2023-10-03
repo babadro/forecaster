@@ -141,6 +141,23 @@ func keyboardMarkup(pollID, forecastsPage int32) (tgbotapi.InlineKeyboardMarkup,
 }
 
 func txtMsg(p swagger.PollWithOptions, userVoteFound bool, userVote swagger.Vote, totalVotes int32) (string, error) {
+	if !swagger.HasVotes(p.Options) {
+		return `🔮 Forecast Unavailable 🔮
+
+Oh no! It looks like we don’t have enough data to create a forecast for this poll just yet.
+
+Here's why this might be happening:
+
+    Not enough votes have been cast.
+    The poll is still very new.
+    The options are not sufficiently voted on to project a trend.
+
+🚀 What Can You Do?
+
+    Share to get more votes.
+    Explore other polls.`, nil
+	}
+
 	var sb render.StringBuilder
 
 	start, finish := render.FormatTime(p.Start), render.FormatTime(p.Finish)

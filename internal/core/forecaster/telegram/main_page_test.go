@@ -1,10 +1,8 @@
 package telegram_test
 
 import (
-	"math"
 	"strings"
 
-	"github.com/brianvoe/gofakeit/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -22,7 +20,7 @@ func (s *TelegramServiceSuite) TestMainPage() {
 	polls := s.createForecasts(2)
 
 	// send /show main command
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startMainPage(userID)
 
 	s.sendMessage(update)

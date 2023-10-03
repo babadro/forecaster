@@ -1,14 +1,12 @@
 package telegram_test
 
 import (
-	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
-	"github.com/brianvoe/gofakeit/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -26,7 +24,7 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	})
 
 	// send /start showpolls_1 command
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowPolls(1, userID)
 
 	s.sendMessage(update)
@@ -148,7 +146,7 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 	})
 
 	// send /start showpolls_1 command
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowPolls(1, userID)
 
 	s.sendMessage(update)

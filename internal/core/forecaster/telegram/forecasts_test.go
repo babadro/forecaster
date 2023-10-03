@@ -2,7 +2,6 @@ package telegram_test
 
 import (
 	"context"
-	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/babadro/forecaster/internal/models/swagger"
 
-	"github.com/brianvoe/gofakeit/v6"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -24,7 +22,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 	polls := s.createForecasts(24)
 
 	// send /start showforecasts_1 command
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
@@ -139,7 +137,7 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 	polls := s.createForecasts(2)
 
 	// send /start showforecasts_1 command
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
@@ -181,7 +179,7 @@ func (s *TelegramServiceSuite) TestShowForecastStartCommand() {
 
 	poll := s.createForecast()
 
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowForecast(poll.ID, userID)
 
 	s.sendMessage(update)
@@ -198,7 +196,7 @@ func (s *TelegramServiceSuite) TestForecastRenderCallback() {
 
 	poll := s.createForecast()
 
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
@@ -215,6 +213,23 @@ func (s *TelegramServiceSuite) TestForecastRenderCallback() {
 	forecastMsg := s.asEditMessage(sentMsg)
 
 	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+}
+
+func (s *TelegramServiceSuite) Test_forecast_unavailable() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	poll := s.createRandomPoll(time.Now())
+
+	userID := randomPositiveInt64()
+	update := startShowForecast(poll.ID, userID)
+
+	s.sendMessage(update)
+
+	// verify the forecast message
+	forecastMsg := s.asMessage(sentMsg)
+	s.Require().Contains(forecastMsg.Text, "Forecast Unavailable")
 }
 
 func findItemByCriteria[T any](s *TelegramServiceSuite, items []T, f func(item T) bool) T {
@@ -243,7 +258,7 @@ func (s *TelegramServiceSuite) createForecast() swagger.PollWithOptions {
 			_, err := s.db.CreateVote(context.Background(), swagger.CreateVote{
 				OptionID: poll.Options[optionIDx].ID,
 				PollID:   poll.ID,
-				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
+				UserID:   randomPositiveInt64(),
 			}, time.Now().Unix())
 
 			s.Require().NoError(err)
@@ -291,7 +306,7 @@ func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
 
 	poll := s.createForecast()
 
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowForecast(poll.ID, userID)
 
 	s.sendMessage(update)
@@ -357,7 +372,7 @@ func (s *TelegramServiceSuite) TestForecasts_polls_without_total_votes_should_no
 	pollWithoutStatistic := s.createRandomPoll(time.Now())
 
 	// send /start showforecasts_1 command
-	userID := int64(gofakeit.IntRange(1, math.MaxInt64))
+	userID := randomPositiveInt64()
 	update := startShowForecasts(userID)
 
 	s.sendMessage(update)
@@ -386,7 +401,7 @@ func (s *TelegramServiceSuite) createForecasts(count int) []swagger.PollWithOpti
 			_, err := s.db.CreateVote(ctx, swagger.CreateVote{
 				OptionID: op.ID,
 				PollID:   p.ID,
-				UserID:   int64(gofakeit.IntRange(1, math.MaxInt64)),
+				UserID:   randomPositiveInt64(),
 			}, time.Now().Unix())
 
 			s.Require().NoError(err)
