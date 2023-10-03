@@ -106,7 +106,7 @@ func (s *Service) render(
 
 func txtMsg(forecastsArr []models2.Forecast) (string, error) {
 	if len(forecastsArr) == 0 {
-		return "There are no polls yet", nil
+		return "There are no forecasts yet", nil
 	}
 
 	var sb render.StringBuilder
