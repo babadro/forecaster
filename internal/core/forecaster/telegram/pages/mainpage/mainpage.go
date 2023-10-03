@@ -58,6 +58,7 @@ func (s *Service) render(chatID int64, messageID int, editMsg bool) (tgbotapi.Ch
 }
 
 func txtMsg() string {
+	//nolint:lll,stylecheck // lines should not be broken
 	return `🚀 Welcome to Forecaster Bot! 🚀
 
 🗳 Your go-to platform for creating and participating in forecasts and polls directly through Telegram! 🗳
@@ -81,6 +82,7 @@ func keyboard() (tgbotapi.InlineKeyboardMarkup, error) {
 	pollsData, err := proto2.MarshalCallbackData(models.PollsRoute, &polls.Polls{
 		CurrentPage: currentPage,
 	})
+
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal polls callback data: %w", err)
 	}

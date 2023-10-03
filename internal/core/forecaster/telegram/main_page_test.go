@@ -11,7 +11,7 @@ const (
 	sentenceFromForecastsPage = "Most popular option"
 )
 
-// open main page with command, go to forecasts page, go back to main page, go to polls page, go back to main page
+// open main page with command, go to forecasts page, go back to main page, go to polls page, go back to main page...
 func (s *TelegramServiceSuite) TestMainPage() {
 	var sentMsg interface{}
 
