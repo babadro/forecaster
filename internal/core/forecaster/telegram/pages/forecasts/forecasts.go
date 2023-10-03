@@ -75,7 +75,7 @@ func (s *Service) render(
 		return nil, "", fmt.Errorf("unable to get forecasts: %s", err.Error())
 	}
 
-	keyboardIn := render.KeyboardInput{
+	keyboardIn := render.ManyItemsKeyboardInput{
 		IDs:                    forecastIDs(forecastArr),
 		CurrentPage:            currentPage,
 		Prev:                   currentPage > 1,
@@ -86,7 +86,7 @@ func (s *Service) render(
 		SingleItemProtoMessage: s.singleForecast,
 	}
 
-	keyboard, err := render.KeyboardMarkup(keyboardIn)
+	keyboard, err := render.ManyItemsKeyboardMarkup(keyboardIn)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard: %s", err.Error())
 	}
@@ -106,7 +106,7 @@ func (s *Service) render(
 
 func txtMsg(forecastsArr []models2.Forecast) (string, error) {
 	if len(forecastsArr) == 0 {
-		return "There are no polls yet", nil
+		return "There are no forecasts yet", nil
 	}
 
 	var sb render.StringBuilder

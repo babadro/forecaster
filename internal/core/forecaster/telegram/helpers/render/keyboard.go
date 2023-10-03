@@ -6,12 +6,13 @@ import (
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	proto2 "google.golang.org/protobuf/proto"
 )
 
-type KeyboardInput struct {
+type ManyItemsKeyboardInput struct {
 	IDs                    []int32
 	CurrentPage            int32
 	Prev, Next             bool
@@ -21,19 +22,23 @@ type KeyboardInput struct {
 	SingleItemProtoMessage func(itemID, referrerAllItemsPage int32) proto2.Message
 }
 
-func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
+func ManyItemsKeyboardMarkup(in ManyItemsKeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 	var firstRow []tgbotapi.InlineKeyboardButton
 
 	var err error
 
-	firstRow, err = appendNaviButton(in.AllItemsRoute, in.AllItemsProtoMessage,
-		firstRow, in.Prev, in.CurrentPage-1, "Prev")
+	if firstRow, err = appendMainMenuButton(firstRow); err != nil {
+		return tgbotapi.InlineKeyboardMarkup{}, err
+	}
+
+	firstRow, err = appendNaviButton(firstRow, in.AllItemsRoute, in.AllItemsProtoMessage,
+		in.Prev, in.CurrentPage-1, "Prev")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}
 
-	firstRow, err = appendNaviButton(in.AllItemsRoute, in.AllItemsProtoMessage,
-		firstRow, in.Next, in.CurrentPage+1, "Next")
+	firstRow, err = appendNaviButton(firstRow, in.AllItemsRoute, in.AllItemsProtoMessage,
+		in.Next, in.CurrentPage+1, "Next")
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}
@@ -73,9 +78,10 @@ func KeyboardMarkup(in KeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {
 }
 
 func appendNaviButton(
+	row []tgbotapi.InlineKeyboardButton,
 	route byte,
 	protoMessage func(page int32) proto2.Message,
-	row []tgbotapi.InlineKeyboardButton, exists bool, page int32, name string,
+	exists bool, page int32, name string,
 ) ([]tgbotapi.InlineKeyboardButton, error) {
 	if !exists {
 		return row, nil
@@ -88,6 +94,20 @@ func appendNaviButton(
 
 	row = append(row, tgbotapi.InlineKeyboardButton{
 		Text:         name,
+		CallbackData: data,
+	})
+
+	return row, nil
+}
+
+func appendMainMenuButton(row []tgbotapi.InlineKeyboardButton) ([]tgbotapi.InlineKeyboardButton, error) {
+	data, err := proto.MarshalCallbackData(models.MainPageRoute, &mainpage.MainPage{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal main callback data: %s", err.Error())
+	}
+
+	row = append(row, tgbotapi.InlineKeyboardButton{
+		Text:         "Main Menu",
 		CallbackData: data,
 	})
 

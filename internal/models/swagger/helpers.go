@@ -30,6 +30,16 @@ func HasOutcome(options []*Option) bool {
 	return false
 }
 
+func HasVotes(options []*Option) bool {
+	for _, op := range options {
+		if op.TotalVotes > 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
 func TotalVotes(options []*Option) int32 {
 	var totalVotes int32
 

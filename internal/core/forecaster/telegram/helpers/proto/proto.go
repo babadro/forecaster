@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const minCallbackDataLength = 2
+const minCallbackDataLength = 1
 
 func MarshalCallbackData(route byte, m proto.Message) (*string, error) {
 	binaryData, err := proto.Marshal(m)

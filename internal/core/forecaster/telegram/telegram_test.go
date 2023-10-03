@@ -121,7 +121,7 @@ func getButtons(keyboard tgbotapi.InlineKeyboardMarkup) []tgbotapi.InlineKeyboar
 	return buttons
 }
 
-func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
+func startCommand(command string, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{
@@ -130,65 +130,36 @@ func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
 			From: &tgbotapi.User{
 				ID: userID,
 			},
-			Text: "/start showpoll_" + strconv.Itoa(int(pollID)),
+			Text: command,
 		},
 	}
+}
+
+func startMainPage(userID int64) tgbotapi.Update {
+	return startCommand("/start main", userID)
+}
+
+func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
+	return startCommand("/start showpoll_"+strconv.Itoa(int(pollID)), userID)
 }
 
 func startShowForecast(pollID int32, userID int64) tgbotapi.Update {
-	return tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: 123,
-			},
-			From: &tgbotapi.User{
-				ID: userID,
-			},
-			Text: "/start showforecast_" + strconv.Itoa(int(pollID)),
-		},
-	}
+	return startCommand("/start showforecast_"+strconv.Itoa(int(pollID)), userID)
 }
 
 func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
-	return tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: 123,
-			},
-			From: &tgbotapi.User{
-				ID: userID,
-			},
-			Text: "/start showpolls_" + strconv.Itoa(int(currentPage)),
-		},
-	}
+	return startCommand("/start showpolls_"+strconv.Itoa(int(currentPage)), userID)
 }
 
 func startShowForecasts(userID int64) tgbotapi.Update {
-	return tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: 123,
-			},
-			From: &tgbotapi.User{
-				ID: userID,
-			},
-			Text: "/start showforecasts_1",
-		},
-	}
+	return startCommand("/start showforecasts_1", userID)
 }
 
 func startShowUserRes(pollID int32, userID int64) tgbotapi.Update {
-	return tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: 123,
-			},
-			From: &tgbotapi.User{
-				ID: userID,
-			},
-			Text: "/start showuserres_" + strconv.Itoa(int(pollID)) + "_" + strconv.Itoa(int(userID)),
-		},
-	}
+	return startCommand(
+		"/start showuserres_"+strconv.Itoa(int(pollID))+"_"+strconv.Itoa(int(userID)),
+		userID,
+	)
 }
 
 func callback(data string, userID int64) tgbotapi.Update {
