@@ -15,4 +15,5 @@ enum FieldToEdit {
 message EditPoll {
   required int32 poll_id = 1;
   required FieldToEdit field_to_edit = 2;
+  optional int32 referrer_my_polls_page = 3;
 }

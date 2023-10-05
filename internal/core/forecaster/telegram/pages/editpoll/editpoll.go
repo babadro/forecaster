@@ -6,8 +6,11 @@ import (
 	"fmt"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
+	"github.com/babadro/forecaster/internal/helpers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
@@ -21,14 +24,14 @@ func New(db models.DB) *Service {
 	return &Service{db: db, w: dbwrapper.New(db)}
 }
 
-func (s *Service) NewRequest() (proto2.Message, *editpoll.EditPoll) {
-	v := new(editpoll.EditPoll)
+func (s *Service) NewRequest() (proto2.Message, *createoreditpoll.EditPoll) {
+	v := new(createoreditpoll.EditPoll)
 
 	return v, v
 }
 
 func (s *Service) RenderCallback(
-	ctx context.Context, req *editpoll.EditPoll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	ctx context.Context, req *createoreditpoll.EditPoll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	user := upd.CallbackQuery.From
 
 	if user == nil {
@@ -41,41 +44,72 @@ func (s *Service) RenderCallback(
 	pollID := req.GetPollId()
 
 	if pollID == 0 {
-		return s.createPoll(ctx, upd, user, chat, message)
+		return s.createPoll(pollID)
 	}
 
 	return nil, "", fmt.Errorf("edit poll is not implemented")
 }
 
-func (s *Service) createPoll(ctx context.Context, upd tgbotapi.Update, user *tgbotapi.User, chat *tgbotapi.Chat, message *tgbotapi.Message) (tgbotapi.Chattable, string, error) {
-
+func (s *Service) createPoll(myPollsPage int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
+	// todo text
 	txt := "some text here about creating new poll"
 
-	return s.render(ctx, int32(pollID), 0, user.ID, chat.ID, message.MessageID, false)
+	keyboard, err := createPollKeyboardMarkup(myPollsPage)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())
+	}
+
+	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-func createPollKeyboardMarkup() *tgbotapi.InlineKeyboardMarkup {
-	res := &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: make([][]tgbotapi.InlineKeyboardButton, 0, 4),
+type editButton struct {
+	text        string
+	fieldToEdit createoreditpoll.FieldToEdit
+}
+
+const maxCountInRow = 3
+
+func createPollKeyboardMarkup(myPollsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
+	editButtons := []editButton{
+		{"Title", createoreditpoll.FieldToEdit_TITLE},
+		{"Description", createoreditpoll.FieldToEdit_DESCRIPTION},
+		{"Start date", createoreditpoll.FieldToEdit_START_DATE},
+		{"Finish date", createoreditpoll.FieldToEdit_FINISH_DATE},
 	}
 
-	for _, field := range []struct {
-		text        string
-		fieldToEdit editpoll.FieldToEdit
-	}{
-		{"Title", editpoll.FieldToEdit_TITLE},
-		{"Description", editpoll.FieldToEdit_DESCRIPTION},
-		{"Start date", editpoll.FieldToEdit_START_DATE},
-		{"Finish date", editpoll.FieldToEdit_FINISH_DATE},
-	} {
+	buttonsCount := len(editButtons) + 1 // +1 for Go back button
 
+	keyboardBuilder := render.NewKeyboardBuilder(maxCountInRow, buttonsCount)
+
+	for i := range editButtons {
+		callbackData, err := proto.MarshalCallbackData(models.EditPollRoute, &createoreditpoll.EditPoll{
+			PollId:      helpers.Ptr[int32](0),
+			FieldToEdit: helpers.Ptr(editButtons[i].fieldToEdit),
+		})
+
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{},
+				fmt.Errorf("unable to marshal callback data for %s button: %s", editButtons[i].text, err.Error())
+		}
+
+		keyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+			Text:         editButtons[i].text,
+			CallbackData: callbackData,
+		})
 	}
 
-	return &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
-			{
-				{Text: "Create new poll", CallbackData: nil},
-			},
-		},
+	goBackData, err := proto.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
+		CurrentPage: helpers.Ptr(myPollsPage),
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{},
+			fmt.Errorf("unable to marshal callback data for go back button: %s", err.Error())
 	}
+
+	keyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+		Text:         "Go back",
+		CallbackData: goBackData,
+	})
+
+	return keyboardBuilder.MarkUp(), nil
 }

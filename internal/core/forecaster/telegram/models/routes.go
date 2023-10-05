@@ -9,6 +9,8 @@ const (
 	PollsRoute
 	ForecastsRoute
 	ForecastRoute
+	EditPollRoute
+	MyPollsRoute
 )
 
 const (
