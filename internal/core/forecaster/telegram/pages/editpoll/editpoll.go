@@ -9,6 +9,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/helpers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -24,14 +25,14 @@ func New(db models.DB) *Service {
 	return &Service{db: db, w: dbwrapper.New(db)}
 }
 
-func (s *Service) NewRequest() (proto2.Message, *createoreditpoll.EditPoll) {
-	v := new(createoreditpoll.EditPoll)
+func (s *Service) NewRequest() (proto2.Message, *editpoll.EditPoll) {
+	v := new(editpoll.EditPoll)
 
 	return v, v
 }
 
 func (s *Service) RenderCallback(
-	ctx context.Context, req *createoreditpoll.EditPoll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	ctx context.Context, req *editpoll.EditPoll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 	user := upd.CallbackQuery.From
 
 	if user == nil {
@@ -41,10 +42,8 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	pollID := req.GetPollId()
-
-	if pollID == 0 {
-		return s.createPoll(pollID)
+	if req.GetCreatePoll() {
+		return s.createPoll(req.GetReferrerMyPollsPage(), message.MessageID, chat.ID)
 	}
 
 	return nil, "", fmt.Errorf("edit poll is not implemented")
@@ -63,18 +62,18 @@ func (s *Service) createPoll(myPollsPage int32, messageID int, chatID int64) (tg
 }
 
 type editButton struct {
-	text        string
-	fieldToEdit createoreditpoll.FieldToEdit
+	text  string
+	Field editpoll.Field
 }
 
 const maxCountInRow = 3
 
 func createPollKeyboardMarkup(myPollsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []editButton{
-		{"Title", createoreditpoll.FieldToEdit_TITLE},
-		{"Description", createoreditpoll.FieldToEdit_DESCRIPTION},
-		{"Start date", createoreditpoll.FieldToEdit_START_DATE},
-		{"Finish date", createoreditpoll.FieldToEdit_FINISH_DATE},
+		{"Title", editpoll.Field_TITLE},
+		{"Description", editpoll.Field_DESCRIPTION},
+		{"Start date", editpoll.Field_START_DATE},
+		{"Finish date", editpoll.Field_FINISH_DATE},
 	}
 
 	buttonsCount := len(editButtons) + 1 // +1 for Go back button
@@ -82,9 +81,9 @@ func createPollKeyboardMarkup(myPollsPage int32) (tgbotapi.InlineKeyboardMarkup,
 	keyboardBuilder := render.NewKeyboardBuilder(maxCountInRow, buttonsCount)
 
 	for i := range editButtons {
-		callbackData, err := proto.MarshalCallbackData(models.EditPollRoute, &createoreditpoll.EditPoll{
-			PollId:      helpers.Ptr[int32](0),
-			FieldToEdit: helpers.Ptr(editButtons[i].fieldToEdit),
+		callbackData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
+			PollId: helpers.Ptr[int32](0),
+			Field:  helpers.Ptr(editButtons[i].Field),
 		})
 
 		if err != nil {
