@@ -2,7 +2,6 @@ package editpoll
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
@@ -33,12 +32,6 @@ func (s *Service) NewRequest() (proto2.Message, *editpoll.EditPoll) {
 
 func (s *Service) RenderCallback(
 	ctx context.Context, req *editpoll.EditPoll, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	user := upd.CallbackQuery.From
-
-	if user == nil {
-		return nil, "", errors.New("user is nil")
-	}
-
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
@@ -48,6 +41,9 @@ func (s *Service) RenderCallback(
 
 	return nil, "", fmt.Errorf("edit poll is not implemented")
 }
+
+// <<<<<<<
+func (s *Service) editPoll
 
 func (s *Service) createPoll(myPollsPage int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
 	// todo text
