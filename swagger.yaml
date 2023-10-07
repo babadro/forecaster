@@ -479,7 +479,7 @@ definitions:
       SeriesID:
         type: "integer"
         format: "int32"
-      UserID:
+      TelegramUserID:
         type: "integer"
         format: "int64"
       Title:
