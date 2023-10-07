@@ -11,6 +11,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/helpers"
+	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
@@ -42,7 +43,18 @@ func (s *Service) RenderCallback(
 	return nil, "", fmt.Errorf("edit poll is not implemented")
 }
 
-func (s *Service) editField(pollID int32, myPollsPage int32, field editpoll.Field, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
+func (s *Service) editField(ctx context.Context, pollID int32, myPollsPage int32, field editpoll.Field, messageID int, chatID, userID int64) (tgbotapi.Chattable, string, error) {
+	if pollID != 0 {
+		p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+		if err != nil {
+			return nil, errMsg, err
+		}
+
+		if p.TelegramUserID != userID {
+			return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
+		}
+	}
+
 	// todo text
 	txt := "some text here about editing field"
 
@@ -54,33 +66,36 @@ func (s *Service) editField(pollID int32, myPollsPage int32, field editpoll.Fiel
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-// <<<<<<<
 func (s *Service) editPoll(ctx context.Context, pollID, myPollsPage int32, messageID int, chatID, userID int64) (tgbotapi.Chattable, string, error) {
-	if pollID != 0 {
-		p, errMsg, err := s.w.GetPollByID(ctx, pollID)
-		if err != nil {
-			return nil, errMsg, err
-		}
-
-		if p.TelegramUserID != userID {
-			return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
-		}
-
+	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	if err != nil {
+		return nil, errMsg, err
 	}
 
-	keyboard, err := editPollKeyboardMarkup(pollID, myPollsPage)
+	if p.TelegramUserID != userID {
+		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
+	}
+
+	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for editPoll page: %s", err.Error())
 	}
 
+	txt := editPollTxt(p)
+
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+}
+
+func editPollTxt(p swagger.PollWithOptions) string {
+	// todo text
+	return "some text here about editing poll"
 }
 
 func (s *Service) createPoll(myPollsPage int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
 	// todo text
 	txt := "some text here about creating new poll"
 
-	keyboard, err := createPollKeyboardMarkup(myPollsPage)
+	keyboard, err := pollKeyboardMarkup(0, myPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())
 	}
@@ -95,7 +110,7 @@ type editButton struct {
 
 const maxCountInRow = 3
 
-func createPollKeyboardMarkup(myPollsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
+func pollKeyboardMarkup(pollID, myPollsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []editButton{
 		{"Title", editpoll.Field_TITLE},
 		{"Description", editpoll.Field_DESCRIPTION},
@@ -109,7 +124,7 @@ func createPollKeyboardMarkup(myPollsPage int32) (tgbotapi.InlineKeyboardMarkup,
 
 	for i := range editButtons {
 		callbackData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
-			PollId: helpers.Ptr[int32](0),
+			PollId: helpers.Ptr(pollID),
 			Field:  helpers.Ptr(editButtons[i].Field),
 		})
 
