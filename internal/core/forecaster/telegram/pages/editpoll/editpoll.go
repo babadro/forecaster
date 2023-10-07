@@ -42,8 +42,35 @@ func (s *Service) RenderCallback(
 	return nil, "", fmt.Errorf("edit poll is not implemented")
 }
 
+func (s *Service) editField(pollID int32, myPollsPage int32, field editpoll.Field, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
+	// todo text
+	txt := "some text here about editing field"
+
+	keyboard, err := editFieldKeyboardMarkup(pollID, myPollsPage)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
+	}
+
+	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+}
+
 // <<<<<<<
-func (s *Service) editPoll
+func (s *Service) editPoll(ctx context.Context, pollID, myPollsPage int32, messageID int, chatID, userID int64) (tgbotapi.Chattable, string, error) {
+	if pollID != 0 {
+		p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+		if err != nil {
+			return nil, errMsg, err
+		}
+
+	}
+
+	keyboard, err := editPollKeyboardMarkup(pollID, myPollsPage)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create keyboard for editPoll page: %s", err.Error())
+	}
+
+	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+}
 
 func (s *Service) createPoll(myPollsPage int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
 	// todo text

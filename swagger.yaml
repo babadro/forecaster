@@ -479,6 +479,9 @@ definitions:
       SeriesID:
         type: "integer"
         format: "int32"
+      UserID:
+        type: "integer"
+        format: "int64"
       Title:
         type: "string"
       Description:
