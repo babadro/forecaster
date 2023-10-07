@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
