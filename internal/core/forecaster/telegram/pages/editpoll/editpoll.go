@@ -62,6 +62,10 @@ func (s *Service) editPoll(ctx context.Context, pollID, myPollsPage int32, messa
 			return nil, errMsg, err
 		}
 
+		if p.TelegramUserID != userID {
+			return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
+		}
+
 	}
 
 	keyboard, err := editPollKeyboardMarkup(pollID, myPollsPage)
