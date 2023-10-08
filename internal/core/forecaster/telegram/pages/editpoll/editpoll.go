@@ -3,8 +3,6 @@ package editpoll
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
@@ -13,8 +11,12 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/models/swagger"
+	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Service struct {
@@ -39,18 +41,109 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("parsing command directly from message is not implemented yet")
 	}
 
-	parentText := update.Message.ReplyToMessage.Text
-
-	newLineIdx := strings.Index(parentText, "\n")
-	if newLineIdx == -1 {
-		return nil, "", fmt.Errorf("unable to parse parent message text")
+	pollID, fieldID, err := parseCommandArgs(update.Message.ReplyToMessage.Text)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	strings.Split(parentText[:newLineIdx], " ")
+	createModel, updateModel, err := getDBModel(pollID, fieldID, update.Message.Text)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
+	}
 
-	// todo
+	var (
+		p   swagger.Poll
+		err error
+	)
+
+	if pollID == 0 {
+		p, err = s.db.CreatePoll(ctx, createModel, time.Now())
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
+		}
+	} else {
+		p, err = s.db.UpdatePoll(ctx, pollID, updateModel, time.Now())
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
+		}
+	}
 
 	return nil, "", fmt.Errorf("not implemented")
+}
+
+func getDBModel(pollID int32, fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, error) {
+	create, update := swagger.CreatePoll{}, swagger.UpdatePoll{}
+
+	switch fieldID {
+	case editfield.Field_TITLE:
+		create.Title, update.Title = input, &input
+	case editfield.Field_DESCRIPTION:
+		create.Description, update.Description = input, &input
+	case editfield.Field_START_DATE:
+		date, err := parseDate(input)
+		if err != nil {
+			return swagger.CreatePoll{}, swagger.UpdatePoll{},
+				fmt.Errorf("unable to parse start date %s date: %s", input, err.Error())
+		}
+
+		create.Start, update.Start = date, &date
+	case editfield.Field_FINISH_DATE:
+		date, err := parseDate(input)
+		if err != nil {
+			return swagger.CreatePoll{}, swagger.UpdatePoll{},
+				fmt.Errorf("unable to parse finish date %s date: %s", input, err.Error())
+		}
+
+		create.Finish, update.Finish = date, &date
+	default:
+		return swagger.CreatePoll{}, swagger.UpdatePoll{},
+			fmt.Errorf("unknown field %d", fieldID)
+	}
+
+	return create, update, nil
+}
+
+func parseDate(input string) (strfmt.DateTime, error) {
+	return strfmt.DateTime(time.Now()), nil
+}
+
+func parseCommandArgs(text string) (int32, editfield.Field, error) {
+	newLineIdx := strings.Index(text, "\n")
+	if newLineIdx == -1 {
+		return 0, 0, fmt.Errorf("no new line found")
+	}
+
+	strArr := strings.Split(text[:newLineIdx], " ")
+	if len(strArr) != 3 {
+		return 0, 0, fmt.Errorf("expected 3 words, got %d", len(strArr))
+	}
+
+	command, pollIDStr, field := strArr[0], strArr[1], strArr[2]
+	if command != models.EditPollCommand {
+		return 0, 0, fmt.Errorf("expected %s command, got %s", models.EditPollCommand, command)
+	}
+
+	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
+	if err != nil {
+		return 0, 0, fmt.Errorf("unable to parse pollID: %s", err.Error())
+	}
+
+	var fieldID editfield.Field
+
+	switch field {
+	case "title":
+		fieldID = editfield.Field_TITLE
+	case "description":
+		fieldID = editfield.Field_DESCRIPTION
+	case "start":
+		fieldID = editfield.Field_START_DATE
+	case "finish":
+		fieldID = editfield.Field_FINISH_DATE
+	default:
+		return 0, 0, fmt.Errorf("unknown field %s", field)
+	}
+
+	return int32(pollID), fieldID, nil
 }
 
 func (s *Service) RenderCallback(
