@@ -3,6 +3,10 @@ package editpoll
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
@@ -14,9 +18,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Service struct {
@@ -46,15 +47,12 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, err := getDBModel(pollID, fieldID, update.Message.Text)
+	createModel, updateModel, err := getDBModel(fieldID, update.Message.Text)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
 	}
 
-	var (
-		p   swagger.Poll
-		err error
-	)
+	var p swagger.Poll
 
 	if pollID == 0 {
 		p, err = s.db.CreatePoll(ctx, createModel, time.Now())
@@ -68,10 +66,12 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		}
 	}
 
-	return nil, "", fmt.Errorf("not implemented")
+	// todo how to pass myPollsPage here?
+
+	return s.editPoll(ctx, &p.ID, nil, update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
 }
 
-func getDBModel(pollID int32, fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, error) {
+func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, error) {
 	create, update := swagger.CreatePoll{}, swagger.UpdatePoll{}
 
 	switch fieldID {
