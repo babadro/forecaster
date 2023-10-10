@@ -14,6 +14,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
+	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -42,33 +43,31 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("parsing command directly from message is not implemented yet")
 	}
 
-	pollID, fieldID, err := parseCommandArgs(update.Message.ReplyToMessage.Text)
+	args, err := parseCommandArgs(update.Message.ReplyToMessage.Text)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, err := getDBModel(fieldID, update.Message.Text)
+	createModel, updateModel, err := getDBModel(args.field, update.Message.Text)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
 	}
 
 	var p swagger.Poll
 
-	if pollID == 0 {
+	if args.pollID == 0 {
 		p, err = s.db.CreatePoll(ctx, createModel, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
 		}
 	} else {
-		p, err = s.db.UpdatePoll(ctx, pollID, updateModel, time.Now())
+		p, err = s.db.UpdatePoll(ctx, args.pollID, updateModel, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
 		}
 	}
 
-	// todo how to pass myPollsPage here?
-
-	return s.editPoll(ctx, &p.ID, nil, update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
+	return s.editPoll(ctx, &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
 }
 
 func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, error) {
@@ -107,25 +106,31 @@ func parseDate(input string) (strfmt.DateTime, error) {
 	return strfmt.DateTime(time.Now()), nil
 }
 
-func parseCommandArgs(text string) (int32, editfield.Field, error) {
+type commandArgs struct {
+	pollID      int32
+	field       editfield.Field
+	myPollsPage int32
+}
+
+func parseCommandArgs(text string) (commandArgs, error) {
 	newLineIdx := strings.Index(text, "\n")
 	if newLineIdx == -1 {
-		return 0, 0, fmt.Errorf("no new line found")
+		return commandArgs{}, fmt.Errorf("no new line found")
 	}
 
 	strArr := strings.Split(text[:newLineIdx], " ")
-	if len(strArr) != 3 {
-		return 0, 0, fmt.Errorf("expected 3 words, got %d", len(strArr))
+	if len(strArr) < 3 {
+		return commandArgs{}, fmt.Errorf("expected at least 3 command parts, got %d", len(strArr))
 	}
 
 	command, pollIDStr, field := strArr[0], strArr[1], strArr[2]
 	if command != models.EditPollCommand {
-		return 0, 0, fmt.Errorf("expected %s command, got %s", models.EditPollCommand, command)
+		return commandArgs{}, fmt.Errorf("expected %s command, got %s", models.EditPollCommand, command)
 	}
 
 	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
 	if err != nil {
-		return 0, 0, fmt.Errorf("unable to parse pollID: %s", err.Error())
+		return commandArgs{}, fmt.Errorf("unable to parse pollID: %s", err.Error())
 	}
 
 	var fieldID editfield.Field
@@ -140,10 +145,22 @@ func parseCommandArgs(text string) (int32, editfield.Field, error) {
 	case "finish":
 		fieldID = editfield.Field_FINISH_DATE
 	default:
-		return 0, 0, fmt.Errorf("unknown field %s", field)
+		return commandArgs{}, fmt.Errorf("unknown field %s", field)
 	}
 
-	return int32(pollID), fieldID, nil
+	var myPollsPage int64
+	if len(strArr) > 3 {
+		myPollsPage, err = strconv.ParseInt(strArr[3], 10, 32)
+		if err != nil {
+			return commandArgs{}, fmt.Errorf("unable to parse myPollsPage: %s", err.Error())
+		}
+	}
+
+	return commandArgs{
+		pollID:      int32(pollID),
+		field:       fieldID,
+		myPollsPage: int32(myPollsPage),
+	}, nil
 }
 
 func (s *Service) RenderCallback(

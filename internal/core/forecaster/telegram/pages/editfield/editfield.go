@@ -57,7 +57,7 @@ func (s *Service) RenderCallback(ctx context.Context, req *editfield.EditField, 
 		}
 	}
 
-	txt, err := txtMsg(p, field)
+	txt, err := txtMsg(p, field, req.GetReferrerMyPollsPage())
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create text for editField page: %s", err.Error())
 	}
@@ -70,9 +70,9 @@ func (s *Service) RenderCallback(ctx context.Context, req *editfield.EditField, 
 	return render.NewMessageWithKeyboard(upd.Message.Chat.ID, txt, keyboard), "", nil
 }
 
-func txtMsg(p swagger.PollWithOptions, field editfield.Field) (string, error) {
+func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPage int32) (string, error) {
 	var sb render.StringBuilder
-	sb.Printf("/editpoll %d %s\n", p.ID, field.String())
+	sb.Printf("/editpoll %d %s %d\n", p.ID, field.String(), referrerMyPollsPage)
 
 	sb.WriteString("\nEnter new value in reply to this message")
 
