@@ -246,8 +246,9 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32) (tgbotapi.InlineKeyboardMark
 	keyboardBuilder := render.NewKeyboardBuilder(maxCountInRow, buttonsCount)
 
 	for i := range editButtons {
-		callbackData, err := proto.MarshalCallbackData(models.EditFieldRoute, &editpoll.EditPoll{
+		callbackData, err := proto.MarshalCallbackData(models.EditFieldRoute, &editfield.EditField{
 			PollId:              pollID,
+			Field:               &editButtons[i].Field,
 			ReferrerMyPollsPage: myPollsPage,
 		})
 
@@ -262,8 +263,13 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32) (tgbotapi.InlineKeyboardMark
 		})
 	}
 
+	currentPage := int32(1)
+	if myPollsPage != nil {
+		currentPage = *myPollsPage
+	}
+
 	goBackData, err := proto.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
-		CurrentPage: myPollsPage,
+		CurrentPage: helpers.Ptr(currentPage),
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{},
