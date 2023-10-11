@@ -48,9 +48,17 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, err := getDBModel(args.field, update.Message.Text)
+	createModel, updateModel, validationErr, err := getDBModel(args.field, update.Message.Text)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
+	}
+
+	if validationErr != "" {
+		if args.pollID == 0 {
+			return s.createPoll(validationErr, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID)
+		} else {
+			return s.editPoll(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
+		}
 	}
 
 	var p swagger.Poll
@@ -67,11 +75,13 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		}
 	}
 
-	return s.editPoll(ctx, &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
+	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
 }
 
-func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, error) {
+func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
 	create, update := swagger.CreatePoll{}, swagger.UpdatePoll{}
+
+	invalidDateErrMsg := fmt.Sprintf("Can't parse date format. It should be %s", time.RFC3339)
 
 	switch fieldID {
 	case editfield.Field_TITLE:
@@ -81,29 +91,32 @@ func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swag
 	case editfield.Field_START_DATE:
 		date, err := parseDate(input)
 		if err != nil {
-			return swagger.CreatePoll{}, swagger.UpdatePoll{},
-				fmt.Errorf("unable to parse start date %s date: %s", input, err.Error())
+			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
 		create.Start, update.Start = date, &date
 	case editfield.Field_FINISH_DATE:
 		date, err := parseDate(input)
 		if err != nil {
-			return swagger.CreatePoll{}, swagger.UpdatePoll{},
-				fmt.Errorf("unable to parse finish date %s date: %s", input, err.Error())
+			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
 		create.Finish, update.Finish = date, &date
 	default:
-		return swagger.CreatePoll{}, swagger.UpdatePoll{},
+		return swagger.CreatePoll{}, swagger.UpdatePoll{}, "",
 			fmt.Errorf("unknown field %d", fieldID)
 	}
 
-	return create, update, nil
+	return create, update, "", nil
 }
 
 func parseDate(input string) (strfmt.DateTime, error) {
-	return strfmt.DateTime(time.Now()), nil
+	t, err := time.Parse(time.RFC3339, input)
+	if err != nil {
+		return strfmt.DateTime{}, fmt.Errorf("unable to parse date %s: %s", input, err.Error())
+	}
+
+	return strfmt.DateTime(t), nil
 }
 
 type commandArgs struct {
@@ -169,13 +182,13 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetPollId() == 0 {
-		return s.createPoll(req.ReferrerMyPollsPage, message.MessageID, chat.ID)
+		return s.createPoll("", req.ReferrerMyPollsPage, message.MessageID, chat.ID)
 	}
 
-	return s.editPoll(ctx, req.PollId, req.ReferrerMyPollsPage, message.MessageID, chat.ID, upd.CallbackQuery.From.ID)
+	return s.editPoll(ctx, "", req.PollId, req.ReferrerMyPollsPage, message.MessageID, chat.ID, upd.CallbackQuery.From.ID)
 }
 
-func (s *Service) editPoll(ctx context.Context, pollID, myPollsPage *int32, messageID int, chatID, userID int64) (tgbotapi.Chattable, string, error) {
+func (s *Service) editPoll(ctx context.Context, validationErr string, pollID, myPollsPage *int32, messageID int, chatID, userID int64) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
 	if err != nil {
 		return nil, errMsg, err
@@ -190,19 +203,20 @@ func (s *Service) editPoll(ctx context.Context, pollID, myPollsPage *int32, mess
 		return nil, "", fmt.Errorf("unable to create keyboard for editPoll page: %s", err.Error())
 	}
 
-	txt := editPollTxt(p)
+	txt := editPollTxt(validationErr, p)
 
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-func editPollTxt(p swagger.PollWithOptions) string {
+func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 	// todo text
-	return "some text here about editing poll"
+	return "some text here about editing poll" + validationErr + "\n" + p.Title + "\n" + p.Description + "\n"
 }
 
-func (s *Service) createPoll(myPollsPage *int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
+func (s *Service) createPoll(validationErrMsg string, myPollsPage *int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
+	// todo add validationErr on top of the page
 	// todo text
-	txt := "some text here about creating new poll"
+	txt := validationErrMsg + "\nsome text here about creating new poll"
 
 	keyboard, err := pollKeyboardMarkup(nil, myPollsPage)
 	if err != nil {
