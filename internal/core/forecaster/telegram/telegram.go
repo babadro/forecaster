@@ -13,6 +13,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecasts"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/mainpage"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/mypolls"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/poll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/polls"
 	userpollresult "github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/userpoll_result"
@@ -33,6 +34,7 @@ type pageServices struct {
 	forecast       *forecast.Service
 	editPoll       *editpoll.Service
 	editField      *editfield.Service
+	myPolls        *mypolls.Service
 }
 
 type Service struct {
@@ -55,6 +57,7 @@ func NewService(db models.DB, b models.TgBot, botName string) *Service {
 		forecast:       forecast.New(db),
 		editPoll:       editpoll.New(db),
 		editField:      editfield.New(db),
+		myPolls:        mypolls.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)

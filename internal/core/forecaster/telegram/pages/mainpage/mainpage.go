@@ -91,7 +91,7 @@ func keyboard() (tgbotapi.InlineKeyboardMarkup, error) {
 		CurrentPage: currentPage,
 	})
 	if err != nil {
-		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall forecasts callback data: %s", err.Error())
 	}
 
 	return tgbotapi.NewInlineKeyboardMarkup(
