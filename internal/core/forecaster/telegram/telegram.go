@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editfield"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecasts"
@@ -29,6 +31,8 @@ type pageServices struct {
 	userPollResult *userpollresult.Service
 	forecasts      *forecasts.Service
 	forecast       *forecast.Service
+	editPoll       *editpoll.Service
+	editField      *editfield.Service
 }
 
 type Service struct {
@@ -49,6 +53,8 @@ func NewService(db models.DB, b models.TgBot, botName string) *Service {
 		polls:          polls.New(db),
 		forecasts:      forecasts.New(db),
 		forecast:       forecast.New(db),
+		editPoll:       editpoll.New(db),
+		editField:      editfield.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)
@@ -99,6 +105,7 @@ const (
 	showPollsStartCommandUpdateType      = "show_polls_start_command_update_type"
 	showForecastsStartCommandUpdateType  = "show_forecasts_start_command_update_type"
 	showForecastStartCommandUpdateType   = "show_forecast_start_command_update_type"
+	editPollUpdateType                   = "edit_poll_update_type"
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
@@ -110,26 +117,35 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 	)
 
 	switch {
+	case upd.Message != nil && upd.Message.ReplyToMessage != nil:
+		if upd.Message.ReplyToMessage != nil {
+			parentText := upd.Message.ReplyToMessage.Text
+
+			if strings.HasPrefix(parentText, models.EditPollCommand) {
+				updateType = editPollUpdateType
+				msg, errMsg, err = validateCommandInput(s.pages.editPoll.RenderCommand)(ctx, upd)
+			}
+		}
 	case upd.Message != nil:
 		switch {
 		case strings.HasPrefix(upd.Message.Text, models.ShowMainStartCommandPrefix):
 			updateType = showMainStartCommandUpdateType
-			msg, errMsg, err = validateStartCommandInput(s.pages.main.RenderStartCommand)(ctx, upd)
+			msg, errMsg, err = validateCommandInput(s.pages.main.RenderStartCommand)(ctx, upd)
 		case strings.HasPrefix(upd.Message.Text, models.ShowPollStartCommandPrefix):
 			updateType = showPollStartCommandUpdateType
-			msg, errMsg, err = validateStartCommandInput(s.pages.poll.RenderStartCommand)(ctx, upd)
+			msg, errMsg, err = validateCommandInput(s.pages.poll.RenderStartCommand)(ctx, upd)
 		case strings.HasPrefix(upd.Message.Text, models.ShowUserResultCommandPrefix):
 			updateType = showUserResultStartCommandUpdateType
-			msg, errMsg, err = validateStartCommandInput(s.pages.userPollResult.RenderStartCommand)(ctx, upd)
+			msg, errMsg, err = validateCommandInput(s.pages.userPollResult.RenderStartCommand)(ctx, upd)
 		case strings.HasPrefix(upd.Message.Text, models.ShowPollsStartCommandPrefix):
 			updateType = showPollsStartCommandUpdateType
-			msg, errMsg, err = validateStartCommandInput(s.pages.polls.RenderStartCommand)(ctx, upd)
+			msg, errMsg, err = validateCommandInput(s.pages.polls.RenderStartCommand)(ctx, upd)
 		case strings.HasPrefix(upd.Message.Text, models.ShowForecastsStartCommandPrefix):
 			updateType = showForecastsStartCommandUpdateType
-			msg, errMsg, err = validateStartCommandInput(s.pages.forecasts.RenderStartCommand)(ctx, upd)
+			msg, errMsg, err = validateCommandInput(s.pages.forecasts.RenderStartCommand)(ctx, upd)
 		case strings.HasPrefix(upd.Message.Text, models.ShowForecastStartCommandPrefix):
 			updateType = showForecastStartCommandUpdateType
-			msg, errMsg, err = validateStartCommandInput(s.pages.forecast.RenderStartCommand)(ctx, upd)
+			msg, errMsg, err = validateCommandInput(s.pages.forecast.RenderStartCommand)(ctx, upd)
 		}
 	case upd.CallbackData() != "":
 		updateType = renderCallbackUpdateType

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editfield"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
@@ -39,6 +41,8 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	handlers[models.PollsRoute] = unmarshalMiddleware[*polls.Polls](svc.polls)
 	handlers[models.ForecastsRoute] = unmarshalMiddleware[*forecasts.Forecasts](svc.forecasts)
 	handlers[models.ForecastRoute] = unmarshalMiddleware[*forecast.Forecast](svc.forecast)
+	handlers[models.EditPollRoute] = unmarshalMiddleware[*editpoll.EditPoll](svc.editPoll)
+	handlers[models.EditFieldRoute] = unmarshalMiddleware[*editfield.EditField](svc.editField)
 
 	defaultHandler := func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		return nil, "", fmt.Errorf("handler for route %d is not implemented", upd.CallbackQuery.Data[0])
@@ -103,7 +107,7 @@ func validateCallbackInput(next handlerFunc) handlerFunc {
 	}
 }
 
-func validateStartCommandInput(next handlerFunc) handlerFunc {
+func validateCommandInput(next handlerFunc) handlerFunc {
 	return func(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
 		if upd.Message.Chat == nil {
 			return nil, "", fmt.Errorf("chat is nil")
