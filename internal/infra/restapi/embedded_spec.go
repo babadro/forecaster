@@ -861,7 +861,8 @@ func init() {
         },
         "TelegramUserID": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "x-nullable": true
         },
         "Title": {
           "type": "string",
@@ -1765,7 +1766,8 @@ func init() {
         },
         "TelegramUserID": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "x-nullable": true
         },
         "Title": {
           "type": "string",

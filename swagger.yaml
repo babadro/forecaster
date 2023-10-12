@@ -462,6 +462,7 @@ definitions:
       TelegramUserID:
         type: "integer"
         format: "int64"
+        x-nullable: true
       Title:
         type: "string"
         x-nullable: true
