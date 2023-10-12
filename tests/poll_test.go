@@ -21,6 +21,8 @@ func (s *APITestSuite) TestPolls() {
 
 		require.Equal(t, createInput.Description, got.Description)
 		require.Equal(t, createInput.Title, got.Title)
+		require.Equal(t, createInput.SeriesID, got.SeriesID)
+		require.Equal(t, createInput.TelegramUserID, got.TelegramUserID)
 
 		timeRoundEqualNow(t, got.CreatedAt)
 		timeRoundEqualNow(t, got.UpdatedAt)
@@ -34,6 +36,8 @@ func (s *APITestSuite) TestPolls() {
 
 		require.Equal(t, createInput.Description, got.Description)
 		require.Equal(t, createInput.Title, got.Title)
+		require.Equal(t, createInput.SeriesID, got.SeriesID)
+		require.Equal(t, createInput.TelegramUserID, got.TelegramUserID)
 
 		timeRoundEqualNow(t, got.CreatedAt)
 		timeRoundEqualNow(t, got.UpdatedAt)
@@ -50,6 +54,8 @@ func (s *APITestSuite) TestPolls() {
 
 		require.Equal(t, *updateInput.Description, got.Description)
 		require.Equal(t, *updateInput.Title, got.Title)
+		require.Equal(t, *updateInput.SeriesID, got.SeriesID)
+		require.Equal(t, *updateInput.TelegramUserID, got.TelegramUserID)
 
 		require.NotZero(t, got.CreatedAt)
 		timeRoundEqualNow(t, got.UpdatedAt)
