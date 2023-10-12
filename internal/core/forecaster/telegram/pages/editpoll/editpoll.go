@@ -148,7 +148,7 @@ func parseCommandArgs(text string) (commandArgs, error) {
 
 	var fieldID editfield.Field
 
-	switch field {
+	switch strings.ToLower(field) {
 	case "title":
 		fieldID = editfield.Field_TITLE
 	case "description":
