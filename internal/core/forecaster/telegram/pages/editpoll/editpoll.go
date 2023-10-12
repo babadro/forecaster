@@ -48,16 +48,16 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, validationErr, err := getDBModel(args.field, update.Message.Text)
+	createModel, updateModel, validationErr, err := getDBModel(args.field, update.Message.Text, update.Message.From.ID)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
 	}
 
 	if validationErr != "" {
 		if args.pollID == 0 {
-			return s.createPoll(validationErr, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID)
+			return s.createPoll(validationErr, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, false)
 		} else {
-			return s.editPoll(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
+			return s.editPoll(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 		}
 	}
 
@@ -75,11 +75,12 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		}
 	}
 
-	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID)
+	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
-func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
-	create, update := swagger.CreatePoll{}, swagger.UpdatePoll{}
+func getDBModel(fieldID editfield.Field, input string, telegramUserID int64) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
+	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
+	update := swagger.UpdatePoll{TelegramUserID: &telegramUserID}
 
 	invalidDateErrMsg := fmt.Sprintf("Can't parse date format. It should be %s", time.RFC3339)
 
@@ -91,6 +92,7 @@ func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swag
 	case editfield.Field_START_DATE:
 		date, err := parseDate(input)
 		if err != nil {
+			fmt.Println(err)
 			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
@@ -98,6 +100,7 @@ func getDBModel(fieldID editfield.Field, input string) (swagger.CreatePoll, swag
 	case editfield.Field_FINISH_DATE:
 		date, err := parseDate(input)
 		if err != nil {
+			fmt.Println(err)
 			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
@@ -146,18 +149,8 @@ func parseCommandArgs(text string) (commandArgs, error) {
 		return commandArgs{}, fmt.Errorf("unable to parse pollID: %s", err.Error())
 	}
 
-	var fieldID editfield.Field
-
-	switch strings.ToLower(field) {
-	case "title":
-		fieldID = editfield.Field_TITLE
-	case "description":
-		fieldID = editfield.Field_DESCRIPTION
-	case "start":
-		fieldID = editfield.Field_START_DATE
-	case "finish":
-		fieldID = editfield.Field_FINISH_DATE
-	default:
+	fieldID, ok := editfield.Field_value[field]
+	if !ok {
 		return commandArgs{}, fmt.Errorf("unknown field %s", field)
 	}
 
@@ -171,7 +164,7 @@ func parseCommandArgs(text string) (commandArgs, error) {
 
 	return commandArgs{
 		pollID:      int32(pollID),
-		field:       fieldID,
+		field:       editfield.Field(fieldID),
 		myPollsPage: int32(myPollsPage),
 	}, nil
 }
@@ -182,13 +175,13 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetPollId() == 0 {
-		return s.createPoll("", req.ReferrerMyPollsPage, message.MessageID, chat.ID)
+		return s.createPoll("", req.ReferrerMyPollsPage, message.MessageID, chat.ID, true)
 	}
 
-	return s.editPoll(ctx, "", req.PollId, req.ReferrerMyPollsPage, message.MessageID, chat.ID, upd.CallbackQuery.From.ID)
+	return s.editPoll(ctx, "", req.PollId, req.ReferrerMyPollsPage, message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
-func (s *Service) editPoll(ctx context.Context, validationErr string, pollID, myPollsPage *int32, messageID int, chatID, userID int64) (tgbotapi.Chattable, string, error) {
+func (s *Service) editPoll(ctx context.Context, validationErr string, pollID, myPollsPage *int32, messageID int, chatID, userID int64, editMessage bool) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
 	if err != nil {
 		return nil, errMsg, err
@@ -205,15 +198,19 @@ func (s *Service) editPoll(ctx context.Context, validationErr string, pollID, my
 
 	txt := editPollTxt(validationErr, p)
 
-	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	if editMessage {
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	}
+
+	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
 }
 
 func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 	// todo text
-	return "some text here about editing poll" + validationErr + "\n" + p.Title + "\n" + p.Description + "\n"
+	return "some text here about editing poll" + validationErr + "\n" + p.Title + "\n" + p.Description + "\n" + p.Start.String() + "\n" + p.Finish.String()
 }
 
-func (s *Service) createPoll(validationErrMsg string, myPollsPage *int32, messageID int, chatID int64) (tgbotapi.Chattable, string, error) {
+func (s *Service) createPoll(validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool) (tgbotapi.Chattable, string, error) {
 	// todo add validationErr on top of the page
 	// todo text
 	txt := validationErrMsg + "\nsome text here about creating new poll"
@@ -223,7 +220,11 @@ func (s *Service) createPoll(validationErrMsg string, myPollsPage *int32, messag
 		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())
 	}
 
-	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	if editMessage {
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	}
+
+	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
 }
 
 type editButton struct {
