@@ -9,6 +9,7 @@ CREATE TABLE forecaster.series (
 CREATE TABLE forecaster.polls (
     id SERIAL PRIMARY KEY,
     series_id INT NOT NULL DEFAULT 0,
+    telegram_user_id BIGINT NOT NULL DEFAULT 0,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     start timestamp with time zone NOT NULL,
