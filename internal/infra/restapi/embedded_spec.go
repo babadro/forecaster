@@ -646,6 +646,10 @@ func init() {
           "type": "string",
           "format": "date-time"
         },
+        "TelegramUserID": {
+          "type": "integer",
+          "format": "int64"
+        },
         "Title": {
           "type": "string"
         }
@@ -734,6 +738,10 @@ func init() {
         "Start": {
           "type": "string",
           "format": "date-time"
+        },
+        "TelegramUserID": {
+          "type": "integer",
+          "format": "int64"
         },
         "Title": {
           "type": "string"
@@ -850,6 +858,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-nullable": true
+        },
+        "TelegramUserID": {
+          "type": "integer",
+          "format": "int64"
         },
         "Title": {
           "type": "string",
@@ -1538,6 +1550,10 @@ func init() {
           "type": "string",
           "format": "date-time"
         },
+        "TelegramUserID": {
+          "type": "integer",
+          "format": "int64"
+        },
         "Title": {
           "type": "string"
         }
@@ -1626,6 +1642,10 @@ func init() {
         "Start": {
           "type": "string",
           "format": "date-time"
+        },
+        "TelegramUserID": {
+          "type": "integer",
+          "format": "int64"
         },
         "Title": {
           "type": "string"
@@ -1742,6 +1762,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-nullable": true
+        },
+        "TelegramUserID": {
+          "type": "integer",
+          "format": "int64"
         },
         "Title": {
           "type": "string",

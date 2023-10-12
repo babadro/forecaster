@@ -33,6 +33,9 @@ type UpdatePoll struct {
 	// Format: date-time
 	Start *strfmt.DateTime `json:"Start,omitempty"`
 
+	// telegram user ID
+	TelegramUserID int64 `json:"TelegramUserID,omitempty"`
+
 	// title
 	Title *string `json:"Title,omitempty"`
 }
