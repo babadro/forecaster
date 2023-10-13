@@ -18,6 +18,7 @@ import (
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog/log"
 	proto2 "google.golang.org/protobuf/proto"
 )
 
@@ -48,7 +49,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, validationErr, err := getDBModel(args.field, update.Message.Text, update.Message.From.ID)
+	createModel, updateModel, validationErr, err := getDBModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
 	}
@@ -78,11 +79,11 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
-func getDBModel(fieldID editfield.Field, input string, telegramUserID int64) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
+func getDBModel(ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
 	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
 	update := swagger.UpdatePoll{TelegramUserID: &telegramUserID}
 
-	invalidDateErrMsg := fmt.Sprintf("Can't parse date format. It should be %s", time.RFC3339)
+	invalidDateErrMsg := fmt.Sprintf("Can't parse date format.\nIt should be %s", time.RFC3339)
 
 	switch fieldID {
 	case editfield.Field_TITLE:
@@ -92,7 +93,7 @@ func getDBModel(fieldID editfield.Field, input string, telegramUserID int64) (sw
 	case editfield.Field_START_DATE:
 		date, err := parseDate(input)
 		if err != nil {
-			fmt.Println(err)
+			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's start poll date")
 			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
@@ -100,7 +101,7 @@ func getDBModel(fieldID editfield.Field, input string, telegramUserID int64) (sw
 	case editfield.Field_FINISH_DATE:
 		date, err := parseDate(input)
 		if err != nil {
-			fmt.Println(err)
+			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's finish poll date")
 			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
@@ -206,25 +207,50 @@ func (s *Service) editPoll(ctx context.Context, validationErr string, pollID, my
 }
 
 func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
-	// todo text
-	return "some text here about editing poll" + validationErr + "\n" + p.Title + "\n" + p.Description + "\n" + p.Start.String() + "\n" + p.Finish.String()
+	var sb render.StringBuilder
+
+	if validationErr != "" {
+		sb.Printf("<b>🚨🚨🚨\n%s\n🚨🚨🚨</b>\n\n", validationErr)
+	}
+
+	sb.Printf("Title:\n<b>%s</b>\n", p.Title)
+	sb.Printf("\nDescription\n:<b>%s</b>\n", p.Description)
+	sb.Printf("\nStart date: <b>%s</b>\n", render.FormatTime(p.Start))
+	sb.Printf("Finish date: <b>%s</b>\n", render.FormatTime(p.Finish))
+
+	return sb.String()
 }
 
 func (s *Service) createPoll(validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool) (tgbotapi.Chattable, string, error) {
-	// todo add validationErr on top of the page
-	// todo text
-	txt := validationErrMsg + "\nsome text here about creating new poll"
-
 	keyboard, err := pollKeyboardMarkup(nil, myPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())
 	}
+
+	txt := createPollTxt(validationErrMsg)
 
 	if editMessage {
 		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 	}
 
 	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
+}
+
+func createPollTxt(validationErrMsg string) string {
+	txt := `🚀 Create Your Own Poll! 🚀
+
+Step into the creator’s chair!
+Define your poll’s title, set a description, choose a start date, and more.
+Your audience is waiting for your questions - let’s get started!`
+
+	var sb render.StringBuilder
+	if validationErrMsg != "" {
+		sb.Printf("<b>🚨🚨🚨\n%s\n🚨🚨🚨</b>\n\n", validationErrMsg)
+	}
+
+	sb.WriteString(txt)
+
+	return sb.String()
 }
 
 type editButton struct {

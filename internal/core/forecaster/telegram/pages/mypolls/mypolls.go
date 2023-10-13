@@ -9,6 +9,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
@@ -51,11 +52,20 @@ func keyboardMarkup() (tgbotapi.InlineKeyboardMarkup, error) {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal editPoll callback data: %s", err.Error())
 	}
 
+	mainMenuButton, err := proto.MarshalCallbackData(models.MainPageRoute, &mainpage.MainPage{})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal mainPage callback data: %s", err.Error())
+	}
+
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.InlineKeyboardButton{
 				Text:         "Create poll",
 				CallbackData: editPollData,
+			},
+			tgbotapi.InlineKeyboardButton{
+				Text:         "Main Menu",
+				CallbackData: mainMenuButton,
 			},
 		),
 	), nil
