@@ -33,8 +33,8 @@ func (s *Service) NewRequest() (proto2.Message, *mypolls.MyPolls) {
 }
 
 func (s *Service) RenderCallback(
-	ctx context.Context, req *mypolls.MyPolls, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-
+	_ context.Context, _ *mypolls.MyPolls, upd tgbotapi.Update,
+) (tgbotapi.Chattable, string, error) {
 	txtMsg := "Getting polls are not implemented yet"
 
 	keyboard, err := keyboardMarkup()

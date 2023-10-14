@@ -49,17 +49,21 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, validationErr, err := getDBModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+	createModel, updateModel, validationErr, err := getDBModel(
+		ctx, args.field, update.Message.Text, update.Message.From.ID,
+	)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
 	}
 
 	if validationErr != "" {
 		if args.pollID == 0 {
-			return s.createPoll(validationErr, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, false)
-		} else {
-			return s.editPoll(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
+			return s.createPoll(validationErr, helpers.NilIfZero(args.myPollsPage),
+				update.Message.MessageID, update.Message.Chat.ID, false)
 		}
+
+		return s.editPoll(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage),
+			update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 	}
 
 	var p swagger.Poll
@@ -76,10 +80,13 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		}
 	}
 
-	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage), update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
+	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage),
+		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
-func getDBModel(ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
+func getDBModel(
+	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
+) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
 	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
 	update := swagger.UpdatePoll{TelegramUserID: &telegramUserID}
 
@@ -106,6 +113,8 @@ func getDBModel(ctx context.Context, fieldID editfield.Field, input string, tele
 		}
 
 		create.Finish, update.Finish = date, &date
+	case editfield.Field_UNDEFINED:
+		return swagger.CreatePoll{}, swagger.UpdatePoll{}, "", fmt.Errorf("field is undefined")
 	default:
 		return swagger.CreatePoll{}, swagger.UpdatePoll{}, "",
 			fmt.Errorf("unknown field %d", fieldID)
@@ -129,6 +138,8 @@ type commandArgs struct {
 	myPollsPage int32
 }
 
+const minCommandParts = 3
+
 func parseCommandArgs(text string) (commandArgs, error) {
 	newLineIdx := strings.Index(text, "\n")
 	if newLineIdx == -1 {
@@ -136,7 +147,7 @@ func parseCommandArgs(text string) (commandArgs, error) {
 	}
 
 	strArr := strings.Split(text[:newLineIdx], " ")
-	if len(strArr) < 3 {
+	if len(strArr) < minCommandParts {
 		return commandArgs{}, fmt.Errorf("expected at least 3 command parts, got %d", len(strArr))
 	}
 
@@ -156,7 +167,7 @@ func parseCommandArgs(text string) (commandArgs, error) {
 	}
 
 	var myPollsPage int64
-	if len(strArr) > 3 {
+	if len(strArr) > minCommandParts {
 		myPollsPage, err = strconv.ParseInt(strArr[3], 10, 32)
 		if err != nil {
 			return commandArgs{}, fmt.Errorf("unable to parse myPollsPage: %s", err.Error())
@@ -176,13 +187,18 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetPollId() == 0 {
-		return s.createPoll("", req.ReferrerMyPollsPage, message.MessageID, chat.ID, true)
+		return s.createPoll("", req.ReferrerMyPollsPage,
+			message.MessageID, chat.ID, true)
 	}
 
-	return s.editPoll(ctx, "", req.PollId, req.ReferrerMyPollsPage, message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
+	return s.editPoll(ctx, "", req.PollId, req.ReferrerMyPollsPage,
+		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
-func (s *Service) editPoll(ctx context.Context, validationErr string, pollID, myPollsPage *int32, messageID int, chatID, userID int64, editMessage bool) (tgbotapi.Chattable, string, error) {
+func (s *Service) editPoll(
+	ctx context.Context, validationErr string, pollID, myPollsPage *int32,
+	messageID int, chatID, userID int64, editMessage bool,
+) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
 	if err != nil {
 		return nil, errMsg, err
@@ -221,7 +237,9 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 	return sb.String()
 }
 
-func (s *Service) createPoll(validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool) (tgbotapi.Chattable, string, error) {
+func (s *Service) createPoll(
+	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool,
+) (tgbotapi.Chattable, string, error) {
 	keyboard, err := pollKeyboardMarkup(nil, myPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())

@@ -8,7 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// open create poll page and click back button
+// open create poll page and click back button...
 func (s *TelegramServiceSuite) TestEditPollBackButton() {
 	var sentMsg interface{}
 
@@ -107,10 +107,11 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 
 		s.Require().Contains(createPollMessage.Text, dateErrorMsg)
 	}
-
 }
 
-func (s *TelegramServiceSuite) goToCreatePollPage(userID int64, sentMsgPtr *interface{}) tgbotapi.EditMessageTextConfig {
+func (s *TelegramServiceSuite) goToCreatePollPage(
+	userID int64, sentMsgPtr *interface{},
+) tgbotapi.EditMessageTextConfig {
 	s.T().Helper()
 
 	update := startMainPage(userID)

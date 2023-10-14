@@ -95,7 +95,9 @@ func keyboard() (tgbotapi.InlineKeyboardMarkup, error) {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall forecasts callback data: %s", err.Error())
 	}
 
-	myPollsData, err := proto2.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{CurrentPage: helpers.Ptr[int32](1)})
+	myPollsData, err := proto2.MarshalCallbackData(
+		models.MyPollsRoute, &mypolls.MyPolls{CurrentPage: helpers.Ptr[int32](1)},
+	)
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall myPolls callback data: %s", err.Error())
 	}

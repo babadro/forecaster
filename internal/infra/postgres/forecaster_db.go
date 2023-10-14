@@ -310,7 +310,8 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 	var res models.Poll
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
-		Scan(&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title, &res.Description, &res.Start, &res.Finish, &res.CreatedAt, &res.UpdatedAt)
+		Scan(&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
+			&res.Description, &res.Start, &res.Finish, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
 		return models.Poll{}, scanFailed("insert poll", err)
 	}
@@ -451,7 +452,8 @@ func (db *ForecasterDB) UpdatePoll(
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(
-			&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title, &res.Description, &res.Start, &res.Finish, &res.UpdatedAt, &res.CreatedAt,
+			&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
+			&res.Description, &res.Start, &res.Finish, &res.UpdatedAt, &res.CreatedAt,
 		)
 	if err != nil {
 		return models.Poll{}, scanFailed("update poll", err)

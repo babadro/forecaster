@@ -32,7 +32,9 @@ func (s *Service) NewRequest() (proto2.Message, *editfield.EditField) {
 	return v, v
 }
 
-func (s *Service) RenderCallback(ctx context.Context, req *editfield.EditField, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+func (s *Service) RenderCallback(
+	ctx context.Context, req *editfield.EditField, upd tgbotapi.Update,
+) (tgbotapi.Chattable, string, error) {
 	field := req.GetField()
 	if field == editfield.Field_UNDEFINED {
 		return nil, "", fmt.Errorf("field is undefined")
@@ -67,18 +69,21 @@ func (s *Service) RenderCallback(ctx context.Context, req *editfield.EditField, 
 		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
 	}
 
-	return render.NewEditMessageTextWithKeyboard(upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID, txt, keyboard), "", nil
+	return render.NewEditMessageTextWithKeyboard(
+		upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID, txt, keyboard), "", nil
 }
 
 func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPage int32) (string, error) {
 	var sb render.StringBuilder
+
 	sb.Printf("/editpoll %d %s %d\n", p.ID, field.String(), referrerMyPollsPage)
 
 	sb.WriteString("\nEnter new value in reply to this message")
 
 	sb.WriteString("\nCurrent value:\n")
 
-	fieldValue := ""
+	var fieldValue string
+
 	switch field {
 	case editfield.Field_TITLE:
 		fieldValue = p.Title
@@ -88,6 +93,8 @@ func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPag
 		fieldValue = p.Start.String()
 	case editfield.Field_FINISH_DATE:
 		fieldValue = p.Finish.String()
+	case editfield.Field_UNDEFINED:
+		return "", fmt.Errorf("field is undefined")
 	default:
 		return "", fmt.Errorf("unknown field %d", field)
 	}
