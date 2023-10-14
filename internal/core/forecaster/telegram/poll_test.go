@@ -48,7 +48,7 @@ func (s *TelegramServiceSuite) TestShowPollStartCommand_notFound() {
 	s.Require().Error(err)
 	s.ErrorContains(err, "unable to get poll by id")
 
-	buttons := s.buttonsFromInterface(msg.ReplyMarkup)
+	buttons := s.buttonsFromMarkup(msg.ReplyMarkup)
 	s.Require().Len(buttons, 1)
 	s.Require().Contains(buttons[0].Text, "Back to main")
 

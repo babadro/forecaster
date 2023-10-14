@@ -121,7 +121,7 @@ func getButtons(keyboard tgbotapi.InlineKeyboardMarkup) []tgbotapi.InlineKeyboar
 	return buttons
 }
 
-func startCommand(command string, userID int64) tgbotapi.Update {
+func command(command string, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{
@@ -136,27 +136,27 @@ func startCommand(command string, userID int64) tgbotapi.Update {
 }
 
 func startMainPage(userID int64) tgbotapi.Update {
-	return startCommand("/start main", userID)
+	return command("/start main", userID)
 }
 
 func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
-	return startCommand("/start showpoll_"+strconv.Itoa(int(pollID)), userID)
+	return command("/start showpoll_"+strconv.Itoa(int(pollID)), userID)
 }
 
 func startShowForecast(pollID int32, userID int64) tgbotapi.Update {
-	return startCommand("/start showforecast_"+strconv.Itoa(int(pollID)), userID)
+	return command("/start showforecast_"+strconv.Itoa(int(pollID)), userID)
 }
 
 func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
-	return startCommand("/start showpolls_"+strconv.Itoa(int(currentPage)), userID)
+	return command("/start showpolls_"+strconv.Itoa(int(currentPage)), userID)
 }
 
 func startShowForecasts(userID int64) tgbotapi.Update {
-	return startCommand("/start showforecasts_1", userID)
+	return command("/start showforecasts_1", userID)
 }
 
 func startShowUserRes(pollID int32, userID int64) tgbotapi.Update {
-	return startCommand(
+	return command(
 		"/start showuserres_"+strconv.Itoa(int(pollID))+"_"+strconv.Itoa(int(userID)),
 		userID,
 	)
@@ -204,7 +204,7 @@ func (s *TelegramServiceSuite) asEditMessage(sentMsg interface{}) tgbotapi.EditM
 	return msg
 }
 
-func (s *TelegramServiceSuite) buttonsFromInterface(in interface{}) []tgbotapi.InlineKeyboardButton {
+func (s *TelegramServiceSuite) buttonsFromMarkup(in interface{}) []tgbotapi.InlineKeyboardButton {
 	s.T().Helper()
 
 	switch keyboard := in.(type) {
