@@ -11,7 +11,7 @@ func (s *TelegramServiceSuite) TestUnknownCommand() {
 
 	// send unknown command
 	userID := randomPositiveInt64()
-	update := command("some-fake-unknown-command", userID)
+	update := messageUpdate("some-fake-unknown-command", userID)
 
 	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
 	s.Require().ErrorContains(err, "unknown command")

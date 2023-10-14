@@ -78,7 +78,7 @@ func (s *TelegramServiceSuite) sendCallback(button tgbotapi.InlineKeyboardButton
 
 	s.Require().NotNil(button.CallbackData)
 
-	update := callback(*button.CallbackData, userID)
+	update := callbackUpdate(*button.CallbackData, userID)
 	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
 	s.Require().NoError(err)
 
@@ -121,7 +121,7 @@ func getButtons(keyboard tgbotapi.InlineKeyboardMarkup) []tgbotapi.InlineKeyboar
 	return buttons
 }
 
-func command(command string, userID int64) tgbotapi.Update {
+func replyMessageUpdate(text, parentText string, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{
@@ -130,39 +130,56 @@ func command(command string, userID int64) tgbotapi.Update {
 			From: &tgbotapi.User{
 				ID: userID,
 			},
-			Text: command,
+			Text: text,
+			ReplyToMessage: &tgbotapi.Message{
+				Text: parentText,
+			},
+		},
+	}
+}
+
+func messageUpdate(text string, userID int64) tgbotapi.Update {
+	return tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: 123,
+			},
+			From: &tgbotapi.User{
+				ID: userID,
+			},
+			Text: text,
 		},
 	}
 }
 
 func startMainPage(userID int64) tgbotapi.Update {
-	return command("/start main", userID)
+	return messageUpdate("/start main", userID)
 }
 
 func startShowPoll(pollID int32, userID int64) tgbotapi.Update {
-	return command("/start showpoll_"+strconv.Itoa(int(pollID)), userID)
+	return messageUpdate("/start showpoll_"+strconv.Itoa(int(pollID)), userID)
 }
 
 func startShowForecast(pollID int32, userID int64) tgbotapi.Update {
-	return command("/start showforecast_"+strconv.Itoa(int(pollID)), userID)
+	return messageUpdate("/start showforecast_"+strconv.Itoa(int(pollID)), userID)
 }
 
 func startShowPolls(currentPage int32, userID int64) tgbotapi.Update {
-	return command("/start showpolls_"+strconv.Itoa(int(currentPage)), userID)
+	return messageUpdate("/start showpolls_"+strconv.Itoa(int(currentPage)), userID)
 }
 
 func startShowForecasts(userID int64) tgbotapi.Update {
-	return command("/start showforecasts_1", userID)
+	return messageUpdate("/start showforecasts_1", userID)
 }
 
 func startShowUserRes(pollID int32, userID int64) tgbotapi.Update {
-	return command(
+	return messageUpdate(
 		"/start showuserres_"+strconv.Itoa(int(pollID))+"_"+strconv.Itoa(int(userID)),
 		userID,
 	)
 }
 
-func callback(data string, userID int64) tgbotapi.Update {
+func callbackUpdate(data string, userID int64) tgbotapi.Update {
 	return tgbotapi.Update{
 		CallbackQuery: &tgbotapi.CallbackQuery{
 			Message: &tgbotapi.Message{

@@ -102,6 +102,10 @@ func randomPositiveInt64() int64 {
 	return int64(gofakeit.IntRange(1, math.MaxInt64))
 }
 
+func randomSentence() string {
+	return gofakeit.Generate("{sentence:3}")
+}
+
 func TestTelegram(t *testing.T) {
 	suite.Run(t, new(TelegramServiceSuite))
 }

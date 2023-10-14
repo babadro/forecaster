@@ -67,7 +67,7 @@ func (s *Service) RenderCallback(ctx context.Context, req *editfield.EditField, 
 		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
 	}
 
-	return render.NewMessageWithKeyboard(upd.CallbackQuery.Message.Chat.ID, txt, keyboard), "", nil
+	return render.NewEditMessageTextWithKeyboard(upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID, txt, keyboard), "", nil
 }
 
 func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPage int32) (string, error) {
