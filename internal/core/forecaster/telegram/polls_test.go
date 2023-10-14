@@ -30,7 +30,7 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.sendMessage(update)
 
 	pollsPageStartCommand := s.asMessage(sentMsg)
-	txt, buttons := pollsPageStartCommand.Text, s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup)
+	txt, buttons := pollsPageStartCommand.Text, s.buttonsFromMarkup(pollsPageStartCommand.ReplyMarkup)
 
 	// verify the first page
 	s.verifyPollsPage(txt, buttons, polls, 1, 10, false, true)
@@ -42,7 +42,7 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.sendCallback(nextButton, userID)
 
 	pollsPage2 := s.asEditMessage(sentMsg)
-	txt, buttons = pollsPage2.Text, s.buttonsFromInterface(pollsPage2.ReplyMarkup)
+	txt, buttons = pollsPage2.Text, s.buttonsFromMarkup(pollsPage2.ReplyMarkup)
 
 	// verify the second page
 	s.verifyPollsPage(txt, buttons, polls, 11, 20, true, true)
@@ -54,7 +54,7 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.sendCallback(nextButton, userID)
 
 	pollsPage3 := s.asEditMessage(sentMsg)
-	txt, buttons = pollsPage3.Text, s.buttonsFromInterface(pollsPage3.ReplyMarkup)
+	txt, buttons = pollsPage3.Text, s.buttonsFromMarkup(pollsPage3.ReplyMarkup)
 
 	// verify the third page
 	s.verifyPollsPage(txt, buttons, polls, 21, 24, true, false)
@@ -66,7 +66,7 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.sendCallback(prevButton, userID)
 
 	pollsPage2 = s.asEditMessage(sentMsg)
-	txt, buttons = pollsPage2.Text, s.buttonsFromInterface(pollsPage2.ReplyMarkup)
+	txt, buttons = pollsPage2.Text, s.buttonsFromMarkup(pollsPage2.ReplyMarkup)
 
 	// verify the second page
 	s.verifyPollsPage(txt, buttons, polls, 11, 20, true, true)
@@ -78,7 +78,7 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.sendCallback(prevButton, userID)
 
 	pollsPage1 := s.asEditMessage(sentMsg)
-	txt, buttons = pollsPage1.Text, s.buttonsFromInterface(pollsPage1.ReplyMarkup)
+	txt, buttons = pollsPage1.Text, s.buttonsFromMarkup(pollsPage1.ReplyMarkup)
 
 	// verify the first page
 	s.verifyPollsPage(txt, buttons, polls, 1, 10, false, true)
@@ -154,7 +154,7 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 	pollsPageStartCommand := s.asMessage(sentMsg)
 
 	firstPollButton := findItemByCriteria(s,
-		s.buttonsFromInterface(pollsPageStartCommand.ReplyMarkup),
+		s.buttonsFromMarkup(pollsPageStartCommand.ReplyMarkup),
 		func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "1"
 		})
@@ -166,7 +166,7 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 	s.Require().Contains(pollMsg.Text, polls[0].Title)
 
 	// verify AllPolls button
-	buttons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	buttons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 	allPollButtons := buttons[len(buttons)-1]
 	s.Require().Contains(allPollButtons.Text, "All Polls")
 
@@ -175,5 +175,5 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 
 	// verify the polls page
 	pollsMessage := s.asEditMessage(sentMsg)
-	s.verifyPollsPage(pollsMessage.Text, s.buttonsFromInterface(pollsMessage.ReplyMarkup), polls, 1, 2, false, false)
+	s.verifyPollsPage(pollsMessage.Text, s.buttonsFromMarkup(pollsMessage.ReplyMarkup), polls, 1, 2, false, false)
 }

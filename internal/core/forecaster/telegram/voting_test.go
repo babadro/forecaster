@@ -23,7 +23,7 @@ func (s *TelegramServiceSuite) TestVoting() {
 
 	pollMsg := s.asMessage(sentMsg)
 
-	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	pollButtons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 	// each keyboard button is a poll option
 	s.Require().Len(pollButtons, len(poll.Options)+2) // +2 for "All Polls" and "Show Forecast" buttons
 
@@ -139,7 +139,7 @@ func (s *TelegramServiceSuite) TestVotePreview_BackButton() {
 
 	pollMsg := s.asMessage(sentMsg)
 
-	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	pollButtons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 
 	// send the first option
 	firstButton := pollButtons[0]
@@ -180,7 +180,7 @@ func (s *TelegramServiceSuite) Test_expiredPoll() {
 	// verify the poll message
 	s.Require().Contains(pollMsg.Text, "poll has expired")
 
-	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	pollButtons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 	// send the first option
 	s.sendCallback(pollButtons[0], 456)
 
@@ -209,7 +209,7 @@ func (s *TelegramServiceSuite) Test_attempt_to_vote_for_the_same_option_result_i
 
 	pollMsg := s.asMessage(sentMsg)
 
-	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	pollButtons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 	// send the first option
 	firstButton := pollButtons[0]
 	s.sendCallback(firstButton, userID)

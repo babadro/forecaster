@@ -21,7 +21,7 @@ func (s *TelegramServiceSuite) TestUserPollResult_callback_happy_path() {
 
 	pollMsg := s.asMessage(sentMsg)
 
-	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	pollButtons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 
 	s.Require().Len(pollButtons, len(p.Options)+2) // +2 for "Show results" and navigation button
 	showResultsButton := pollButtons[len(pollButtons)-2]
@@ -90,7 +90,7 @@ func (s *TelegramServiceSuite) TestUserPollResult_wrong_voted_user() {
 	s.sendMessage(update)
 
 	pollMsg := s.asMessage(sentMsg)
-	pollButtons := s.buttonsFromInterface(pollMsg.ReplyMarkup)
+	pollButtons := s.buttonsFromMarkup(pollMsg.ReplyMarkup)
 	showResultsButton := pollButtons[len(pollButtons)-2]
 	_ = s.sendCallback(showResultsButton, targetUserID)
 
@@ -112,7 +112,7 @@ func (s *TelegramServiceSuite) TestBackToPollButton() {
 	userPollResultMsg := s.asMessage(sentMsg)
 
 	// verify the "Back to poll" button
-	userPollResultButtons := s.buttonsFromInterface(userPollResultMsg.ReplyMarkup)
+	userPollResultButtons := s.buttonsFromMarkup(userPollResultMsg.ReplyMarkup)
 	s.Require().NotEmpty(userPollResultButtons)
 
 	backToPollButton := userPollResultButtons[len(userPollResultButtons)-1]

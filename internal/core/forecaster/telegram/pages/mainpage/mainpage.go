@@ -9,6 +9,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/polls"
 	"github.com/babadro/forecaster/internal/helpers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -91,12 +92,20 @@ func keyboard() (tgbotapi.InlineKeyboardMarkup, error) {
 		CurrentPage: currentPage,
 	})
 	if err != nil {
-		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall poll callback data: %s", err.Error())
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall forecasts callback data: %s", err.Error())
+	}
+
+	myPollsData, err := proto2.MarshalCallbackData(
+		models.MyPollsRoute, &mypolls.MyPolls{CurrentPage: helpers.Ptr[int32](1)},
+	)
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable marshall myPolls callback data: %s", err.Error())
 	}
 
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.InlineKeyboardButton{Text: "All polls", CallbackData: pollsData},
 			tgbotapi.InlineKeyboardButton{Text: "All forecasts", CallbackData: forecastsData},
+			tgbotapi.InlineKeyboardButton{Text: "My polls", CallbackData: myPollsData},
 		)), nil
 }

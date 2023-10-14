@@ -439,6 +439,9 @@ definitions:
       SeriesID:
         type: "integer"
         format: "int32"
+      TelegramUserID:
+        type: "integer"
+        format: "int64"
       Title:
         type: "string"
       Description:
@@ -455,6 +458,10 @@ definitions:
       SeriesID:
         type: "integer"
         format: "int32"
+        x-nullable: true
+      TelegramUserID:
+        type: "integer"
+        format: "int64"
         x-nullable: true
       Title:
         type: "string"
@@ -479,6 +486,9 @@ definitions:
       SeriesID:
         type: "integer"
         format: "int32"
+      TelegramUserID:
+        type: "integer"
+        format: "int64"
       Title:
         type: "string"
       Description:
@@ -504,6 +514,9 @@ definitions:
       SeriesID:
         type: "integer"
         format: "int32"
+      TelegramUserID:
+        type: "integer"
+        format: "int64"
       Title:
         type: "string"
       Description:

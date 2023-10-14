@@ -30,7 +30,7 @@ func (s *TelegramServiceSuite) TestMainPage() {
 	// check that we are on the main page
 	s.Require().Contains(mainPage.Text, sentenceFromMainPage)
 
-	buttons := s.buttonsFromInterface(mainPage.ReplyMarkup)
+	buttons := s.buttonsFromMarkup(mainPage.ReplyMarkup)
 
 	// go to forecasts page
 	forecastsButton := findItemByCriteria(s, buttons,
@@ -52,7 +52,7 @@ func (s *TelegramServiceSuite) TestMainPage() {
 	s.Require().Contains(forecastsPage.Text, sentenceFromForecastsPage)
 
 	// go back to main page
-	mainMenuButton := s.findMainButton(s.buttonsFromInterface(forecastsPage.ReplyMarkup))
+	mainMenuButton := s.findMainButton(s.buttonsFromMarkup(forecastsPage.ReplyMarkup))
 
 	s.sendCallback(mainMenuButton, userID)
 
@@ -60,7 +60,7 @@ func (s *TelegramServiceSuite) TestMainPage() {
 	s.Require().Contains(mainEditPage.Text, sentenceFromMainPage)
 
 	// go to polls page
-	pollsButton := findItemByCriteria(s, s.buttonsFromInterface(mainEditPage.ReplyMarkup),
+	pollsButton := findItemByCriteria(s, s.buttonsFromMarkup(mainEditPage.ReplyMarkup),
 		func(button tgbotapi.InlineKeyboardButton) bool {
 			return strings.Contains(button.Text, "polls")
 		})
@@ -78,7 +78,7 @@ func (s *TelegramServiceSuite) TestMainPage() {
 
 	// go back to main page
 
-	mainMenuButton = s.findMainButton(s.buttonsFromInterface(pollsPage.ReplyMarkup))
+	mainMenuButton = s.findMainButton(s.buttonsFromMarkup(pollsPage.ReplyMarkup))
 
 	s.sendCallback(mainMenuButton, userID)
 

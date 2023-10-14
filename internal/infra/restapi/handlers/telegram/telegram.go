@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime/debug"
 	"sync"
 
 	"github.com/babadro/forecaster/internal/infra/restapi/operations"
@@ -59,7 +60,7 @@ func (p *Telegram) ReceiveTelegramUpdates(params operations.ReceiveTelegramUpdat
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Error().Msgf("Process  telegram update recovered from panic: %v", r)
+				logger.Error().Msgf("Process  telegram update recovered from panic: %v\n%s", r, debug.Stack())
 			}
 
 			p.wg.Done()

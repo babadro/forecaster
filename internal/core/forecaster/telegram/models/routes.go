@@ -9,6 +9,9 @@ const (
 	PollsRoute
 	ForecastsRoute
 	ForecastRoute
+	EditPollRoute
+	MyPollsRoute
+	EditFieldRoute
 )
 
 const (
@@ -18,4 +21,8 @@ const (
 	ShowPollsStartCommandPrefix     = "/start showpolls_"
 	ShowForecastsStartCommandPrefix = "/start showforecasts_"
 	ShowForecastStartCommandPrefix  = "/start showforecast_"
+)
+
+const (
+	EditPollCommand = "/editpoll"
 )

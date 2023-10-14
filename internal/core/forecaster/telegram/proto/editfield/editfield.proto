@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package editfield;
+
+option go_package = "./editfield";
+
+enum Field {
+  UNDEFINED = 0;
+  TITLE = 1;
+  DESCRIPTION = 2;
+  START_DATE = 3;
+  FINISH_DATE = 4;
+}
+
+message EditField {
+  required Field field = 1;
+  optional int32 poll_id = 2;
+  optional int32 referrer_my_polls_page = 3;
+}

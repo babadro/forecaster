@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -28,7 +27,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 	s.sendMessage(update)
 
 	forecastsPageStartCommand := s.asMessage(sentMsg)
-	txt, buttons := forecastsPageStartCommand.Text, s.buttonsFromInterface(forecastsPageStartCommand.ReplyMarkup)
+	txt, buttons := forecastsPageStartCommand.Text, s.buttonsFromMarkup(forecastsPageStartCommand.ReplyMarkup)
 
 	// verify the first page
 	s.verifyForecastsPage(txt, buttons, polls, 1, 10, false, true)
@@ -40,7 +39,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 	s.sendCallback(nextButton, userID)
 
 	forecastsPage2 := s.asEditMessage(sentMsg)
-	txt, buttons = forecastsPage2.Text, s.buttonsFromInterface(forecastsPage2.ReplyMarkup)
+	txt, buttons = forecastsPage2.Text, s.buttonsFromMarkup(forecastsPage2.ReplyMarkup)
 
 	// verify the second page
 	s.verifyForecastsPage(txt, buttons, polls, 11, 20, true, true)
@@ -52,7 +51,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 	s.sendCallback(nextButton, userID)
 
 	pollsPage3 := s.asEditMessage(sentMsg)
-	txt, buttons = pollsPage3.Text, s.buttonsFromInterface(pollsPage3.ReplyMarkup)
+	txt, buttons = pollsPage3.Text, s.buttonsFromMarkup(pollsPage3.ReplyMarkup)
 
 	// verify the third page
 	s.verifyPollsPage(txt, buttons, polls, 21, 24, true, false)
@@ -64,7 +63,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 	s.sendCallback(prevButton, userID)
 
 	forecastsPage2 = s.asEditMessage(sentMsg)
-	txt, buttons = forecastsPage2.Text, s.buttonsFromInterface(forecastsPage2.ReplyMarkup)
+	txt, buttons = forecastsPage2.Text, s.buttonsFromMarkup(forecastsPage2.ReplyMarkup)
 
 	// verify the second page
 	s.verifyForecastsPage(txt, buttons, polls, 11, 20, true, true)
@@ -76,7 +75,7 @@ func (s *TelegramServiceSuite) TestForecasts_pagination() {
 	s.sendCallback(prevButton, userID)
 
 	forecastsPage1 := s.asEditMessage(sentMsg)
-	txt, buttons = forecastsPage1.Text, s.buttonsFromInterface(forecastsPage1.ReplyMarkup)
+	txt, buttons = forecastsPage1.Text, s.buttonsFromMarkup(forecastsPage1.ReplyMarkup)
 
 	// verify the first page
 	s.verifyForecastsPage(txt, buttons, polls, 1, 10, false, true)
@@ -145,7 +144,7 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 	forecastsPageStartCommand := s.asMessage(sentMsg)
 
 	firstForecastButton := findItemByCriteria(s,
-		s.buttonsFromInterface(forecastsPageStartCommand.ReplyMarkup),
+		s.buttonsFromMarkup(forecastsPageStartCommand.ReplyMarkup),
 		func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "1"
 		})
@@ -157,7 +156,7 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 	s.Require().Contains(forecastMsg.Text, polls[0].Title)
 
 	// verify AllForecasts button
-	buttons := s.buttonsFromInterface(forecastMsg.ReplyMarkup)
+	buttons := s.buttonsFromMarkup(forecastMsg.ReplyMarkup)
 	allForecastsButtons := buttons[len(buttons)-2]
 	s.Require().Contains(allForecastsButtons.Text, "All Forecasts")
 
@@ -167,7 +166,7 @@ func (s *TelegramServiceSuite) TestForecasts_chose_forecast() {
 	// verify the forecasts page
 	forecastsMessage := s.asEditMessage(sentMsg)
 	s.verifyForecastsPage(
-		forecastsMessage.Text, s.buttonsFromInterface(forecastsMessage.ReplyMarkup), polls,
+		forecastsMessage.Text, s.buttonsFromMarkup(forecastsMessage.ReplyMarkup), polls,
 		1, 2, false, false,
 	)
 }
@@ -186,7 +185,7 @@ func (s *TelegramServiceSuite) TestShowForecastStartCommand() {
 
 	forecastMsg := s.asMessage(sentMsg)
 
-	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromMarkup(forecastMsg.ReplyMarkup), poll)
 }
 
 func (s *TelegramServiceSuite) TestForecastRenderCallback() {
@@ -204,7 +203,7 @@ func (s *TelegramServiceSuite) TestForecastRenderCallback() {
 	forecastsPage := s.asMessage(sentMsg)
 
 	firstForecastButton := findItemByCriteria(s,
-		s.buttonsFromInterface(forecastsPage.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+		s.buttonsFromMarkup(forecastsPage.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "1"
 		})
 
@@ -212,7 +211,7 @@ func (s *TelegramServiceSuite) TestForecastRenderCallback() {
 
 	forecastMsg := s.asEditMessage(sentMsg)
 
-	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromInterface(forecastMsg.ReplyMarkup), poll)
+	s.verifyForecastPage(forecastMsg.Text, s.buttonsFromMarkup(forecastMsg.ReplyMarkup), poll)
 }
 
 func (s *TelegramServiceSuite) Test_forecast_unavailable() {
@@ -315,7 +314,7 @@ func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
 
 	// verify ShowPoll button
 	showPollButton := findItemByCriteria(s,
-		s.buttonsFromInterface(forecastMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+		s.buttonsFromMarkup(forecastMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "Show Poll"
 		})
 
@@ -327,7 +326,7 @@ func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
 
 	// vote for the first option
 	firstOptionButton := findItemByCriteria(s,
-		s.buttonsFromInterface(pollMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+		s.buttonsFromMarkup(pollMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "1"
 		})
 
@@ -339,7 +338,7 @@ func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
 
 	// get back to poll
 	backToPollButton := findItemByCriteria(s,
-		s.buttonsFromInterface(voteMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+		s.buttonsFromMarkup(voteMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "Back"
 		})
 
@@ -351,7 +350,7 @@ func (s *TelegramServiceSuite) TestForecastShowPollAndBack() {
 
 	// get back to forecast
 	backToForecastButton := findItemByCriteria(s,
-		s.buttonsFromInterface(pollMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
+		s.buttonsFromMarkup(pollMsg.ReplyMarkup), func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "Show Forecast"
 		})
 

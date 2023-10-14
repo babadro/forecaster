@@ -11,7 +11,7 @@ func (s *TelegramServiceSuite) TestUnknownCommand() {
 
 	// send unknown command
 	userID := randomPositiveInt64()
-	update := startCommand("some-fake-unknown-command", userID)
+	update := messageUpdate("some-fake-unknown-command", userID)
 
 	err := s.telegramService.ProcessTelegramUpdate(&s.logger, update)
 	s.Require().ErrorContains(err, "unknown command")
@@ -21,7 +21,7 @@ func (s *TelegramServiceSuite) TestUnknownCommand() {
 	// check that we are on the error page
 	s.Require().Contains(unknownCommand.Text, "I don't know this command")
 
-	backToMainButton := findItemByCriteria(s, s.buttonsFromInterface(unknownCommand.ReplyMarkup),
+	backToMainButton := findItemByCriteria(s, s.buttonsFromMarkup(unknownCommand.ReplyMarkup),
 		func(button tgbotapi.InlineKeyboardButton) bool {
 			return button.Text == "Back to main"
 		})
