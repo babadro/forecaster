@@ -276,18 +276,13 @@ Your audience is waiting for your questions - let’s get started!`
 	return sb.String()
 }
 
-type editButton struct {
-	text  string
-	Field editfield.Field
-}
-
 const (
 	fieldsMaxCountInRow  = 3
 	addOptionButtonWidth = 3
 )
 
 func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
-	editButtons := []editButton{
+	editButtons := []models.EditButton[editfield.Field]{
 		{"Title", editfield.Field_TITLE},
 		{"Description", editfield.Field_DESCRIPTION},
 		{"Start date", editfield.Field_START_DATE},
@@ -307,11 +302,11 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (
 
 		if err != nil {
 			return tgbotapi.InlineKeyboardMarkup{},
-				fmt.Errorf("unable to marshal callback data for %s button: %s", editButtons[i].text, err.Error())
+				fmt.Errorf("unable to marshal callback data for %s button: %s", editButtons[i].Text, err.Error())
 		}
 
 		fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
-			Text:         editButtons[i].text,
+			Text:         editButtons[i].Text,
 			CallbackData: callbackData,
 		})
 	}

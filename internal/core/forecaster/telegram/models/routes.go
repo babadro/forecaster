@@ -13,6 +13,8 @@ const (
 	MyPollsRoute
 	EditFieldRoute
 	EditOptionRoute
+	EditOptionFieldRoute
+	DeleteOptionRoute
 )
 
 const (
