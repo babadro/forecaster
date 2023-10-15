@@ -12,6 +12,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editfield"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/helpers"
@@ -208,7 +209,7 @@ func (s *Service) editPoll(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
-	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage)
+	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage, p.Options)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for editPoll page: %s", err.Error())
 	}
@@ -234,13 +235,17 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 	sb.Printf("\nStart date: <b>%s</b>\n", render.FormatTime(p.Start))
 	sb.Printf("Finish date: <b>%s</b>\n", render.FormatTime(p.Finish))
 
+	for i, op := range p.Options {
+		sb.Printf("	%d. %s\n", i+1, op.Title)
+	}
+
 	return sb.String()
 }
 
 func (s *Service) createPoll(
 	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	keyboard, err := pollKeyboardMarkup(nil, myPollsPage)
+	keyboard, err := pollKeyboardMarkup(nil, myPollsPage, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())
 	}
@@ -276,9 +281,12 @@ type editButton struct {
 	Field editfield.Field
 }
 
-const maxCountInRow = 3
+const (
+	fieldsMaxCountInRow  = 3
+	addOptionButtonWidth = 3
+)
 
-func pollKeyboardMarkup(pollID, myPollsPage *int32) (tgbotapi.InlineKeyboardMarkup, error) {
+func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []editButton{
 		{"Title", editfield.Field_TITLE},
 		{"Description", editfield.Field_DESCRIPTION},
@@ -288,7 +296,7 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32) (tgbotapi.InlineKeyboardMark
 
 	buttonsCount := len(editButtons) + 1 // +1 for Go back button
 
-	keyboardBuilder := render.NewKeyboardBuilder(maxCountInRow, buttonsCount)
+	fieldsKeyboardBuilder := render.NewKeyboardBuilder(fieldsMaxCountInRow, buttonsCount)
 
 	for i := range editButtons {
 		callbackData, err := proto.MarshalCallbackData(models.EditFieldRoute, &editfield.EditField{
@@ -302,29 +310,67 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32) (tgbotapi.InlineKeyboardMark
 				fmt.Errorf("unable to marshal callback data for %s button: %s", editButtons[i].text, err.Error())
 		}
 
-		keyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+		fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
 			Text:         editButtons[i].text,
 			CallbackData: callbackData,
 		})
 	}
 
-	currentPage := int32(1)
+	var currentPage *int32
 	if myPollsPage != nil {
-		currentPage = *myPollsPage
+		currentPage = myPollsPage
+	} else {
+		currentPage = helpers.Ptr[int32](1)
 	}
 
 	goBackData, err := proto.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
-		CurrentPage: helpers.Ptr(currentPage),
+		CurrentPage: currentPage,
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{},
 			fmt.Errorf("unable to marshal callback data for go back button: %s", err.Error())
 	}
 
-	keyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+	fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
 		Text:         "Go back",
 		CallbackData: goBackData,
 	})
 
-	return keyboardBuilder.MarkUp(), nil
+	optionsKeyboardBuilder := render.NewKeyboardBuilder(models.MaxCountInRow, len(options)+addOptionButtonWidth)
+
+	for i, op := range options {
+		var editOptionData *string
+		editOptionData, err = proto.MarshalCallbackData(models.EditOptionRoute, &editoption.EditOption{
+			PollId:              pollID,
+			OptionId:            helpers.Ptr(int32(op.ID)),
+			ReferrerMyPollsPage: myPollsPage,
+		})
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{},
+				fmt.Errorf("unable to marshal callback data for edit option button: %s", err.Error())
+		}
+
+		optionsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+			Text:         strconv.Itoa(i + 1),
+			CallbackData: editOptionData,
+		})
+	}
+
+	addOptionData, err := proto.MarshalCallbackData(models.EditOptionRoute, &editoption.EditOption{
+		PollId:              pollID,
+		ReferrerMyPollsPage: myPollsPage,
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{},
+			fmt.Errorf("unable to marshal callback data for add option button: %s", err.Error())
+	}
+
+	optionsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+		Text:         "Add option",
+		CallbackData: addOptionData,
+	})
+
+	return tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: append(fieldsKeyboardBuilder.Rows(), optionsKeyboardBuilder.Rows()...),
+	}, nil
 }

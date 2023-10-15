@@ -12,6 +12,7 @@ const (
 	EditPollRoute
 	MyPollsRoute
 	EditFieldRoute
+	EditOptionRoute
 )
 
 const (
