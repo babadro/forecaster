@@ -40,7 +40,27 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetOptionId() == 0 {
-		return nil, "", nil
+		return s.createOption("", req.PollId, req.ReferrerMyPollsPage,
+			message.MessageID, chat.ID, true)
+	}
+
+	if req.GetPollId() == 0 {
+		return nil, "", fmt.Errorf("can't edit poll: poll id is undefined")
+	}
+
+	return nil, "", nil
+}
+
+func (s *Service) editOption(
+	ctx context.Context, pollID, optionID, myPollsPage *int32, messageID int, chatID, userID int64,
+) (tgbotapi.Chattable, string, error) {
+	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
+	if err != nil {
+		return nil, errMsg, err
+	}
+
+	if p.TelegramUserID != userID {
+		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
 	return nil, "", nil
@@ -54,7 +74,13 @@ func (s *Service) createOption(
 		return nil, "", fmt.Errorf("unable to create keyboard for options: %s", err.Error())
 	}
 
-	return nil, "", nil
+	txt := createOptionTxt(validationErrMsg)
+
+	if editMessage {
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	}
+
+	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
 }
 
 func createOptionTxt(validationErrMsg string) string {
