@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -37,19 +38,73 @@ func (s *Service) NewRequest() (proto2.Message, *editoption.EditOption) {
 }
 
 func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tgbotapi.Chattable, string, error) {
-	args, err := parseCommandArgs(update.Message.Text)
+	args, err := parseCommandArgs(update.Message.ReplyToMessage.Text)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
+	}
+
+	if err = validateCommandArgs(args); err != nil {
+		return nil, "", fmt.Errorf("invalid command args: %s", err.Error())
+	}
+
+	var pollID int32
+
+	if args.optionID == 0 {
+		if args.pollID == 0 {
+			if p, err := s.db.CreatePoll(ctx, swagger.CreatePoll{}, time.Now()); err != nil {
+				return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
+			} else {
+				pollID = p.ID
+			}
+		} else {
+			pollID = args.pollID
+		}
+	}
+
+	if args.optionID == 0 {
+
 	}
 
 	return s.editOption(ctx, "", &args.pollID, &args.optionID, &args.myPollsPage,
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
-func getDBModel(
-	ctx context.Context, fieldID editoptionfield.Field, pollID int32, optionID int16, telegramUSerID int64,
-) (swagger.CreatePoll, swagger.UpdatePoll, error) {
-	create := swagger.CreateOption{}
+func validateCommandArgs(args commandArgs) error {
+	if args.optionID != 0 && args.pollID == 0 {
+		return fmt.Errorf("can't edit option: poll id %v is undefined", args.pollID)
+	}
+
+	return nil
+}
+
+func getUpdateModel(fieldID editoptionfield.Field, input string) (swagger.UpdateOption, error) {
+	res := swagger.UpdateOption{}
+
+	switch fieldID {
+	case editoptionfield.Field_TITLE:
+		res.Title = &input
+	case editoptionfield.Field_DESCRIPTION:
+		res.Description = &input
+	default:
+		return swagger.UpdateOption{}, fmt.Errorf("unknown field %s", fieldID)
+	}
+
+	return res, nil
+}
+
+func getCreateModel(fieldID editoptionfield.Field, input string) (swagger.CreateOption, error) {
+	res := swagger.CreateOption{}
+
+	switch fieldID {
+	case editoptionfield.Field_TITLE:
+		res.Title = input
+	case editoptionfield.Field_DESCRIPTION:
+		res.Description = input
+	default:
+		return swagger.CreateOption{}, fmt.Errorf("unknown field %s", fieldID)
+	}
+
+	return res, nil
 }
 
 type commandArgs struct {
