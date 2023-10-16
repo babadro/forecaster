@@ -3,6 +3,8 @@ package editoption
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -12,6 +14,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoptionfield"
 	"github.com/babadro/forecaster/internal/helpers"
+	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
@@ -33,6 +36,78 @@ func (s *Service) NewRequest() (proto2.Message, *editoption.EditOption) {
 	return v, v
 }
 
+func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tgbotapi.Chattable, string, error) {
+	args, err := parseCommandArgs(update.Message.Text)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
+	}
+
+	return s.editOption(ctx, "", &args.pollID, &args.optionID, &args.myPollsPage,
+		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
+}
+
+func getDBModel(
+	ctx context.Context, fieldID editoptionfield.Field, pollID int32, optionID int16, telegramUSerID int64,
+) (swagger.CreatePoll, swagger.UpdatePoll, error) {
+	create := swagger.CreateOption{}
+}
+
+type commandArgs struct {
+	pollID      int32
+	optionID    int16
+	field       editoptionfield.Field
+	myPollsPage int32
+}
+
+const minCommandParts = 4
+
+func parseCommandArgs(text string) (commandArgs, error) {
+	newLineIDx := strings.Index(text, "\n")
+	if newLineIDx == -1 {
+		return commandArgs{}, fmt.Errorf("no new line found")
+	}
+
+	strArr := strings.Split(text[:newLineIDx], " ")
+	if len(strArr) < minCommandParts {
+		return commandArgs{}, fmt.Errorf("expected at least %d command parts, got %d", minCommandParts, len(strArr))
+	}
+
+	command, pollIDStr, optionIDStr, field := strArr[0], strArr[1], strArr[2], strArr[3]
+	if command != models.EditOptionCommand {
+		return commandArgs{}, fmt.Errorf("expected command %s, got %s", models.EditOptionCommand, command)
+	}
+
+	pollID, err := strconv.ParseInt(pollIDStr, 10, 32)
+	if err != nil {
+		return commandArgs{}, fmt.Errorf("unable to parse poll id: %s", err.Error())
+	}
+
+	optionID, err := strconv.ParseInt(optionIDStr, 10, 16)
+	if err != nil {
+		return commandArgs{}, fmt.Errorf("unable to parse option id: %s", err.Error())
+	}
+
+	fieldID, ok := editoptionfield.Field_value[field]
+	if !ok {
+		return commandArgs{}, fmt.Errorf("unknown field %s", field)
+	}
+
+	var myPollsPage int64
+	if len(strArr) > minCommandParts {
+		myPollsPage, err = strconv.ParseInt(strArr[4], 10, 32)
+		if err != nil {
+			return commandArgs{}, fmt.Errorf("unable to parse my polls page: %s", err.Error())
+		}
+	}
+
+	return commandArgs{
+		pollID:      int32(pollID),
+		optionID:    int16(optionID),
+		field:       editoptionfield.Field(fieldID),
+		myPollsPage: int32(myPollsPage),
+	}, nil
+}
+
 func (s *Service) RenderCallback(
 	ctx context.Context, req *editoption.EditOption, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
@@ -45,14 +120,16 @@ func (s *Service) RenderCallback(
 	}
 
 	if req.GetPollId() == 0 {
-		return nil, "", fmt.Errorf("can't edit poll: poll id is undefined")
+		return nil, "", fmt.Errorf("can't edit poll: poll id %v is undefined", req.PollId)
 	}
 
-	return nil, "", nil
+	return s.editOption(ctx, "", req.PollId, req.OptionId, req.ReferrerMyPollsPage,
+		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
 func (s *Service) editOption(
-	ctx context.Context, pollID, optionID, myPollsPage *int32, messageID int, chatID, userID int64,
+	ctx context.Context, validationErr string, pollID, optionID, myPollsPage *int32,
+	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
 	if err != nil {
@@ -63,7 +140,36 @@ func (s *Service) editOption(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
-	return nil, "", nil
+	op, idx := swagger.FindOptionByID(p.Options, int16(*optionID))
+	if idx == -1 {
+		return nil, "", fmt.Errorf("option %d not found in poll %d", optionID, pollID)
+	}
+
+	keyboard, err := keyboardMarkup(pollID, optionID, myPollsPage)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create keyboard for options: %s", err.Error())
+	}
+
+	txt := editOptionTxt(validationErr, op)
+
+	if editMessage {
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	}
+
+	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
+}
+
+func editOptionTxt(validationErrMsg string, op *swagger.Option) string {
+	var sb render.StringBuilder
+
+	if validationErrMsg != "" {
+		sb.Printf("<b>🚨🚨🚨\n%s\n🚨🚨🚨</b>\n\n", validationErrMsg)
+	}
+
+	sb.Printf("Title:\n<b>%s</b>\n", op.Title)
+	sb.Printf("\nDescription\n:<b>%s</b>\n", op.Description)
+
+	return sb.String()
 }
 
 func (s *Service) createOption(

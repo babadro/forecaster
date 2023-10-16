@@ -27,5 +27,6 @@ const (
 )
 
 const (
-	EditPollCommand = "/editpoll"
+	EditPollCommand   = "/editpoll"
+	EditOptionCommand = "/editoption"
 )

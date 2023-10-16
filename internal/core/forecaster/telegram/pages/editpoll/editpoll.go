@@ -142,14 +142,14 @@ type commandArgs struct {
 const minCommandParts = 3
 
 func parseCommandArgs(text string) (commandArgs, error) {
-	newLineIdx := strings.Index(text, "\n")
-	if newLineIdx == -1 {
+	newLineIDx := strings.Index(text, "\n")
+	if newLineIDx == -1 {
 		return commandArgs{}, fmt.Errorf("no new line found")
 	}
 
-	strArr := strings.Split(text[:newLineIdx], " ")
+	strArr := strings.Split(text[:newLineIDx], " ")
 	if len(strArr) < minCommandParts {
-		return commandArgs{}, fmt.Errorf("expected at least 3 command parts, got %d", len(strArr))
+		return commandArgs{}, fmt.Errorf("expected at least %d command parts, got %d", minCommandParts, len(strArr))
 	}
 
 	command, pollIDStr, field := strArr[0], strArr[1], strArr[2]
