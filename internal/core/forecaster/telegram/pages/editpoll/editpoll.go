@@ -59,11 +59,11 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 
 	if validationErr != "" {
 		if args.pollID == 0 {
-			return s.createPoll(validationErr, helpers.NilIfZero(args.myPollsPage),
+			return s.createPollDialog(validationErr, helpers.NilIfZero(args.myPollsPage),
 				update.Message.MessageID, update.Message.Chat.ID, false)
 		}
 
-		return s.editPoll(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage),
+		return s.editPollDialog(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage),
 			update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 	}
 
@@ -81,7 +81,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		}
 	}
 
-	return s.editPoll(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage),
+	return s.editPollDialog(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage),
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
@@ -188,16 +188,17 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetPollId() == 0 {
-		return s.createPoll("", req.ReferrerMyPollsPage,
+		return s.createPollDialog("", req.ReferrerMyPollsPage,
 			message.MessageID, chat.ID, true)
 	}
 
-	return s.editPoll(ctx, "", req.PollId, req.ReferrerMyPollsPage,
+	return s.editPollDialog(ctx, "", req.PollId, req.ReferrerMyPollsPage,
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
-func (s *Service) editPoll(
+func (s *Service) editPollDialog(
 	ctx context.Context, validationErr string, pollID, myPollsPage *int32,
+	updatePoll swagger.UpdatePoll, updateInDB bool,
 	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
@@ -209,9 +210,17 @@ func (s *Service) editPoll(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
+	if updateInDB {
+		updatePollRes, err := s.db.UpdatePoll(ctx, *pollID, updatePoll, time.Now())
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
+		}
+
+	}
+
 	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage, p.Options)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create keyboard for editPoll page: %s", err.Error())
+		return nil, "", fmt.Errorf("unable to create keyboard for editPollDialog page: %s", err.Error())
 	}
 
 	txt := editPollTxt(validationErr, p)
@@ -242,12 +251,12 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 	return sb.String()
 }
 
-func (s *Service) createPoll(
+func (s *Service) createPollDialog(
 	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	keyboard, err := pollKeyboardMarkup(nil, myPollsPage, nil)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create keyboard for createPoll page: %s", err.Error())
+		return nil, "", fmt.Errorf("unable to create keyboard for createPollDialog page: %s", err.Error())
 	}
 
 	txt := createPollTxt(validationErrMsg)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -47,20 +46,6 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("invalid command args: %s", err.Error())
 	}
 
-	var pollID int32
-
-	if args.optionID == 0 {
-		if args.pollID == 0 {
-			if p, err := s.db.CreatePoll(ctx, swagger.CreatePoll{}, time.Now()); err != nil {
-				return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
-			} else {
-				pollID = p.ID
-			}
-		} else {
-			pollID = args.pollID
-		}
-	}
-
 	if args.optionID == 0 {
 
 	}
@@ -70,8 +55,8 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 }
 
 func validateCommandArgs(args commandArgs) error {
-	if args.optionID != 0 && args.pollID == 0 {
-		return fmt.Errorf("can't edit option: poll id %v is undefined", args.pollID)
+	if args.pollID == 0 {
+		return fmt.Errorf("poll id should not be zero")
 	}
 
 	return nil
