@@ -49,3 +49,18 @@ func TotalVotes(options []*Option) int32 {
 
 	return totalVotes
 }
+
+// todo unit test for fields (random)
+func MergePolls(pollWithOptions PollWithOptions, p Poll) PollWithOptions {
+	pollWithOptions.ID = p.ID
+	pollWithOptions.SeriesID = p.SeriesID
+	pollWithOptions.Title = p.Title
+	pollWithOptions.Description = p.Description
+	pollWithOptions.TelegramUserID = p.TelegramUserID
+	pollWithOptions.Start = p.Start
+	pollWithOptions.Finish = p.Finish
+	pollWithOptions.CreatedAt = p.CreatedAt
+	pollWithOptions.UpdatedAt = p.UpdatedAt
+
+	return pollWithOptions
+}

@@ -211,11 +211,12 @@ func (s *Service) editPollDialog(
 	}
 
 	if updateInDB {
-		updatePollRes, err := s.db.UpdatePoll(ctx, *pollID, updatePoll, time.Now())
+		updatedPoll, err := s.db.UpdatePoll(ctx, *pollID, updatePoll, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
 		}
 
+		p = swagger.MergePolls(p, updatedPoll)
 	}
 
 	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage, p.Options)
@@ -252,7 +253,9 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 }
 
 func (s *Service) createPollDialog(
-	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64, editMessage bool,
+	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64,
+	createPoll swagger.CreatePoll, createInDB bool,
+	editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	keyboard, err := pollKeyboardMarkup(nil, myPollsPage, nil)
 	if err != nil {
