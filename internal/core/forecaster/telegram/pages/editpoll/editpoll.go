@@ -51,7 +51,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 	}
 
 	if args.pollID == 0 {
-		createModel, validationErr, err := gedCreateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+		createModel, validationErr, err := getCreateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to get create model: %s", err.Error())
 		}
@@ -63,7 +63,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 			}
 		}
 
-		return s.editPollDialog(ctx, validationErr, &p.ID, helpers.NilIfZero(args.myPollsPage),
+		return s.editPollDialog(ctx, validationErr, p.ID, args.myPollsPage,
 			swagger.UpdatePoll{}, false,
 			update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 	}
@@ -73,7 +73,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to get update model: %s", err.Error())
 	}
 
-	return s.editPollDialog(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage),
+	return s.editPollDialog(ctx, validationErr, args.pollID, args.myPollsPage,
 		updateModel, validationErr == "",
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
@@ -116,7 +116,7 @@ func getUpdateModel(
 	return update, "", nil
 }
 
-func gedCreateModel(
+func getCreateModel(
 	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
 ) (swagger.CreatePoll, string, error) {
 	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
@@ -213,21 +213,21 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetPollId() == 0 {
-		return s.createPollDialog("", req.ReferrerMyPollsPage,
+		return s.createPollDialog("", req.GetReferrerMyPollsPage(),
 			message.MessageID, chat.ID, true)
 	}
 
-	return s.editPollDialog(ctx, "", req.PollId, req.ReferrerMyPollsPage,
+	return s.editPollDialog(ctx, "", req.GetPollId(), req.GetReferrerMyPollsPage(),
 		swagger.UpdatePoll{}, false,
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
 func (s *Service) editPollDialog(
-	ctx context.Context, validationErr string, pollID, myPollsPage *int32,
+	ctx context.Context, validationErr string, pollID, myPollsPage int32,
 	updateModel swagger.UpdatePoll, doUpdate bool,
 	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
+	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}
@@ -237,7 +237,7 @@ func (s *Service) editPollDialog(
 	}
 
 	if doUpdate {
-		updatedPoll, err := s.db.UpdatePoll(ctx, *pollID, updateModel, time.Now())
+		updatedPoll, err := s.db.UpdatePoll(ctx, pollID, updateModel, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
 		}
@@ -279,10 +279,10 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 }
 
 func (s *Service) createPollDialog(
-	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64,
+	validationErrMsg string, myPollsPage int32, messageID int, chatID int64,
 	editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	keyboard, err := pollKeyboardMarkup(nil, myPollsPage, nil)
+	keyboard, err := pollKeyboardMarkup(0, myPollsPage, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for createPollDialog page: %s", err.Error())
 	}
@@ -318,7 +318,7 @@ const (
 	addOptionButtonWidth = 3
 )
 
-func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
+func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []models.EditButton[editfield.Field]{
 		{"Title", editfield.Field_TITLE},
 		{"Description", editfield.Field_DESCRIPTION},
@@ -330,11 +330,13 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (
 
 	fieldsKeyboardBuilder := render.NewKeyboardBuilder(fieldsMaxCountInRow, buttonsCount)
 
+	pollIDPtr, myPollsPagePtr := helpers.NilIfZero(pollID), helpers.NilIfZero(myPollsPage)
+
 	for i := range editButtons {
 		callbackData, err := proto.MarshalCallbackData(models.EditFieldRoute, &editfield.EditField{
-			PollId:              pollID,
+			PollId:              pollIDPtr,
 			Field:               &editButtons[i].Field,
-			ReferrerMyPollsPage: myPollsPage,
+			ReferrerMyPollsPage: myPollsPagePtr,
 		})
 
 		if err != nil {
@@ -348,15 +350,8 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (
 		})
 	}
 
-	var currentPage *int32
-	if myPollsPage != nil {
-		currentPage = myPollsPage
-	} else {
-		currentPage = helpers.Ptr[int32](1)
-	}
-
 	goBackData, err := proto.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
-		CurrentPage: currentPage,
+		CurrentPage: helpers.NilIfZero(myPollsPage),
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{},
@@ -373,9 +368,9 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (
 	for i, op := range options {
 		var editOptionData *string
 		editOptionData, err = proto.MarshalCallbackData(models.EditOptionRoute, &editoption.EditOption{
-			PollId:              pollID,
+			PollId:              pollIDPtr,
 			OptionId:            helpers.Ptr(int32(op.ID)),
-			ReferrerMyPollsPage: myPollsPage,
+			ReferrerMyPollsPage: myPollsPagePtr,
 		})
 		if err != nil {
 			return tgbotapi.InlineKeyboardMarkup{},
@@ -389,8 +384,8 @@ func pollKeyboardMarkup(pollID, myPollsPage *int32, options []*swagger.Option) (
 	}
 
 	addOptionData, err := proto.MarshalCallbackData(models.EditOptionRoute, &editoption.EditOption{
-		PollId:              pollID,
-		ReferrerMyPollsPage: myPollsPage,
+		PollId:              pollIDPtr,
+		ReferrerMyPollsPage: myPollsPagePtr,
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{},
