@@ -50,78 +50,103 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	createModel, updateModel, validationErr, err := getDBModel(
-		ctx, args.field, update.Message.Text, update.Message.From.ID,
-	)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to get db model: %s", err.Error())
-	}
-
-	if validationErr != "" {
-		if args.pollID == 0 {
-			return s.createPollDialog(validationErr, helpers.NilIfZero(args.myPollsPage),
-				update.Message.MessageID, update.Message.Chat.ID, false)
+	if args.pollID == 0 {
+		createModel, validationErr, err := gedCreateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get create model: %s", err.Error())
 		}
 
-		return s.editPollDialog(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage),
+		var p swagger.Poll
+		if validationErr == "" {
+			if p, err = s.db.CreatePoll(ctx, createModel, time.Now()); err != nil {
+				return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
+			}
+		}
+
+		return s.editPollDialog(ctx, validationErr, &p.ID, helpers.NilIfZero(args.myPollsPage),
+			swagger.UpdatePoll{}, false,
 			update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 	}
 
-	var p swagger.Poll
-
-	if args.pollID == 0 {
-		p, err = s.db.CreatePoll(ctx, createModel, time.Now())
-		if err != nil {
-			return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
-		}
-	} else {
-		p, err = s.db.UpdatePoll(ctx, args.pollID, updateModel, time.Now())
-		if err != nil {
-			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
-		}
+	updateModel, validationErr, err := getUpdateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to get update model: %s", err.Error())
 	}
 
-	return s.editPollDialog(ctx, "", &p.ID, helpers.NilIfZero(args.myPollsPage),
+	return s.editPollDialog(ctx, validationErr, &args.pollID, helpers.NilIfZero(args.myPollsPage),
+		updateModel, validationErr == "",
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
-func getDBModel(
-	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
-) (swagger.CreatePoll, swagger.UpdatePoll, string, error) {
-	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
-	update := swagger.UpdatePoll{TelegramUserID: &telegramUserID}
+const invalidDateErrMsg = "Can't parse date format.\nIt should be " + time.RFC3339
 
-	invalidDateErrMsg := fmt.Sprintf("Can't parse date format.\nIt should be %s", time.RFC3339)
+func getUpdateModel(
+	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
+) (swagger.UpdatePoll, string, error) {
+	update := swagger.UpdatePoll{TelegramUserID: &telegramUserID}
 
 	switch fieldID {
 	case editfield.Field_TITLE:
-		create.Title, update.Title = input, &input
+		update.Title = &input
 	case editfield.Field_DESCRIPTION:
-		create.Description, update.Description = input, &input
+		update.Description = &input
 	case editfield.Field_START_DATE:
 		date, err := parseDate(input)
 		if err != nil {
 			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's start poll date")
-			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
+			return swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
-		create.Start, update.Start = date, &date
+		update.Start = &date
 	case editfield.Field_FINISH_DATE:
 		date, err := parseDate(input)
 		if err != nil {
 			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's finish poll date")
-			return swagger.CreatePoll{}, swagger.UpdatePoll{}, invalidDateErrMsg, nil
+			return swagger.UpdatePoll{}, invalidDateErrMsg, nil
 		}
 
-		create.Finish, update.Finish = date, &date
+		update.Finish = &date
 	case editfield.Field_UNDEFINED:
-		return swagger.CreatePoll{}, swagger.UpdatePoll{}, "", fmt.Errorf("field is undefined")
+		return swagger.UpdatePoll{}, "", fmt.Errorf("field is undefined")
 	default:
-		return swagger.CreatePoll{}, swagger.UpdatePoll{}, "",
+		return swagger.UpdatePoll{}, "",
 			fmt.Errorf("unknown field %d", fieldID)
 	}
 
-	return create, update, "", nil
+	return update, "", nil
+}
+
+func gedCreateModel(
+	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
+) (swagger.CreatePoll, string, error) {
+	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
+
+	switch fieldID {
+	case editfield.Field_TITLE:
+		create.Title = input
+	case editfield.Field_DESCRIPTION:
+		create.Description = input
+	case editfield.Field_START_DATE:
+		date, err := parseDate(input)
+		if err != nil {
+			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's start poll date")
+			return swagger.CreatePoll{}, invalidDateErrMsg, nil
+		}
+
+		create.Start = date
+	case editfield.Field_FINISH_DATE:
+		date, err := parseDate(input)
+		if err != nil {
+			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's finish poll date")
+			return swagger.CreatePoll{}, invalidDateErrMsg, nil
+		}
+
+		create.Finish = date
+	case editfield.Field_UNDEFINED:
+		return swagger.CreatePoll{}, "", fmt.Errorf("field is undefined")
+	}
+
+	return create, "", nil
 }
 
 func parseDate(input string) (strfmt.DateTime, error) {
@@ -193,12 +218,13 @@ func (s *Service) RenderCallback(
 	}
 
 	return s.editPollDialog(ctx, "", req.PollId, req.ReferrerMyPollsPage,
+		swagger.UpdatePoll{}, false,
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
 func (s *Service) editPollDialog(
 	ctx context.Context, validationErr string, pollID, myPollsPage *int32,
-	updatePoll swagger.UpdatePoll, updateInDB bool,
+	updateModel swagger.UpdatePoll, doUpdate bool,
 	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
@@ -210,8 +236,8 @@ func (s *Service) editPollDialog(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
-	if updateInDB {
-		updatedPoll, err := s.db.UpdatePoll(ctx, *pollID, updatePoll, time.Now())
+	if doUpdate {
+		updatedPoll, err := s.db.UpdatePoll(ctx, *pollID, updateModel, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
 		}
@@ -254,7 +280,6 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 
 func (s *Service) createPollDialog(
 	validationErrMsg string, myPollsPage *int32, messageID int, chatID int64,
-	createPoll swagger.CreatePoll, createInDB bool,
 	editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	keyboard, err := pollKeyboardMarkup(nil, myPollsPage, nil)
