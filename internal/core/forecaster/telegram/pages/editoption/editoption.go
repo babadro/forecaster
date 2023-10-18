@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -50,7 +51,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 
 	}
 
-	return s.editOption(ctx, "", &args.pollID, &args.optionID, &args.myPollsPage,
+	return s.editOptionDialog(ctx, "", &args.pollID, &args.optionID, &args.myPollsPage,
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
@@ -155,7 +156,7 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetOptionId() == 0 {
-		return s.createOption("", req.PollId, req.ReferrerMyPollsPage,
+		return s.createOptionDialog("", req.PollId, req.ReferrerMyPollsPage,
 			message.MessageID, chat.ID, true)
 	}
 
@@ -163,15 +164,16 @@ func (s *Service) RenderCallback(
 		return nil, "", fmt.Errorf("can't edit poll: poll id %v is undefined", req.PollId)
 	}
 
-	return s.editOption(ctx, "", req.PollId, req.OptionId, req.ReferrerMyPollsPage,
+	return s.editOptionDialog(ctx, "", req.PollId, req.OptionId, req.ReferrerMyPollsPage,
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
-func (s *Service) editOption(
-	ctx context.Context, validationErr string, pollID, optionID, myPollsPage *int32,
+func (s *Service) editOptionDialog(
+	ctx context.Context, validationErr string, pollID int32, optionID int16, myPollsPage int32,
+	updateModel swagger.UpdateOption, doUpdate bool,
 	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, *pollID)
+	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}
@@ -180,12 +182,21 @@ func (s *Service) editOption(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
-	op, idx := swagger.FindOptionByID(p.Options, int16(*optionID))
+	op, idx := swagger.FindOptionByID(p.Options, optionID)
 	if idx == -1 {
 		return nil, "", fmt.Errorf("option %d not found in poll %d", optionID, pollID)
 	}
 
-	keyboard, err := keyboardMarkup(pollID, optionID, myPollsPage)
+	if doUpdate {
+		updatedOption, err := s.db.UpdateOption(ctx, pollID, optionID, updateModel, time.Now())
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to update option: %s", err.Error())
+		}
+
+		p.Options[idx] = &updatedOption
+	}
+
+	keyboard, err := keyboardMarkup(pollID, int32(optionID), myPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for options: %s", err.Error())
 	}
@@ -212,7 +223,7 @@ func editOptionTxt(validationErrMsg string, op *swagger.Option) string {
 	return sb.String()
 }
 
-func (s *Service) createOption(
+func (s *Service) createOptionDialog(
 	validationErrMsg string, pollID, myPollsPage *int32, messageID int, chatID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
 	keyboard, err := keyboardMarkup(pollID, nil, myPollsPage)
@@ -246,7 +257,7 @@ const (
 	maxCountInRow = 2
 )
 
-func keyboardMarkup(pollID, optionID, myPollsPage *int32) (tgbotapi.InlineKeyboardMarkup, error) {
+func keyboardMarkup(pollID, optionID, myPollsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []models.EditButton[editoptionfield.Field]{
 		{"Title", editoptionfield.Field_TITLE},
 		{"Description", editoptionfield.Field_DESCRIPTION},
@@ -256,12 +267,16 @@ func keyboardMarkup(pollID, optionID, myPollsPage *int32) (tgbotapi.InlineKeyboa
 
 	keyboardBuilder := render.NewKeyboardBuilder(maxCountInRow, buttonsCount)
 
+	pollIDPtr := helpers.NilIfZero(pollID)
+	optionIDPtr := helpers.NilIfZero(optionID)
+	myPollsPagePtr := helpers.NilIfZero(myPollsPage)
+
 	for _, editButton := range editButtons {
 		callbackData, err := proto.MarshalCallbackData(models.EditOptionFieldRoute, &editoptionfield.EditOptionField{
-			PollId:              pollID,
-			OptionId:            optionID,
+			PollId:              pollIDPtr,
+			OptionId:            optionIDPtr,
 			Field:               helpers.Ptr(editButton.Field),
-			ReferrerMyPollsPage: myPollsPage,
+			ReferrerMyPollsPage: myPollsPagePtr,
 		})
 
 		if err != nil {
@@ -275,11 +290,11 @@ func keyboardMarkup(pollID, optionID, myPollsPage *int32) (tgbotapi.InlineKeyboa
 		})
 	}
 
-	if !helpers.IsZero(optionID) {
+	if optionID != 0 {
 		callbackData, err := proto.MarshalCallbackData(models.DeleteOptionRoute, &deleteoption.DeleteOption{
-			PollId:              pollID,
-			OptionId:            optionID,
-			ReferrerMyPollsPage: myPollsPage,
+			PollId:              pollIDPtr,
+			OptionId:            optionIDPtr,
+			ReferrerMyPollsPage: myPollsPagePtr,
 		})
 
 		if err != nil {
