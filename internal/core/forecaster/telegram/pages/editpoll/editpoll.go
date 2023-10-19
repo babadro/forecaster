@@ -50,31 +50,40 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
+	var (
+		updateModel   swagger.UpdatePoll
+		createModel   swagger.CreatePoll
+		p             swagger.Poll
+		doUpdate      bool
+		validationErr string
+		pollID        int32
+	)
+
 	if args.pollID == 0 {
-		createModel, validationErr, err := getCreateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+		createModel, validationErr, err = getCreateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to get create model: %s", err.Error())
 		}
 
-		var p swagger.Poll
 		if validationErr == "" {
 			if p, err = s.db.CreatePoll(ctx, createModel, time.Now()); err != nil {
 				return nil, "", fmt.Errorf("unable to create poll: %s", err.Error())
 			}
 		}
 
-		return s.editPollDialog(ctx, validationErr, p.ID, args.myPollsPage,
-			swagger.UpdatePoll{}, false,
-			update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
+		doUpdate, pollID = false, p.ID
+	} else {
+		updateModel, validationErr, err = getUpdateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get update model: %s", err.Error())
+		}
+
+		doUpdate = validationErr == ""
+		pollID = args.pollID
 	}
 
-	updateModel, validationErr, err := getUpdateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to get update model: %s", err.Error())
-	}
-
-	return s.editPollDialog(ctx, validationErr, args.pollID, args.myPollsPage,
-		updateModel, validationErr == "",
+	return s.editPollDialog(ctx, validationErr, pollID, args.myPollsPage,
+		updateModel, doUpdate,
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 

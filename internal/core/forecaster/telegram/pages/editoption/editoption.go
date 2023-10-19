@@ -47,11 +47,37 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("invalid command args: %s", err.Error())
 	}
 
-	if args.optionID == 0 {
+	var (
+		updateModel swagger.UpdateOption
+		createModel swagger.CreateOption
+		op          swagger.Option
+		doUpdate    bool
+		optionID    int16
+	)
 
+	if args.optionID == 0 {
+		createModel, err = getCreateModel(args.field, args.pollID, update.Message.Text)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get option create model: %s", err.Error())
+		}
+
+		op, err = s.db.CreateOption(ctx, createModel, time.Now())
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to create option: %s", err.Error())
+		}
+
+		doUpdate, optionID = false, op.ID
+	} else {
+		updateModel, err = getUpdateModel(args.field, update.Message.Text)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get option update model: %s", err.Error())
+		}
+
+		doUpdate, optionID = true, args.optionID
 	}
 
-	return s.editOptionDialog(ctx, "", &args.pollID, &args.optionID, &args.myPollsPage,
+	return s.editOptionDialog(ctx, "", args.pollID, optionID, args.myPollsPage,
+		updateModel, doUpdate,
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
@@ -78,8 +104,8 @@ func getUpdateModel(fieldID editoptionfield.Field, input string) (swagger.Update
 	return res, nil
 }
 
-func getCreateModel(fieldID editoptionfield.Field, input string) (swagger.CreateOption, error) {
-	res := swagger.CreateOption{}
+func getCreateModel(fieldID editoptionfield.Field, pollID int32, input string) (swagger.CreateOption, error) {
+	res := swagger.CreateOption{PollID: pollID}
 
 	switch fieldID {
 	case editoptionfield.Field_TITLE:
@@ -156,7 +182,7 @@ func (s *Service) RenderCallback(
 	message := upd.CallbackQuery.Message
 
 	if req.GetOptionId() == 0 {
-		return s.createOptionDialog("", req.PollId, req.ReferrerMyPollsPage,
+		return s.createOptionDialog("", req.GetPollId(), req.GetReferrerMyPollsPage(),
 			message.MessageID, chat.ID, true)
 	}
 
@@ -164,7 +190,8 @@ func (s *Service) RenderCallback(
 		return nil, "", fmt.Errorf("can't edit poll: poll id %v is undefined", req.PollId)
 	}
 
-	return s.editOptionDialog(ctx, "", req.PollId, req.OptionId, req.ReferrerMyPollsPage,
+	return s.editOptionDialog(ctx, "", req.GetPollId(), int16(req.GetOptionId()), req.GetReferrerMyPollsPage(),
+		swagger.UpdateOption{}, false,
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
@@ -224,9 +251,9 @@ func editOptionTxt(validationErrMsg string, op *swagger.Option) string {
 }
 
 func (s *Service) createOptionDialog(
-	validationErrMsg string, pollID, myPollsPage *int32, messageID int, chatID int64, editMessage bool,
+	validationErrMsg string, pollID, myPollsPage int32, messageID int, chatID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	keyboard, err := keyboardMarkup(pollID, nil, myPollsPage)
+	keyboard, err := keyboardMarkup(pollID, 0, myPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for options: %s", err.Error())
 	}
