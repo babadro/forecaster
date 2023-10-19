@@ -47,6 +47,13 @@ func (s *Service) RenderCallback(
 	)
 
 	userID := upd.CallbackQuery.From.ID
+	chatID := upd.CallbackQuery.Message.Chat.ID
+	messageID := upd.CallbackQuery.Message.MessageID
+
+	keyboard, err := keyboardMarkup(req.PollId, req.ReferrerMyPollsPage)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
+	}
 
 	if pollID := req.GetPollId(); pollID != 0 {
 		p, errMsg, err = s.w.GetPollByID(ctx, pollID)
@@ -57,6 +64,10 @@ func (s *Service) RenderCallback(
 		if p.TelegramUserID != userID {
 			return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 		}
+	} else if field != editfield.Field_TITLE {
+		errMessage := "First create Title, please, and then you can create other fields"
+
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, errMessage, keyboard), "", nil
 	}
 
 	txt, err := txtMsg(p, field, req.GetReferrerMyPollsPage())
@@ -64,13 +75,7 @@ func (s *Service) RenderCallback(
 		return nil, "", fmt.Errorf("unable to create text for editField page: %s", err.Error())
 	}
 
-	keyboard, err := keyboardMarkup(req.PollId, req.ReferrerMyPollsPage)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
-	}
-
-	return render.NewEditMessageTextWithKeyboard(
-		upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID, txt, keyboard), "", nil
+	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
 func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPage int32) (string, error) {

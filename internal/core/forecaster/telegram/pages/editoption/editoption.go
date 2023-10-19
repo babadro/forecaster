@@ -330,7 +330,7 @@ func keyboardMarkup(pollID, optionID, myPollsPage int32) (tgbotapi.InlineKeyboar
 		}
 
 		keyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
-			Text:         "Delete",
+			Text:         "Delete option",
 			CallbackData: callbackData,
 		})
 	}
