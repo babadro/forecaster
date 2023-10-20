@@ -40,12 +40,12 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 
 	userID := randomPositiveInt64()
 
-	createPollEditMessage := s.goToCreatePollPage(userID, &sentMsg)
+	var createOrEditPollKeyboard any = s.goToCreatePollPage(userID, &sentMsg).ReplyMarkup
 
 	var createPollMessage tgbotapi.MessageConfig
 
 	for _, buttonName := range []string{"title", "description"} {
-		button := findItemByCriteria(s, s.buttonsFromMarkup(createPollEditMessage.ReplyMarkup),
+		button := findItemByCriteria(s, s.buttonsFromMarkup(createOrEditPollKeyboard),
 			func(button tgbotapi.InlineKeyboardButton) bool {
 				return strings.ToLower(button.Text) == buttonName
 			},
@@ -68,6 +68,8 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 		createPollMessage = s.asMessage(sentMsg)
 
 		s.Require().Contains(createPollMessage.Text, userInput)
+
+		createOrEditPollKeyboard = createPollMessage.ReplyMarkup
 	}
 
 	for _, dateButtonName := range []string{"start", "finish"} {

@@ -360,7 +360,7 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 	}
 
 	goBackData, err := proto.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
-		CurrentPage: helpers.NilIfZero(myPollsPage),
+		CurrentPage: helpers.OneIfZero(myPollsPage),
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{},

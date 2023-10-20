@@ -17,10 +17,10 @@ func NilIfZero[T Number](v T) *T {
 	return &v
 }
 
-func IsZero[T Number](v *T) bool {
-	if v == nil {
-		return true
+func OneIfZero[T Number](v T) *T {
+	if v == 0 {
+		v = 1
 	}
 
-	return *v == 0
+	return &v
 }
