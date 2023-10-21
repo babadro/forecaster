@@ -19,11 +19,7 @@ func (s *TelegramServiceSuite) TestEditPollBackButton() {
 	createPollPage := s.goToCreatePollPage(userID, &sentMsg)
 
 	// click back button
-	backButton := findItemByCriteria(s, s.buttonsFromMarkup(createPollPage.ReplyMarkup),
-		func(button tgbotapi.InlineKeyboardButton) bool {
-			return button.Text == "Go back"
-		},
-	)
+	backButton := s.findButtonByLowerText("go back", createPollPage.ReplyMarkup)
 
 	s.sendCallback(backButton, userID)
 
@@ -45,11 +41,7 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 	var createPollMessage tgbotapi.MessageConfig
 
 	for _, buttonName := range []string{"title", "description"} {
-		button := findItemByCriteria(s, s.buttonsFromMarkup(createOrEditPollKeyboard),
-			func(button tgbotapi.InlineKeyboardButton) bool {
-				return strings.ToLower(button.Text) == buttonName
-			},
-		)
+		button := s.findButtonByLowerText(buttonName, createOrEditPollKeyboard)
 
 		s.sendCallback(button, userID)
 
@@ -73,11 +65,7 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 	}
 
 	for _, dateButtonName := range []string{"start", "finish"} {
-		dateButton := findItemByCriteria(s, s.buttonsFromMarkup(createPollMessage.ReplyMarkup),
-			func(button tgbotapi.InlineKeyboardButton) bool {
-				return strings.Contains(strings.ToLower(button.Text), dateButtonName)
-			},
-		)
+		dateButton := s.findButtonByContainsLowerText(dateButtonName, createPollMessage.ReplyMarkup)
 
 		s.sendCallback(dateButton, userID)
 
@@ -123,22 +111,14 @@ func (s *TelegramServiceSuite) goToCreatePollPage(
 	mainPage := s.asMessage(*sentMsgPtr)
 
 	// click myPolls button
-	myPollsButton := findItemByCriteria(s, s.buttonsFromMarkup(mainPage.ReplyMarkup),
-		func(button tgbotapi.InlineKeyboardButton) bool {
-			return button.Text == "My polls"
-		},
-	)
+	myPollsButton := s.findButtonByLowerText("my polls", mainPage.ReplyMarkup)
 
 	s.sendCallback(myPollsButton, userID)
 
 	myPollsMessage := s.asEditMessage(*sentMsgPtr)
 
 	// click create poll button
-	createPollButton := findItemByCriteria(s, s.buttonsFromMarkup(myPollsMessage.ReplyMarkup),
-		func(button tgbotapi.InlineKeyboardButton) bool {
-			return button.Text == "Create poll"
-		},
-	)
+	createPollButton := s.findButtonByLowerText("create poll", myPollsMessage.ReplyMarkup)
 
 	s.sendCallback(createPollButton, userID)
 
