@@ -54,9 +54,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		updateModel   swagger.UpdatePoll
 		createModel   swagger.CreatePoll
 		p             swagger.Poll
-		doUpdate      bool
 		validationErr string
-		pollID        int32
 	)
 
 	if args.pollID == 0 {
@@ -71,19 +69,18 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 			}
 		}
 
-		doUpdate, pollID = false, p.ID
-	} else {
-		updateModel, validationErr, err = getUpdateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
-		if err != nil {
-			return nil, "", fmt.Errorf("unable to get update model: %s", err.Error())
-		}
-
-		doUpdate = validationErr == ""
-		pollID = args.pollID
+		return s.editPollDialog(ctx, validationErr, p.ID, args.myPollsPage,
+			updateModel, false,
+			update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 	}
 
-	return s.editPollDialog(ctx, validationErr, pollID, args.myPollsPage,
-		updateModel, doUpdate,
+	updateModel, validationErr, err = getUpdateModel(ctx, args.field, update.Message.Text, update.Message.From.ID)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to get update model: %s", err.Error())
+	}
+
+	return s.editPollDialog(ctx, validationErr, args.pollID, args.myPollsPage,
+		updateModel, validationErr == "",
 		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
 }
 
