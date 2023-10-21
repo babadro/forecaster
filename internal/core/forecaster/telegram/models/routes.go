@@ -11,7 +11,7 @@ const (
 	ForecastRoute
 	EditPollRoute
 	MyPollsRoute
-	EditFieldRoute
+	EditPollFieldRoute
 	EditOptionRoute
 	EditOptionFieldRoute
 	DeleteOptionRoute

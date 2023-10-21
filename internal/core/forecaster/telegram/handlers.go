@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoptionfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpollfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
@@ -45,7 +45,7 @@ func newCallbackHandlers(svc pageServices) [256]handlerFunc {
 	handlers[models.ForecastsRoute] = unmarshalMiddleware[*forecasts.Forecasts](svc.forecasts)
 	handlers[models.ForecastRoute] = unmarshalMiddleware[*forecast.Forecast](svc.forecast)
 	handlers[models.EditPollRoute] = unmarshalMiddleware[*editpoll.EditPoll](svc.editPoll)
-	handlers[models.EditFieldRoute] = unmarshalMiddleware[*editfield.EditField](svc.editField)
+	handlers[models.EditPollFieldRoute] = unmarshalMiddleware[*editpollfield.EditPollField](svc.editpollfield)
 	handlers[models.MyPollsRoute] = unmarshalMiddleware[*mypolls.MyPolls](svc.myPolls)
 	handlers[models.EditOptionRoute] = unmarshalMiddleware[*editoption.EditOption](svc.editOption)
 	handlers[models.EditOptionFieldRoute] = unmarshalMiddleware[*editoptionfield.EditOptionField](svc.editOptionField)

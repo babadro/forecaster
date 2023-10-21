@@ -61,7 +61,7 @@ func (s *Service) RenderCallback(
 
 	keyboard, err := keyboardMarkup(req.PollId, req.OptionId, req.ReferrerMyPollsPage)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
+		return nil, "", fmt.Errorf("unable to create keyboard for editpollfield page: %s", err.Error())
 	}
 
 	op := swagger.Option{PollID: pollID}
@@ -81,7 +81,7 @@ func (s *Service) RenderCallback(
 
 	txt, err := txtMsg(op, field, req.GetReferrerMyPollsPage())
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create text for editField page: %s", err.Error())
+		return nil, "", fmt.Errorf("unable to create text for editpollfield page: %s", err.Error())
 	}
 
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil

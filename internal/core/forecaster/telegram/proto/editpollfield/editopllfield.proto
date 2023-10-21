@@ -1,8 +1,8 @@
 syntax = "proto2";
 
-package editfield;
+package editpollfield;
 
-option go_package = "./editfield";
+option go_package = "./editpollfield";
 
 enum Field {
   UNDEFINED = 0;
@@ -12,7 +12,7 @@ enum Field {
   FINISH_DATE = 4;
 }
 
-message EditField {
+message EditPollField {
   required Field field = 1;
   optional int32 poll_id = 2;
   optional int32 referrer_my_polls_page = 3;

@@ -1,4 +1,4 @@
-package editfield
+package editpollfield
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpollfield"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
@@ -26,17 +26,17 @@ func New(db models.DB) *Service {
 	}
 }
 
-func (s *Service) NewRequest() (proto2.Message, *editfield.EditField) {
-	v := new(editfield.EditField)
+func (s *Service) NewRequest() (proto2.Message, *editpollfield.EditPollField) {
+	v := new(editpollfield.EditPollField)
 
 	return v, v
 }
 
 func (s *Service) RenderCallback(
-	ctx context.Context, req *editfield.EditField, upd tgbotapi.Update,
+	ctx context.Context, req *editpollfield.EditPollField, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
 	field := req.GetField()
-	if field == editfield.Field_UNDEFINED {
+	if field == editpollfield.Field_UNDEFINED {
 		return nil, "", fmt.Errorf("field is undefined")
 	}
 
@@ -52,7 +52,7 @@ func (s *Service) RenderCallback(
 
 	keyboard, err := keyboardMarkup(req.PollId, req.ReferrerMyPollsPage)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
+		return nil, "", fmt.Errorf("unable to create keyboard for editpollfield page: %s", err.Error())
 	}
 
 	if pollID := req.GetPollId(); pollID != 0 {
@@ -64,7 +64,7 @@ func (s *Service) RenderCallback(
 		if p.TelegramUserID != userID {
 			return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 		}
-	} else if field != editfield.Field_TITLE {
+	} else if field != editpollfield.Field_TITLE {
 		errMessage := "First create Title, please, and then you can create other fields"
 
 		return render.NewEditMessageTextWithKeyboard(chatID, messageID, errMessage, keyboard), "", nil
@@ -72,13 +72,13 @@ func (s *Service) RenderCallback(
 
 	txt, err := txtMsg(p, field, req.GetReferrerMyPollsPage())
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create text for editField page: %s", err.Error())
+		return nil, "", fmt.Errorf("unable to create text for editpollfield page: %s", err.Error())
 	}
 
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPage int32) (string, error) {
+func txtMsg(p swagger.PollWithOptions, field editpollfield.Field, referrerMyPollsPage int32) (string, error) {
 	var sb render.StringBuilder
 
 	sb.Printf("%s %d %s %d\n", models.EditPollCommand, p.ID, field.String(), referrerMyPollsPage)
@@ -90,15 +90,15 @@ func txtMsg(p swagger.PollWithOptions, field editfield.Field, referrerMyPollsPag
 	var fieldValue string
 
 	switch field {
-	case editfield.Field_TITLE:
+	case editpollfield.Field_TITLE:
 		fieldValue = p.Title
-	case editfield.Field_DESCRIPTION:
+	case editpollfield.Field_DESCRIPTION:
 		fieldValue = p.Description
-	case editfield.Field_START_DATE:
+	case editpollfield.Field_START_DATE:
 		fieldValue = p.Start.String()
-	case editfield.Field_FINISH_DATE:
+	case editpollfield.Field_FINISH_DATE:
 		fieldValue = p.Finish.String()
-	case editfield.Field_UNDEFINED:
+	case editpollfield.Field_UNDEFINED:
 		return "", fmt.Errorf("field is undefined")
 	default:
 		return "", fmt.Errorf("unknown field %d", field)

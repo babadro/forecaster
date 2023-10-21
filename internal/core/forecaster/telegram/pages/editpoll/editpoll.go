@@ -11,9 +11,9 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpollfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
@@ -87,16 +87,16 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 const invalidDateErrMsg = "Can't parse date format.\nIt should be " + time.RFC3339
 
 func getUpdateModel(
-	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
+	ctx context.Context, fieldID editpollfield.Field, input string, telegramUserID int64,
 ) (swagger.UpdatePoll, string, error) {
 	update := swagger.UpdatePoll{TelegramUserID: &telegramUserID}
 
 	switch fieldID {
-	case editfield.Field_TITLE:
+	case editpollfield.Field_TITLE:
 		update.Title = &input
-	case editfield.Field_DESCRIPTION:
+	case editpollfield.Field_DESCRIPTION:
 		update.Description = &input
-	case editfield.Field_START_DATE:
+	case editpollfield.Field_START_DATE:
 		date, err := parseDate(input)
 		if err != nil {
 			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's start poll date")
@@ -104,7 +104,7 @@ func getUpdateModel(
 		}
 
 		update.Start = &date
-	case editfield.Field_FINISH_DATE:
+	case editpollfield.Field_FINISH_DATE:
 		date, err := parseDate(input)
 		if err != nil {
 			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's finish poll date")
@@ -112,7 +112,7 @@ func getUpdateModel(
 		}
 
 		update.Finish = &date
-	case editfield.Field_UNDEFINED:
+	case editpollfield.Field_UNDEFINED:
 		return swagger.UpdatePoll{}, "", fmt.Errorf("field is undefined")
 	default:
 		return swagger.UpdatePoll{}, "",
@@ -123,16 +123,16 @@ func getUpdateModel(
 }
 
 func getCreateModel(
-	ctx context.Context, fieldID editfield.Field, input string, telegramUserID int64,
+	ctx context.Context, fieldID editpollfield.Field, input string, telegramUserID int64,
 ) (swagger.CreatePoll, string, error) {
 	create := swagger.CreatePoll{TelegramUserID: telegramUserID}
 
 	switch fieldID {
-	case editfield.Field_TITLE:
+	case editpollfield.Field_TITLE:
 		create.Title = input
-	case editfield.Field_DESCRIPTION:
+	case editpollfield.Field_DESCRIPTION:
 		create.Description = input
-	case editfield.Field_START_DATE:
+	case editpollfield.Field_START_DATE:
 		date, err := parseDate(input)
 		if err != nil {
 			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's start poll date")
@@ -140,7 +140,7 @@ func getCreateModel(
 		}
 
 		create.Start = date
-	case editfield.Field_FINISH_DATE:
+	case editpollfield.Field_FINISH_DATE:
 		date, err := parseDate(input)
 		if err != nil {
 			log.Ctx(ctx).Warn().Err(err).Msg("unable to parse user's finish poll date")
@@ -148,7 +148,7 @@ func getCreateModel(
 		}
 
 		create.Finish = date
-	case editfield.Field_UNDEFINED:
+	case editpollfield.Field_UNDEFINED:
 		return swagger.CreatePoll{}, "", fmt.Errorf("field is undefined")
 	}
 
@@ -166,7 +166,7 @@ func parseDate(input string) (strfmt.DateTime, error) {
 
 type commandArgs struct {
 	pollID      int32
-	field       editfield.Field
+	field       editpollfield.Field
 	myPollsPage int32
 }
 
@@ -193,7 +193,7 @@ func parseCommandArgs(text string) (commandArgs, error) {
 		return commandArgs{}, fmt.Errorf("unable to parse pollID: %s", err.Error())
 	}
 
-	fieldID, ok := editfield.Field_value[field]
+	fieldID, ok := editpollfield.Field_value[field]
 	if !ok {
 		return commandArgs{}, fmt.Errorf("unknown field %s", field)
 	}
@@ -208,7 +208,7 @@ func parseCommandArgs(text string) (commandArgs, error) {
 
 	return commandArgs{
 		pollID:      int32(pollID),
-		field:       editfield.Field(fieldID),
+		field:       editpollfield.Field(fieldID),
 		myPollsPage: int32(myPollsPage),
 	}, nil
 }
@@ -328,11 +328,11 @@ const (
 )
 
 func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
-	editButtons := []models.EditButton[editfield.Field]{
-		{Text: "Title", Field: editfield.Field_TITLE},
-		{Text: "Description", Field: editfield.Field_DESCRIPTION},
-		{Text: "Start date", Field: editfield.Field_START_DATE},
-		{Text: "Finish date", Field: editfield.Field_FINISH_DATE},
+	editButtons := []models.EditButton[editpollfield.Field]{
+		{Text: "Title", Field: editpollfield.Field_TITLE},
+		{Text: "Description", Field: editpollfield.Field_DESCRIPTION},
+		{Text: "Start date", Field: editpollfield.Field_START_DATE},
+		{Text: "Finish date", Field: editpollfield.Field_FINISH_DATE},
 	}
 
 	buttonsCount := len(editButtons) + 1 // +1 for Go back button
@@ -342,7 +342,7 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 	pollIDPtr, myPollsPagePtr := helpers.NilIfZero(pollID), helpers.NilIfZero(myPollsPage)
 
 	for i := range editButtons {
-		callbackData, err := proto.MarshalCallbackData(models.EditFieldRoute, &editfield.EditField{
+		callbackData, err := proto.MarshalCallbackData(models.EditPollFieldRoute, &editpollfield.EditPollField{
 			PollId:              pollIDPtr,
 			Field:               &editButtons[i].Field,
 			ReferrerMyPollsPage: myPollsPagePtr,

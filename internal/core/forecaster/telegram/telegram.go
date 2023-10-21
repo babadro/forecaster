@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editoptionfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editpollfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecasts"
@@ -35,7 +35,7 @@ type pageServices struct {
 	forecasts       *forecasts.Service
 	forecast        *forecast.Service
 	editPoll        *editpoll.Service
-	editField       *editfield.Service
+	editpollfield   *editpollfield.Service
 	myPolls         *mypolls.Service
 	editOption      *editoption.Service
 	editOptionField *editoptionfield.Service
@@ -60,7 +60,7 @@ func NewService(db models.DB, b models.TgBot, botName string) *Service {
 		forecasts:       forecasts.New(db),
 		forecast:        forecast.New(db),
 		editPoll:        editpoll.New(db),
-		editField:       editfield.New(db),
+		editpollfield:   editpollfield.New(db),
 		myPolls:         mypolls.New(db),
 		editOption:      editoption.New(db),
 		editOptionField: editoptionfield.New(db),
