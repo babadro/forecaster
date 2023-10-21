@@ -245,8 +245,9 @@ func (s *Service) editPollDialog(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
+	var updatedPoll swagger.Poll
 	if doUpdate {
-		updatedPoll, err := s.db.UpdatePoll(ctx, pollID, updateModel, time.Now())
+		updatedPoll, err = s.db.UpdatePoll(ctx, pollID, updateModel, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
 		}
@@ -331,10 +332,10 @@ const (
 
 func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []models.EditButton[editfield.Field]{
-		{"Title", editfield.Field_TITLE},
-		{"Description", editfield.Field_DESCRIPTION},
-		{"Start date", editfield.Field_START_DATE},
-		{"Finish date", editfield.Field_FINISH_DATE},
+		{Text: "Title", Field: editfield.Field_TITLE},
+		{Text: "Description", Field: editfield.Field_DESCRIPTION},
+		{Text: "Start date", Field: editfield.Field_START_DATE},
+		{Text: "Finish date", Field: editfield.Field_FINISH_DATE},
 	}
 
 	buttonsCount := len(editButtons) + 1 // +1 for Go back button
@@ -383,6 +384,7 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 			OptionId:            helpers.Ptr(int32(op.ID)),
 			ReferrerMyPollsPage: myPollsPagePtr,
 		})
+
 		if err != nil {
 			return tgbotapi.InlineKeyboardMarkup{},
 				fmt.Errorf("unable to marshal callback data for edit option button: %s", err.Error())

@@ -91,6 +91,8 @@ func getUpdateModel(fieldID editoptionfield.Field, input string) (swagger.Update
 		res.Title = &input
 	case editoptionfield.Field_DESCRIPTION:
 		res.Description = &input
+	case editoptionfield.Field_UNDEFINED:
+		return swagger.UpdateOption{}, fmt.Errorf("field is undefined")
 	default:
 		return swagger.UpdateOption{}, fmt.Errorf("unknown field %s", fieldID)
 	}
@@ -106,6 +108,8 @@ func getCreateModel(fieldID editoptionfield.Field, pollID int32, input string) (
 		res.Title = input
 	case editoptionfield.Field_DESCRIPTION:
 		res.Description = input
+	case editoptionfield.Field_UNDEFINED:
+		return swagger.CreateOption{}, fmt.Errorf("field is undefined")
 	default:
 		return swagger.CreateOption{}, fmt.Errorf("unknown field %s", fieldID)
 	}
@@ -189,7 +193,9 @@ func (s *Service) RenderCallback(
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
 }
 
-func (s *Service) firstCreatePollMsg(chatID int64, messageID int, myPollsPage int32, editMessage bool) (tgbotapi.Chattable, string, error) {
+func (s *Service) firstCreatePollMsg(
+	chatID int64, messageID int, myPollsPage int32, editMessage bool,
+) (tgbotapi.Chattable, string, error) {
 	goBackData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
 		ReferrerMyPollsPage: helpers.NilIfZero(myPollsPage),
 	})
@@ -233,8 +239,9 @@ func (s *Service) editOptionDialog(
 		return nil, "", fmt.Errorf("option %d not found in poll %d", optionID, pollID)
 	}
 
+	var updatedOption swagger.Option
 	if doUpdate {
-		updatedOption, err := s.db.UpdateOption(ctx, pollID, optionID, updateModel, time.Now())
+		updatedOption, err = s.db.UpdateOption(ctx, pollID, optionID, updateModel, time.Now())
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to update option: %s", err.Error())
 		}
@@ -300,16 +307,18 @@ func createOptionTxt(validationErrMsg string) string {
 }
 
 const (
-	maxCountInRow = 2
+	maxCountInRow   = 2
+	deleteButtonLen = 1
+	backButtonLen   = 1
 )
 
 func keyboardMarkup(pollID, optionID, myPollsPage int32) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []models.EditButton[editoptionfield.Field]{
-		{"Title", editoptionfield.Field_TITLE},
-		{"Description", editoptionfield.Field_DESCRIPTION},
+		{Text: "Title", Field: editoptionfield.Field_TITLE},
+		{Text: "Description", Field: editoptionfield.Field_DESCRIPTION},
 	}
 
-	buttonsCount := len(editButtons) + 2 // +2 for delete and back buttons
+	buttonsCount := len(editButtons) + deleteButtonLen + backButtonLen
 
 	keyboardBuilder := render.NewKeyboardBuilder(maxCountInRow, buttonsCount)
 
