@@ -239,7 +239,7 @@ func (s *Service) editOptionDialog(
 			return nil, "", fmt.Errorf("unable to update option: %s", err.Error())
 		}
 
-		p.Options[idx] = &updatedOption
+		op = &updatedOption
 	}
 
 	keyboard, err := keyboardMarkup(pollID, int32(optionID), myPollsPage)

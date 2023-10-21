@@ -36,12 +36,12 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 
 	userID := randomPositiveInt64()
 
-	var createOrEditPollKeyboard any = s.goToCreatePollPage(userID, &sentMsg).ReplyMarkup
+	var pollKeyboard any = s.goToCreatePollPage(userID, &sentMsg).ReplyMarkup
 
-	var createPollMessage tgbotapi.MessageConfig
+	var pollMessage tgbotapi.MessageConfig
 
 	for _, buttonName := range []string{"title", "description"} {
-		button := s.findButtonByLowerText(buttonName, createOrEditPollKeyboard)
+		button := s.findButtonByLowerText(buttonName, pollKeyboard)
 
 		s.sendCallback(button, userID)
 
@@ -57,15 +57,15 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 		s.sendMessage(reply)
 
 		// check that we are on the edit poll page and this page contains user input
-		createPollMessage = s.asMessage(sentMsg)
+		pollMessage = s.asMessage(sentMsg)
 
-		s.Require().Contains(createPollMessage.Text, userInput)
+		s.Require().Contains(pollMessage.Text, userInput)
 
-		createOrEditPollKeyboard = createPollMessage.ReplyMarkup
+		pollKeyboard = pollMessage.ReplyMarkup
 	}
 
 	for _, dateButtonName := range []string{"start", "finish"} {
-		dateButton := s.findButtonByContainsLowerText(dateButtonName, createPollMessage.ReplyMarkup)
+		dateButton := s.findButtonByContainsLowerText(dateButtonName, pollMessage.ReplyMarkup)
 
 		s.sendCallback(dateButton, userID)
 
@@ -81,11 +81,11 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 		s.sendMessage(reply)
 
 		// check that we are on the edit poll page and this page contains user input
-		createPollMessage = s.asMessage(sentMsg)
+		pollMessage = s.asMessage(sentMsg)
 
 		const dateErrorMsg = "Can't parse date format"
 
-		s.Require().NotContains(createPollMessage.Text, dateErrorMsg)
+		s.Require().NotContains(pollMessage.Text, dateErrorMsg)
 
 		// invalid date case
 		invalidDate := "some-invalid-date"
@@ -93,9 +93,9 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 
 		s.sendMessage(reply)
 
-		createPollMessage = s.asMessage(sentMsg)
+		pollMessage = s.asMessage(sentMsg)
 
-		s.Require().Contains(createPollMessage.Text, dateErrorMsg)
+		s.Require().Contains(pollMessage.Text, dateErrorMsg)
 	}
 }
 
