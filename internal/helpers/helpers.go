@@ -16,3 +16,11 @@ func NilIfZero[T Number](v T) *T {
 
 	return &v
 }
+
+func OneIfZero[T Number](v T) *T {
+	if v == 0 {
+		v = 1
+	}
+
+	return &v
+}

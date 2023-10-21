@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package deleteoption;
+
+option go_package = "./deleteoption";
+
+message DeleteOption {
+  required int32 poll_id = 1;
+  required int32 option_id = 2;
+  optional int32 referrer_my_polls_page = 3;
+}

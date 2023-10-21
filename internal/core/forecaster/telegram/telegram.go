@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editfield"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editoption"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editoptionfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editpoll"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editpollfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/errorpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/forecasts"
@@ -24,17 +26,19 @@ import (
 )
 
 type pageServices struct {
-	main           *mainpage.Service
-	votePreview    *votepreview.Service
-	vote           *vote.Service
-	poll           *poll.Service
-	polls          *polls.Service
-	userPollResult *userpollresult.Service
-	forecasts      *forecasts.Service
-	forecast       *forecast.Service
-	editPoll       *editpoll.Service
-	editField      *editfield.Service
-	myPolls        *mypolls.Service
+	main            *mainpage.Service
+	votePreview     *votepreview.Service
+	vote            *vote.Service
+	poll            *poll.Service
+	polls           *polls.Service
+	userPollResult  *userpollresult.Service
+	forecasts       *forecasts.Service
+	forecast        *forecast.Service
+	editPoll        *editpoll.Service
+	editpollfield   *editpollfield.Service
+	myPolls         *mypolls.Service
+	editOption      *editoption.Service
+	editOptionField *editoptionfield.Service
 }
 
 type Service struct {
@@ -47,17 +51,19 @@ type Service struct {
 
 func NewService(db models.DB, b models.TgBot, botName string) *Service {
 	pages := pageServices{
-		main:           mainpage.New(db),
-		votePreview:    votepreview.New(db),
-		vote:           vote.New(db),
-		poll:           poll.New(db),
-		userPollResult: userpollresult.New(db, botName),
-		polls:          polls.New(db),
-		forecasts:      forecasts.New(db),
-		forecast:       forecast.New(db),
-		editPoll:       editpoll.New(db),
-		editField:      editfield.New(db),
-		myPolls:        mypolls.New(db),
+		main:            mainpage.New(db),
+		votePreview:     votepreview.New(db),
+		vote:            vote.New(db),
+		poll:            poll.New(db),
+		userPollResult:  userpollresult.New(db, botName),
+		polls:           polls.New(db),
+		forecasts:       forecasts.New(db),
+		forecast:        forecast.New(db),
+		editPoll:        editpoll.New(db),
+		editpollfield:   editpollfield.New(db),
+		myPolls:         mypolls.New(db),
+		editOption:      editoption.New(db),
+		editOptionField: editoptionfield.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)
@@ -109,6 +115,7 @@ const (
 	showForecastsStartCommandUpdateType  = "show_forecasts_start_command_update_type"
 	showForecastStartCommandUpdateType   = "show_forecast_start_command_update_type"
 	editPollUpdateType                   = "edit_poll_update_type"
+	editOptionUpdateType                 = "edit_option_update_type"
 )
 
 func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.Chattable, string, error) {
@@ -127,6 +134,9 @@ func (s *Service) switcher(ctx context.Context, upd tgbotapi.Update) (tgbotapi.C
 			if strings.HasPrefix(parentText, models.EditPollCommand) {
 				updateType = editPollUpdateType
 				msg, errMsg, err = validateCommandInput(s.pages.editPoll.RenderCommand)(ctx, upd)
+			} else if strings.HasPrefix(parentText, models.EditOptionCommand) {
+				updateType = editOptionUpdateType
+				msg, errMsg, err = validateCommandInput(s.pages.editOption.RenderCommand)(ctx, upd)
 			}
 		}
 	case upd.Message != nil:

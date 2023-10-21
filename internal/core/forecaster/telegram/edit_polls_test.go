@@ -19,11 +19,7 @@ func (s *TelegramServiceSuite) TestEditPollBackButton() {
 	createPollPage := s.goToCreatePollPage(userID, &sentMsg)
 
 	// click back button
-	backButton := findItemByCriteria(s, s.buttonsFromMarkup(createPollPage.ReplyMarkup),
-		func(button tgbotapi.InlineKeyboardButton) bool {
-			return button.Text == "Go back"
-		},
-	)
+	backButton := s.findButtonByLowerText("go back", createPollPage.ReplyMarkup)
 
 	s.sendCallback(backButton, userID)
 
@@ -40,16 +36,12 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 
 	userID := randomPositiveInt64()
 
-	createPollEditMessage := s.goToCreatePollPage(userID, &sentMsg)
+	var pollKeyboard any = s.goToCreatePollPage(userID, &sentMsg).ReplyMarkup
 
-	var createPollMessage tgbotapi.MessageConfig
+	var pollMessage tgbotapi.MessageConfig
 
 	for _, buttonName := range []string{"title", "description"} {
-		button := findItemByCriteria(s, s.buttonsFromMarkup(createPollEditMessage.ReplyMarkup),
-			func(button tgbotapi.InlineKeyboardButton) bool {
-				return strings.ToLower(button.Text) == buttonName
-			},
-		)
+		button := s.findButtonByLowerText(buttonName, pollKeyboard)
 
 		s.sendCallback(button, userID)
 
@@ -65,17 +57,15 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 		s.sendMessage(reply)
 
 		// check that we are on the edit poll page and this page contains user input
-		createPollMessage = s.asMessage(sentMsg)
+		pollMessage = s.asMessage(sentMsg)
 
-		s.Require().Contains(createPollMessage.Text, userInput)
+		s.Require().Contains(pollMessage.Text, userInput)
+
+		pollKeyboard = pollMessage.ReplyMarkup
 	}
 
 	for _, dateButtonName := range []string{"start", "finish"} {
-		dateButton := findItemByCriteria(s, s.buttonsFromMarkup(createPollMessage.ReplyMarkup),
-			func(button tgbotapi.InlineKeyboardButton) bool {
-				return strings.Contains(strings.ToLower(button.Text), dateButtonName)
-			},
-		)
+		dateButton := s.findButtonByContainsLowerText(dateButtonName, pollMessage.ReplyMarkup)
 
 		s.sendCallback(dateButton, userID)
 
@@ -91,11 +81,11 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 		s.sendMessage(reply)
 
 		// check that we are on the edit poll page and this page contains user input
-		createPollMessage = s.asMessage(sentMsg)
+		pollMessage = s.asMessage(sentMsg)
 
 		const dateErrorMsg = "Can't parse date format"
 
-		s.Require().NotContains(createPollMessage.Text, dateErrorMsg)
+		s.Require().NotContains(pollMessage.Text, dateErrorMsg)
 
 		// invalid date case
 		invalidDate := "some-invalid-date"
@@ -103,9 +93,9 @@ func (s *TelegramServiceSuite) TestCreatePoll() {
 
 		s.sendMessage(reply)
 
-		createPollMessage = s.asMessage(sentMsg)
+		pollMessage = s.asMessage(sentMsg)
 
-		s.Require().Contains(createPollMessage.Text, dateErrorMsg)
+		s.Require().Contains(pollMessage.Text, dateErrorMsg)
 	}
 }
 
@@ -121,24 +111,36 @@ func (s *TelegramServiceSuite) goToCreatePollPage(
 	mainPage := s.asMessage(*sentMsgPtr)
 
 	// click myPolls button
-	myPollsButton := findItemByCriteria(s, s.buttonsFromMarkup(mainPage.ReplyMarkup),
-		func(button tgbotapi.InlineKeyboardButton) bool {
-			return button.Text == "My polls"
-		},
-	)
+	myPollsButton := s.findButtonByLowerText("my polls", mainPage.ReplyMarkup)
 
 	s.sendCallback(myPollsButton, userID)
 
 	myPollsMessage := s.asEditMessage(*sentMsgPtr)
 
 	// click create poll button
-	createPollButton := findItemByCriteria(s, s.buttonsFromMarkup(myPollsMessage.ReplyMarkup),
-		func(button tgbotapi.InlineKeyboardButton) bool {
-			return button.Text == "Create poll"
-		},
-	)
+	createPollButton := s.findButtonByLowerText("create poll", myPollsMessage.ReplyMarkup)
 
 	s.sendCallback(createPollButton, userID)
 
 	return s.asEditMessage(*sentMsgPtr)
+}
+
+func (s *TelegramServiceSuite) TestCreatePoll_error_title_should_be_created_first() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	userID := randomPositiveInt64()
+
+	createPollKeyboard := s.goToCreatePollPage(userID, &sentMsg).ReplyMarkup
+
+	// click description button
+	descriptionButton := s.findButtonByLowerText("description", createPollKeyboard)
+
+	s.sendCallback(descriptionButton, userID)
+
+	// check that we are on the edit page for the button
+	editPage := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(editPage.Text, "First create Title, please, and then you can create other fields")
 }

@@ -11,7 +11,10 @@ const (
 	ForecastRoute
 	EditPollRoute
 	MyPollsRoute
-	EditFieldRoute
+	EditPollFieldRoute
+	EditOptionRoute
+	EditOptionFieldRoute
+	DeleteOptionRoute
 )
 
 const (
@@ -24,5 +27,6 @@ const (
 )
 
 const (
-	EditPollCommand = "/editpoll"
+	EditPollCommand   = "/editpoll"
+	EditOptionCommand = "/editoption"
 )

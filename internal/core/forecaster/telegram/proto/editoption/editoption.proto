@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package editoption;
+
+option go_package = "./editoption";
+
+message EditOption {
+  optional int32 poll_id = 1;
+  optional int32 option_id = 2;
+  optional int32 referrer_my_polls_page = 3;
+}

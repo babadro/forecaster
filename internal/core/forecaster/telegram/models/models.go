@@ -51,3 +51,8 @@ type Scope struct {
 	DB  DB
 	Bot TgBot
 }
+
+type EditButton[T any] struct {
+	Text  string
+	Field T
+}

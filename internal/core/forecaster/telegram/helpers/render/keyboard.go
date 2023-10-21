@@ -114,9 +114,14 @@ func appendMainMenuButton(row []tgbotapi.InlineKeyboardButton) ([]tgbotapi.Inlin
 	return row, nil
 }
 
-func NewKeyboardBuilder(rowLen, rowsCountCapacity int) KeyboardBuilder {
+func NewKeyboardBuilder(rowLen, buttonsCount int) KeyboardBuilder {
+	rowsCapacity := buttonsCount / rowLen
+	if buttonsCount%rowLen > 0 {
+		rowsCapacity++
+	}
+
 	return KeyboardBuilder{
-		rows:   make([][]tgbotapi.InlineKeyboardButton, 0, rowsCountCapacity),
+		rows:   make([][]tgbotapi.InlineKeyboardButton, 0, rowsCapacity),
 		rowLen: rowLen,
 	}
 }
@@ -139,4 +144,8 @@ func (k *KeyboardBuilder) AddButton(button tgbotapi.InlineKeyboardButton) {
 
 func (k *KeyboardBuilder) MarkUp() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: k.rows}
+}
+
+func (k *KeyboardBuilder) Rows() [][]tgbotapi.InlineKeyboardButton {
+	return k.rows
 }
