@@ -14,10 +14,30 @@ func (s *TelegramServiceSuite) TestEditOptionBackButton() {
 
 	userID := randomPositiveInt64()
 
-	createPollPage := s.goToCreatePollPage(userID, &sentMsg)
+	pollKeyboard := s.createPollAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
 
-	_ = createPollPage
-	//
+	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
+
+	s.sendCallback(createOptionButton, userID)
+
+	// check that we are on edit option page
+	var optionKeyboard any = s.asEditMessage(sentMsg).ReplyMarkup
+
+	// click title button
+	titleButton := s.findButtonByLowerText("title", optionKeyboard)
+
+	s.sendCallback(titleButton, userID)
+
+	editPage := s.asEditMessage(sentMsg)
+
+	backButton := s.findButtonByLowerText("go back", editPage.ReplyMarkup)
+
+	s.sendCallback(backButton, userID)
+
+	// check that we are on the edit poll page
+	pollMessage := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(pollMessage.Text, "Define your option title and description.")
 }
 
 func (s *TelegramServiceSuite) TestCreateOption() {
@@ -96,6 +116,33 @@ func (s *TelegramServiceSuite) createPollAndGoToEditPollPage(userID int64, sentM
 	s.sendMessage(reply)
 
 	return s.asMessage(*sentMsg)
+}
+
+func (s *TelegramServiceSuite) TestCreateOption_error_title_should_be_created_first() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	userID := randomPositiveInt64()
+
+	pollKeyboard := s.createPollAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
+
+	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
+
+	s.sendCallback(createOptionButton, userID)
+
+	// check that we are on edit option page
+	var optionKeyboard any = s.asEditMessage(sentMsg).ReplyMarkup
+
+	// click description button
+	descriptionButton := s.findButtonByLowerText("description", optionKeyboard)
+
+	s.sendCallback(descriptionButton, userID)
+
+	// check that we are on the edit page for the button
+	editPage := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(editPage.Text, "First create Title, please, and then you can create other fields")
 }
 
 func (s *TelegramServiceSuite) findButtonByLowerText(text string, markup interface{}) tgbotapi.InlineKeyboardButton {

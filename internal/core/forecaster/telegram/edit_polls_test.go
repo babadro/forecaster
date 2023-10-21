@@ -124,3 +124,23 @@ func (s *TelegramServiceSuite) goToCreatePollPage(
 
 	return s.asEditMessage(*sentMsgPtr)
 }
+
+func (s *TelegramServiceSuite) TestCreatePoll_error_title_should_be_created_first() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	userID := randomPositiveInt64()
+
+	createPollKeyboard := s.goToCreatePollPage(userID, &sentMsg).ReplyMarkup
+
+	// click description button
+	descriptionButton := s.findButtonByLowerText("description", createPollKeyboard)
+
+	s.sendCallback(descriptionButton, userID)
+
+	// check that we are on the edit page for the button
+	editPage := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(editPage.Text, "First create Title, please, and then you can create other fields")
+}
