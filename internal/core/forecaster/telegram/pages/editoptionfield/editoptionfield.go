@@ -64,7 +64,7 @@ func (s *Service) RenderCallback(
 		return nil, "", fmt.Errorf("unable to create keyboard for editField page: %s", err.Error())
 	}
 
-	var op swagger.Option
+	op := swagger.Option{PollID: pollID}
 
 	if optionID := req.GetOptionId(); optionID != 0 {
 		opPtr, idx := swagger.FindOptionByID(p.Options, int16(optionID))

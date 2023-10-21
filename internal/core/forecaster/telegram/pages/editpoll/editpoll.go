@@ -280,6 +280,8 @@ func editPollTxt(validationErr string, p swagger.PollWithOptions) string {
 	sb.Printf("\nStart date: <b>%s</b>\n", render.FormatTime(p.Start))
 	sb.Printf("Finish date: <b>%s</b>\n", render.FormatTime(p.Finish))
 
+	sb.WriteString("\n<b>Options:</b>\n")
+
 	for i, op := range p.Options {
 		sb.Printf("	%d. %s\n", i+1, op.Title)
 	}

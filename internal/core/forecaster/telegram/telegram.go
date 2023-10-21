@@ -51,18 +51,19 @@ type Service struct {
 
 func NewService(db models.DB, b models.TgBot, botName string) *Service {
 	pages := pageServices{
-		main:           mainpage.New(db),
-		votePreview:    votepreview.New(db),
-		vote:           vote.New(db),
-		poll:           poll.New(db),
-		userPollResult: userpollresult.New(db, botName),
-		polls:          polls.New(db),
-		forecasts:      forecasts.New(db),
-		forecast:       forecast.New(db),
-		editPoll:       editpoll.New(db),
-		editField:      editfield.New(db),
-		myPolls:        mypolls.New(db),
-		editOption:     editoption.New(db),
+		main:            mainpage.New(db),
+		votePreview:     votepreview.New(db),
+		vote:            vote.New(db),
+		poll:            poll.New(db),
+		userPollResult:  userpollresult.New(db, botName),
+		polls:           polls.New(db),
+		forecasts:       forecasts.New(db),
+		forecast:        forecast.New(db),
+		editPoll:        editpoll.New(db),
+		editField:       editfield.New(db),
+		myPolls:         mypolls.New(db),
+		editOption:      editoption.New(db),
+		editOptionField: editoptionfield.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)

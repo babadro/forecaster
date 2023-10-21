@@ -14,6 +14,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/deleteoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoptionfield"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -43,8 +44,10 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 		return nil, "", fmt.Errorf("unable to parse command args: %s", err.Error())
 	}
 
-	if err = validateCommandArgs(args); err != nil {
-		return nil, "", fmt.Errorf("invalid command args: %s", err.Error())
+	chatID, messageID, userID := update.Message.Chat.ID, update.Message.MessageID, update.Message.From.ID
+
+	if args.pollID == 0 {
+		return s.firstCreatePollMsg(chatID, messageID, args.myPollsPage, false)
 	}
 
 	var (
@@ -77,16 +80,7 @@ func (s *Service) RenderCommand(ctx context.Context, update tgbotapi.Update) (tg
 	}
 
 	return s.editOptionDialog(ctx, "", args.pollID, optionID, args.myPollsPage,
-		updateModel, doUpdate,
-		update.Message.MessageID, update.Message.Chat.ID, update.Message.From.ID, false)
-}
-
-func validateCommandArgs(args commandArgs) error {
-	if args.pollID == 0 {
-		return fmt.Errorf("poll id should not be zero")
-	}
-
-	return nil
+		updateModel, doUpdate, messageID, chatID, userID, false)
 }
 
 func getUpdateModel(fieldID editoptionfield.Field, input string) (swagger.UpdateOption, error) {
@@ -181,18 +175,43 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
+	if req.GetPollId() == 0 {
+		return s.firstCreatePollMsg(chat.ID, message.MessageID, req.GetReferrerMyPollsPage(), true)
+	}
+
 	if req.GetOptionId() == 0 {
 		return s.createOptionDialog("", req.GetPollId(), req.GetReferrerMyPollsPage(),
 			message.MessageID, chat.ID, true)
 	}
 
-	if req.GetPollId() == 0 {
-		return nil, "", fmt.Errorf("can't edit poll: poll id %v is undefined", req.PollId)
-	}
-
 	return s.editOptionDialog(ctx, "", req.GetPollId(), int16(req.GetOptionId()), req.GetReferrerMyPollsPage(),
 		swagger.UpdateOption{}, false,
 		message.MessageID, chat.ID, upd.CallbackQuery.From.ID, true)
+}
+
+func (s *Service) firstCreatePollMsg(chatID int64, messageID int, myPollsPage int32, editMessage bool) (tgbotapi.Chattable, string, error) {
+	goBackData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
+		ReferrerMyPollsPage: helpers.NilIfZero(myPollsPage),
+	})
+	if err != nil {
+		return nil, "",
+			fmt.Errorf("unable to marshal callback data for go back button: %s", err.Error())
+	}
+
+	keyboard := tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{{{
+			Text:         "Go back",
+			CallbackData: goBackData,
+		}}},
+	}
+
+	txt := "First create poll, please, and then you can create options"
+
+	if editMessage {
+		return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
+	}
+
+	return render.NewMessageWithKeyboard(chatID, txt, keyboard), "", nil
 }
 
 func (s *Service) editOptionDialog(
@@ -335,5 +354,19 @@ func keyboardMarkup(pollID, optionID, myPollsPage int32) (tgbotapi.InlineKeyboar
 		})
 	}
 
-	return tgbotapi.InlineKeyboardMarkup{}, nil
+	goBackData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
+		PollId:              pollIDPtr,
+		ReferrerMyPollsPage: helpers.NilIfZero(myPollsPage),
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{},
+			fmt.Errorf("unable to marshal callback data for go back button: %s", err.Error())
+	}
+
+	keyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+		Text:         "Go back",
+		CallbackData: goBackData,
+	})
+
+	return keyboardBuilder.MarkUp(), nil
 }
