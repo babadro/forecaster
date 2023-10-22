@@ -8,4 +8,5 @@ message DeleteOption {
   required int32 poll_id = 1;
   required int32 option_id = 2;
   optional int32 referrer_my_polls_page = 3;
+  optional bool confirmation = 4;
 }
