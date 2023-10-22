@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/deletepoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editoptionfield"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/pages/editpoll"
@@ -39,6 +40,7 @@ type pageServices struct {
 	myPolls         *mypolls.Service
 	editOption      *editoption.Service
 	editOptionField *editoptionfield.Service
+	deletepoll      *deletepoll.Service
 }
 
 type Service struct {
@@ -64,6 +66,7 @@ func NewService(db models.DB, b models.TgBot, botName string) *Service {
 		myPolls:         mypolls.New(db),
 		editOption:      editoption.New(db),
 		editOptionField: editoptionfield.New(db),
+		deletepoll:      deletepoll.New(db),
 	}
 
 	callbackHandlers := newCallbackHandlers(pages)

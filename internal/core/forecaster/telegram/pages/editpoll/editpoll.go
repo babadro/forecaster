@@ -11,6 +11,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/deletepoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpollfield"
@@ -325,6 +326,9 @@ Your audience is waiting for your questions - let’s get started!`
 const (
 	fieldsMaxCountInRow  = 3
 	addOptionButtonWidth = 3
+
+	goBackButton = 1
+	deleteButton = 1
 )
 
 func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
@@ -335,7 +339,7 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 		{Text: "Finish date", Field: editpollfield.Field_FINISH_DATE},
 	}
 
-	buttonsCount := len(editButtons) + 1 // +1 for Go back button
+	buttonsCount := len(editButtons) + goBackButton + deleteButton
 
 	fieldsKeyboardBuilder := render.NewKeyboardBuilder(fieldsMaxCountInRow, buttonsCount)
 
@@ -406,6 +410,24 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 		Text:         "Add option",
 		CallbackData: addOptionData,
 	})
+
+	if pollID != 0 {
+		var deleteData *string
+		deleteData, err = proto.MarshalCallbackData(models.DeletePollRoute, &deletepoll.DeletePoll{
+			PollId:              pollIDPtr,
+			ReferrerMyPollsPage: myPollsPagePtr,
+			NeedConfirmation:    helpers.Ptr(true),
+		})
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{},
+				fmt.Errorf("unable to marshal delete callback data: %s", err.Error())
+		}
+
+		optionsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+			Text:         "Delete poll",
+			CallbackData: deleteData,
+		})
+	}
 
 	return tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: append(fieldsKeyboardBuilder.Rows(), optionsKeyboardBuilder.Rows()...),
