@@ -14,6 +14,7 @@ const (
 	EditPollFieldRoute
 	EditOptionRoute
 	EditOptionFieldRoute
+	DeletePollRoute
 	DeleteOptionRoute
 )
 

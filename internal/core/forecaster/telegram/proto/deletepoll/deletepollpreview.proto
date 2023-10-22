@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package deletepoll;
+
+option go_package = "./deletepoll";
+
+message DeletePoll {
+  required int32 poll_id = 1;
+  optional int32 referrer_my_polls_page = 2;
+  optional bool need_confirmation = 3;
+}
