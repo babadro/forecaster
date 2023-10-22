@@ -345,22 +345,12 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 
 	pollIDPtr, myPollsPagePtr := helpers.NilIfZero(pollID), helpers.NilIfZero(myPollsPage)
 
-	for i := range editButtons {
-		callbackData, err := proto.MarshalCallbackData(models.EditPollFieldRoute, &editpollfield.EditPollField{
-			PollId:              pollIDPtr,
-			Field:               &editButtons[i].Field,
-			ReferrerMyPollsPage: myPollsPagePtr,
-		})
+	var err error
 
-		if err != nil {
-			return tgbotapi.InlineKeyboardMarkup{},
-				fmt.Errorf("unable to marshal callback data for %s button: %s", editButtons[i].Text, err.Error())
-		}
-
-		fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
-			Text:         editButtons[i].Text,
-			CallbackData: callbackData,
-		})
+	fieldsKeyboardBuilder, err = addEditButtons(fieldsKeyboardBuilder, editButtons, pollIDPtr, myPollsPagePtr)
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{},
+			fmt.Errorf("unable to add edit buttons: %s", err.Error())
 	}
 
 	goBackData, err := proto.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
@@ -413,6 +403,7 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 
 	if pollID != 0 {
 		var deleteData *string
+
 		deleteData, err = proto.MarshalCallbackData(models.DeletePollRoute, &deletepoll.DeletePoll{
 			PollId:              pollIDPtr,
 			ReferrerMyPollsPage: myPollsPagePtr,
@@ -432,4 +423,28 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 	return tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: append(fieldsKeyboardBuilder.Rows(), optionsKeyboardBuilder.Rows()...),
 	}, nil
+}
+
+func addEditButtons(fieldsKeyboardBuilder render.KeyboardBuilder,
+	editButtons []models.EditButton[editpollfield.Field], pollIDPtr, myPollsPagePtr *int32,
+) (render.KeyboardBuilder, error) {
+	for i := range editButtons {
+		callbackData, err := proto.MarshalCallbackData(models.EditPollFieldRoute, &editpollfield.EditPollField{
+			PollId:              pollIDPtr,
+			Field:               &editButtons[i].Field,
+			ReferrerMyPollsPage: myPollsPagePtr,
+		})
+
+		if err != nil {
+			return render.KeyboardBuilder{},
+				fmt.Errorf("unable to marshal callback data for %s button: %s", editButtons[i].Text, err.Error())
+		}
+
+		fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+			Text:         editButtons[i].Text,
+			CallbackData: callbackData,
+		})
+	}
+
+	return fieldsKeyboardBuilder, nil
 }

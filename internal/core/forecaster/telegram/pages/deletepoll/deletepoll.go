@@ -66,7 +66,9 @@ func (s *Service) RenderCallback(
 	return successDeletion(p.Title, req.GetReferrerMyPollsPage(), chatID, messageID)
 }
 
-func successDeletion(pollTitle string, referrerMyPollsPage int32, chatID int64, messageID int) (tgbotapi.Chattable, string, error) {
+func successDeletion(
+	pollTitle string, referrerMyPollsPage int32, chatID int64, messageID int,
+) (tgbotapi.Chattable, string, error) {
 	backData, err := proto2.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
 		CurrentPage: helpers.OneIfZero(referrerMyPollsPage),
 	})
@@ -89,7 +91,9 @@ func successDeletion(pollTitle string, referrerMyPollsPage int32, chatID int64, 
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, sb.String(), keyboard), "", nil
 }
 
-func (s *Service) confirmation(p swagger.PollWithOptions, referrerMyPollsPage *int32, chatID int64, messageID int) (tgbotapi.Chattable, string, error) {
+func (s *Service) confirmation(
+	p swagger.PollWithOptions, referrerMyPollsPage *int32, chatID int64, messageID int,
+) (tgbotapi.Chattable, string, error) {
 	keyboard, err := confirmationKeyboard(p.ID, referrerMyPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create confirmation keyboard: %s", err.Error())
