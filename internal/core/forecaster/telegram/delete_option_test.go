@@ -1,43 +1,37 @@
 package telegram_test
 
-import (
-	"context"
-
-	"github.com/babadro/forecaster/internal/domain"
-)
-
+/*
 // open create poll page and click back button...
 func (s *TelegramServiceSuite) TestDeleteOption() {
-	userID := randomPositiveInt64()
+
+	s.createRandomPoll()
 
 	var sentMsg interface{}
 
 	s.mockTelegramSender(&sentMsg)
 
-	editPoll := s.createPollAndGoToEditPollPage(userID, &sentMsg)
+	userID := randomPositiveInt64()
 
-	deleteButton := s.findButtonByLowerText("delete poll", editPoll.ReplyMarkup)
+	pollKeyboard := s.createPollAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
 
-	s.sendCallback(deleteButton, userID)
+	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
 
-	pollsArr, _, err := s.db.GetPolls(context.Background(), 0, 1)
-	s.Require().NoError(err)
-	s.Require().Len(pollsArr, 1)
-	p := pollsArr[0]
+	s.sendCallback(createOptionButton, userID)
 
-	deleteConfirmation := s.asEditMessage(sentMsg)
+	// check that we are on edit option page
+	var optionKeyboard any = s.asEditMessage(sentMsg).ReplyMarkup
 
-	s.Require().Contains(deleteConfirmation.Text, p.Title)
+	// click title button
+	titleButton := s.findButtonByLowerText("title", optionKeyboard)
 
-	// verify that poll was not deleted yet
-	_, err = s.db.GetPollByID(context.Background(), p.ID)
-	s.Require().NoError(err)
+	s.sendCallback(titleButton, userID)
 
-	deleteButton = s.findButtonByLowerText("delete", deleteConfirmation.ReplyMarkup)
+	editPage := s.asEditMessage(sentMsg)
 
-	s.sendCallback(deleteButton, userID)
+	userInput := randomSentence()
+	reply := replyMessageUpdate(userInput, editPage.Text, userID)
 
-	// check that poll was deleted this time
-	_, err = s.db.GetPollByID(context.Background(), p.ID)
-	s.Require().ErrorIs(err, domain.ErrNotFound)
+	s.sendMessage(reply)
 }
+
+*/

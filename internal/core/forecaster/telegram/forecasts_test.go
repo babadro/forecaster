@@ -219,7 +219,7 @@ func (s *TelegramServiceSuite) Test_forecast_unavailable() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	poll := s.createRandomPoll(time.Now())
+	poll := s.createRandomPoll(withNow(time.Now()))
 
 	userID := randomPositiveInt64()
 	update := startShowForecast(poll.ID, userID)
@@ -250,7 +250,7 @@ func findItemByCriteria[T any](s *TelegramServiceSuite, items []T, f func(item T
 func (s *TelegramServiceSuite) createForecast() swagger.PollWithOptions {
 	s.T().Helper()
 
-	poll := s.createRandomPoll(time.Now())
+	poll := s.createRandomPoll(withNow(time.Now()))
 
 	for optionIDx, votesCount := range []int{3, 2, 1} {
 		for i := 0; i < votesCount; i++ {
@@ -368,7 +368,7 @@ func (s *TelegramServiceSuite) TestForecasts_polls_without_total_votes_should_no
 
 	pollWithStatistic := s.createForecast()
 
-	pollWithoutStatistic := s.createRandomPoll(time.Now())
+	pollWithoutStatistic := s.createRandomPoll(withNow(time.Now()))
 
 	// send /start showforecasts_1 command
 	userID := randomPositiveInt64()

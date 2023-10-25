@@ -8,7 +8,7 @@ import (
 )
 
 func (s *TelegramServiceSuite) TestShowPollStartCommand() {
-	poll := s.createRandomPoll(time.Now())
+	poll := s.createRandomPoll(withNow(time.Now()))
 
 	update := startShowPoll(poll.ID, 456)
 
