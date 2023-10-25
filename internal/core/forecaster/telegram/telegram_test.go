@@ -33,6 +33,12 @@ func withNow(now time.Time) func(in *createPollInput) {
 	}
 }
 
+func withTelegramUserID(id int64) func(in *createPollInput) {
+	return func(in *createPollInput) {
+		in.pollModel.TelegramUserID = id
+	}
+}
+
 type creationOption func(input *createPollInput)
 
 func (s *TelegramServiceSuite) createRandomPolls(count int) []swagger.PollWithOptions {
