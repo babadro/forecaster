@@ -15,19 +15,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type createPollInput struct {
+	optionsCount int
+	now          time.Time
+	pollModel    swagger.CreatePoll
+}
+
+func withNow(now time.Time) func(in *createPollInput) {
+	return func(in *createPollInput) {
+		in.now = now
+	}
+}
+
+type creationOption func(input *createPollInput)
+
 func (s *TelegramServiceSuite) createRandomPolls(count int) []swagger.PollWithOptions {
 	s.T().Helper()
 
 	polls := make([]swagger.PollWithOptions, count)
 
 	for i := range polls {
-		polls[i] = s.createRandomPoll(time.Now().Add(time.Second * time.Duration(i)))
+		polls[i] = s.createRandomPoll(withNow(time.Now().Add(time.Second * time.Duration(i))))
 	}
 
 	return polls
 }
 
-func (s *TelegramServiceSuite) createRandomPoll(now time.Time) swagger.PollWithOptions {
+func (s *TelegramServiceSuite) createRandomPoll(opts ...creationOption) swagger.PollWithOptions {
 	s.T().Helper()
 
 	pollInput := randomModel[swagger.CreatePoll](s.T())
@@ -35,18 +49,28 @@ func (s *TelegramServiceSuite) createRandomPoll(now time.Time) swagger.PollWithO
 	pollInput.Start = strfmt.DateTime(time.Now().Add(-time.Hour))
 	pollInput.Finish = strfmt.DateTime(time.Now().Add(time.Hour))
 
-	return s.createPoll(pollInput, now)
+	creationInput := createPollInput{
+		optionsCount: 3,
+		now:          time.Now(),
+		pollModel:    pollInput,
+	}
+
+	for _, opt := range opts {
+		opt(&creationInput)
+	}
+
+	return s.createPollWithRandomOptions(creationInput)
 }
 
-func (s *TelegramServiceSuite) createPoll(pollInput swagger.CreatePoll, now time.Time) swagger.PollWithOptions {
+func (s *TelegramServiceSuite) createPollWithRandomOptions(in createPollInput) swagger.PollWithOptions {
 	s.T().Helper()
 
 	ctx := context.Background()
 
-	poll, err := s.db.CreatePoll(ctx, pollInput, now)
+	poll, err := s.db.CreatePoll(ctx, in.pollModel, in.now)
 	s.Require().NoError(err)
 
-	createdOptions := make([]*swagger.Option, 3)
+	createdOptions := make([]*swagger.Option, in.optionsCount)
 	for i := range createdOptions {
 		optionInput := randomModel[swagger.CreateOption](s.T())
 		optionInput.PollID = poll.ID
