@@ -349,6 +349,7 @@ func keyboardMarkup(pollID, optionID, myPollsPage int32) (tgbotapi.InlineKeyboar
 		callbackData, err := proto.MarshalCallbackData(models.DeleteOptionRoute, &deleteoption.DeleteOption{
 			PollId:              pollIDPtr,
 			OptionId:            optionIDPtr,
+			NeedConfirmation:    helpers.Ptr(true),
 			ReferrerMyPollsPage: myPollsPagePtr,
 		})
 

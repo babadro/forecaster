@@ -129,8 +129,8 @@ func confirmationKeyboard(
 	pollIDPtr, optionIDPtr := helpers.Ptr(pollID), helpers.Ptr(int32(optionID))
 
 	deleteData, err := proto2.MarshalCallbackData(models.DeleteOptionRoute, &deleteoption.DeleteOption{
-		PollId:           pollIDPtr,
-		NeedConfirmation: helpers.Ptr(true),
+		PollId:   pollIDPtr,
+		OptionId: optionIDPtr,
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal delete callback data: %s", err.Error())

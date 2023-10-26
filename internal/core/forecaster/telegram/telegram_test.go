@@ -21,21 +21,9 @@ type createPollInput struct {
 	pollModel    swagger.CreatePoll
 }
 
-func withOptionCount(count int) func(in *createPollInput) {
-	return func(in *createPollInput) {
-		in.optionsCount = count
-	}
-}
-
 func withNow(now time.Time) func(in *createPollInput) {
 	return func(in *createPollInput) {
 		in.now = now
-	}
-}
-
-func withTelegramUserID(id int64) func(in *createPollInput) {
-	return func(in *createPollInput) {
-		in.pollModel.TelegramUserID = id
 	}
 }
 
