@@ -13,13 +13,14 @@ import (
 )
 
 type ManyItemsKeyboardInput struct {
-	IDs                    []int32
-	CurrentPage            int32
-	Prev, Next             bool
-	AllItemsRoute          byte
-	SingleItemRoute        byte
-	AllItemsProtoMessage   func(page int32) proto2.Message
-	SingleItemProtoMessage func(itemID, referrerAllItemsPage int32) proto2.Message
+	IDs                       []int32
+	CurrentPage               int32
+	Prev, Next                bool
+	AllItemsRoute             byte
+	SingleItemRoute           byte
+	AllItemsProtoMessage      func(page int32) proto2.Message
+	SingleItemProtoMessage    func(itemID, referrerAllItemsPage int32) proto2.Message
+	FirstRowAdditionalButtons []tgbotapi.InlineKeyboardButton
 }
 
 func ManyItemsKeyboardMarkup(in ManyItemsKeyboardInput) (tgbotapi.InlineKeyboardMarkup, error) {

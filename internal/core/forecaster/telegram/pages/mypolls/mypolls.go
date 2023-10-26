@@ -11,6 +11,7 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
+	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
@@ -32,10 +33,24 @@ func (s *Service) NewRequest() (proto2.Message, *mypolls.MyPolls) {
 	return v, v
 }
 
+const pageSize = 10
+
 func (s *Service) RenderCallback(
-	_ context.Context, _ *mypolls.MyPolls, upd tgbotapi.Update,
+	ctx context.Context, req *mypolls.MyPolls, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
-	txtMsg := "Getting polls are not implemented yet"
+	currentPage := req.GetCurrentPage()
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
+
+	userID := upd.CallbackQuery.From.ID
+
+	pollArr, totalCount, err := s.db.GetPolls(ctx, offset, limit, models.NewPollFilter().WithTelegramUserID(userID))
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
+	}
 
 	keyboard, err := keyboardMarkup()
 	if err != nil {
@@ -44,6 +59,19 @@ func (s *Service) RenderCallback(
 
 	return render.NewEditMessageTextWithKeyboard(
 		upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID, txtMsg, keyboard), "", nil
+}
+
+func txtMsg(pollsArr []swagger.Poll) string {
+	if len(pollsArr) == 0 {
+		return "There are no polls yet"
+	}
+
+	var sb render.StringBuilder
+	for i, p := range pollsArr {
+		sb.Printf("%d. %s\n", i+1, p.Title)
+	}
+
+	return sb.String()
 }
 
 func keyboardMarkup() (tgbotapi.InlineKeyboardMarkup, error) {

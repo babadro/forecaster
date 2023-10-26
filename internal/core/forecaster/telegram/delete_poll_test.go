@@ -3,6 +3,7 @@ package telegram_test
 import (
 	"context"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/domain"
 )
 
@@ -20,7 +21,7 @@ func (s *TelegramServiceSuite) TestDeletePoll() {
 
 	s.sendCallback(deleteButton, userID)
 
-	pollsArr, _, err := s.db.GetPolls(context.Background(), 0, 1)
+	pollsArr, _, err := s.db.GetPolls(context.Background(), 0, 1, models.PollFilter{})
 	s.Require().NoError(err)
 	s.Require().Len(pollsArr, 1)
 	p := pollsArr[0]
