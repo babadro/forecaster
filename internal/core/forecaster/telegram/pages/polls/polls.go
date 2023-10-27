@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	models2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
 	"github.com/babadro/forecaster/internal/helpers"
 
@@ -75,7 +76,7 @@ func (s *Service) render(
 	}
 
 	keyboardIn := render.ManyItemsKeyboardInput{
-		IDs:                    pollsIDs(pollsArr),
+		IDs:                    models2.PollsIDs(pollsArr),
 		CurrentPage:            currentPage,
 		Prev:                   currentPage > 1,
 		Next:                   currentPage*pageSize < totalCount,
@@ -109,13 +110,4 @@ func txtMsg(pollsArr []swagger.Poll) string {
 	}
 
 	return sb.String()
-}
-
-func pollsIDs(pollsArr []swagger.Poll) []int32 {
-	ids := make([]int32, len(pollsArr))
-	for i, p := range pollsArr {
-		ids[i] = p.ID
-	}
-
-	return ids
 }

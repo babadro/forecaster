@@ -28,6 +28,10 @@ func ManyItemsKeyboardMarkup(in ManyItemsKeyboardInput) (tgbotapi.InlineKeyboard
 
 	var err error
 
+	if len(in.FirstRowAdditionalButtons) > 0 {
+		firstRow = append(firstRow, in.FirstRowAdditionalButtons...)
+	}
+
 	if firstRow, err = appendMainMenuButton(firstRow); err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, err
 	}

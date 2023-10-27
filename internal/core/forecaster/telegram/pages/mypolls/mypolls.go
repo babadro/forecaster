@@ -5,12 +5,14 @@ import (
 	"fmt"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
+	models2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mainpage"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
+	"github.com/babadro/forecaster/internal/helpers"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
@@ -19,11 +21,21 @@ import (
 type Service struct {
 	db models.DB
 	w  dbwrapper.Wrapper
+	allPolls  func(page int32) proto2.Message
+	singlePoll func(itemID, _ int32) proto2.Message
 }
 
 func New(db models.DB) *Service {
 	return &Service{
 		db: db, w: dbwrapper.New(db),
+		allPolls: func(page int32) proto2.Message {
+			return &mypolls.MyPolls{CurrentPage: helpers.Ptr(page)}
+		},
+		singlePoll: func(itemID, _ int32) proto2.Message {
+			return &editpoll.EditPoll{
+				PollId: helpers.Ptr(itemID),
+			}
+		},
 	}
 }
 
@@ -50,6 +62,18 @@ func (s *Service) RenderCallback(
 	pollArr, totalCount, err := s.db.GetPolls(ctx, offset, limit, models.NewPollFilter().WithTelegramUserID(userID))
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
+	}
+
+	keyboardIn := render.ManyItemsKeyboardInput{
+		IDs:                       models2.PollsIDs(pollArr),
+		CurrentPage:               currentPage,
+		Prev:                      currentPage > 1,
+		Next:                      currentPage*pageSize < totalCount,
+		AllItemsRoute:             models.MyPollsRoute,
+		SingleItemRoute:           models.EditPollRoute,
+		AllItemsProtoMessage:      s.,
+		SingleItemProtoMessage:    nil,
+		FirstRowAdditionalButtons: nil,
 	}
 
 	keyboard, err := keyboardMarkup()
