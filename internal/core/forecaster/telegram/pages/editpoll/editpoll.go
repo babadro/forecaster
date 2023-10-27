@@ -366,6 +366,39 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 		CallbackData: goBackData,
 	})
 
+	addOptionData, err := proto.MarshalCallbackData(models.EditOptionRoute, &editoption.EditOption{
+		PollId:              pollIDPtr,
+		ReferrerMyPollsPage: myPollsPagePtr,
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{},
+			fmt.Errorf("unable to marshal callback data for add option button: %s", err.Error())
+	}
+
+	fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+		Text:         "Add option",
+		CallbackData: addOptionData,
+	})
+
+	if pollID != 0 {
+		var deleteData *string
+
+		deleteData, err = proto.MarshalCallbackData(models.DeletePollRoute, &deletepoll.DeletePoll{
+			PollId:              pollIDPtr,
+			ReferrerMyPollsPage: myPollsPagePtr,
+			NeedConfirmation:    helpers.Ptr(true),
+		})
+		if err != nil {
+			return tgbotapi.InlineKeyboardMarkup{},
+				fmt.Errorf("unable to marshal delete callback data: %s", err.Error())
+		}
+
+		fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+			Text:         "Delete poll",
+			CallbackData: deleteData,
+		})
+	}
+
 	optionsKeyboardBuilder := render.NewKeyboardBuilder(models.MaxCountInRow, len(options)+addOptionButtonWidth)
 
 	for i, op := range options {
@@ -384,39 +417,6 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 		optionsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
 			Text:         strconv.Itoa(i + 1),
 			CallbackData: editOptionData,
-		})
-	}
-
-	addOptionData, err := proto.MarshalCallbackData(models.EditOptionRoute, &editoption.EditOption{
-		PollId:              pollIDPtr,
-		ReferrerMyPollsPage: myPollsPagePtr,
-	})
-	if err != nil {
-		return tgbotapi.InlineKeyboardMarkup{},
-			fmt.Errorf("unable to marshal callback data for add option button: %s", err.Error())
-	}
-
-	optionsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
-		Text:         "Add option",
-		CallbackData: addOptionData,
-	})
-
-	if pollID != 0 {
-		var deleteData *string
-
-		deleteData, err = proto.MarshalCallbackData(models.DeletePollRoute, &deletepoll.DeletePoll{
-			PollId:              pollIDPtr,
-			ReferrerMyPollsPage: myPollsPagePtr,
-			NeedConfirmation:    helpers.Ptr(true),
-		})
-		if err != nil {
-			return tgbotapi.InlineKeyboardMarkup{},
-				fmt.Errorf("unable to marshal delete callback data: %s", err.Error())
-		}
-
-		optionsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
-			Text:         "Delete poll",
-			CallbackData: deleteData,
 		})
 	}
 
