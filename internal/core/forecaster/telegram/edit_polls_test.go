@@ -26,7 +26,7 @@ func (s *TelegramServiceSuite) TestEditPollBackButton() {
 	// check that we are on "my polls" page
 	myPollsPage := s.asEditMessage(sentMsg)
 
-	s.Require().Contains(myPollsPage.Text, "Getting polls are not implemented yet")
+	s.Require().Contains(myPollsPage.Text, "There are no polls yet")
 }
 
 func (s *TelegramServiceSuite) TestCreatePoll() {
@@ -104,18 +104,7 @@ func (s *TelegramServiceSuite) goToCreatePollPage(
 ) tgbotapi.EditMessageTextConfig {
 	s.T().Helper()
 
-	update := startMainPage(userID)
-
-	s.sendMessage(update)
-
-	mainPage := s.asMessage(*sentMsgPtr)
-
-	// click myPolls button
-	myPollsButton := s.findButtonByLowerText("my polls", mainPage.ReplyMarkup)
-
-	s.sendCallback(myPollsButton, userID)
-
-	myPollsMessage := s.asEditMessage(*sentMsgPtr)
+	myPollsMessage := s.goToMyPollsPage(userID, sentMsgPtr)
 
 	// click create poll button
 	createPollButton := s.findButtonByLowerText("create poll", myPollsMessage.ReplyMarkup)

@@ -27,15 +27,23 @@ func withNow(now time.Time) func(in *createPollInput) {
 	}
 }
 
+func withTelegramUserID(id int64) func(in *createPollInput) {
+	return func(in *createPollInput) {
+		in.pollModel.TelegramUserID = id
+	}
+}
+
 type creationOption func(input *createPollInput)
 
-func (s *TelegramServiceSuite) createRandomPolls(count int) []swagger.PollWithOptions {
+func (s *TelegramServiceSuite) createRandomPolls(count int, opts ...creationOption) []swagger.PollWithOptions {
 	s.T().Helper()
 
 	polls := make([]swagger.PollWithOptions, count)
 
 	for i := range polls {
-		polls[i] = s.createRandomPoll(withNow(time.Now().Add(time.Second * time.Duration(i))))
+		opts = append(opts, withNow(time.Now().Add(time.Second*time.Duration(i))))
+
+		polls[i] = s.createRandomPoll(opts...)
 	}
 
 	return polls
@@ -45,6 +53,8 @@ func (s *TelegramServiceSuite) createRandomPoll(opts ...creationOption) swagger.
 	s.T().Helper()
 
 	pollInput := randomModel[swagger.CreatePoll](s.T())
+	pollInput.Title = randomSentence()
+	pollInput.Description = randomSentence()
 	pollInput.SeriesID = 0
 	pollInput.Start = strfmt.DateTime(time.Now().Add(-time.Hour))
 	pollInput.Finish = strfmt.DateTime(time.Now().Add(time.Hour))

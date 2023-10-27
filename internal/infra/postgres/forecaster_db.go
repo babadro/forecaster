@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	models3 "github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	models2 "github.com/babadro/forecaster/internal/models"
 
 	"github.com/babadro/forecaster/internal/domain"
@@ -117,7 +118,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 }
 
 func (db *ForecasterDB) GetPolls(
-	ctx context.Context, offset, limit uint64,
+	ctx context.Context, offset, limit uint64, filter models3.PollFilter,
 ) ([]models.Poll, int32, error) {
 	var rowsCount sql.NullInt32
 
@@ -132,12 +133,18 @@ func (db *ForecasterDB) GetPolls(
 		return nil, 0, nil
 	}
 
-	pollsSQL, args, err := db.q.
+	b := db.q.
 		Select(
 			"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "created_at", "updated_at",
 		).
 		From("forecaster.polls").OrderBy("created_at DESC").
-		Limit(limit).Offset(offset).ToSql()
+		Limit(limit).Offset(offset)
+
+	if filter.TelegramUserID.Defined {
+		b = b.Where(sq.Eq{"telegram_user_id": filter.TelegramUserID.Value})
+	}
+
+	pollsSQL, args, err := b.ToSql()
 
 	if err != nil {
 		return nil, 0, buildingQueryFailed("select polls", err)
