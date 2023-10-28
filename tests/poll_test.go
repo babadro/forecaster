@@ -2,6 +2,8 @@ package polls_test
 
 import (
 	"context"
+	"github.com/babadro/forecaster/internal/models"
+	"github.com/brianvoe/gofakeit/v6"
 	"math/rand"
 	"testing"
 	"time"
@@ -50,6 +52,7 @@ func (s *APITestSuite) TestPolls() {
 
 	updateInput := randomModel[swagger.UpdatePoll](s.T())
 	updateInput.SeriesID = helpers.Ptr[int32](0)
+	updateInput.Status = randomPollStatus()
 
 	checkUpdateRes := func(t *testing.T, id int32, got swagger.Poll) {
 		require.Equal(t, id, got.ID)
@@ -146,10 +149,18 @@ func (s *APITestSuite) TestPolls_popularity() {
 
 	updateInput := randomModel[swagger.UpdatePoll](s.T())
 	updateInput.SeriesID = helpers.Ptr[int32](0)
+	updateInput.Status = randomPollStatus()
 
 	gotUpdateResult := update[swagger.UpdatePoll, swagger.Poll](
 		s.T(), updateInput, urlWithID(s.apiAddr, "polls", poll.ID),
 	)
 
 	s.Require().Equal(popularity, gotUpdateResult.Popularity)
+}
+
+func randomPollStatus() swagger.PollStatus {
+	return swagger.PollStatus(gofakeit.RandomInt([]int{
+		int(models.UnknownPollStatus), int(models.DraftPollStatus),
+		int(models.ActivePollStatus), int(models.FinishedPollStatus),
+	}))
 }

@@ -331,9 +331,10 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries,
 func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error) {
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
-		Columns("series_id", "telegram_user_id", "title", "description", "start", "finish",
+		Columns("series_id", "telegram_user_id", "title", "description", "start", "finish", "status",
 			"created_at", "updated_at").
-		Values(poll.SeriesID, poll.TelegramUserID, poll.Title, poll.Description, poll.Start, poll.Finish, now, now).
+		Values(poll.SeriesID, poll.TelegramUserID, poll.Title, poll.Description, poll.Start, poll.Finish, "draft",
+			now, now).
 		Suffix("RETURNING id, series_id, telegram_user_id, title, " +
 			"description, start, finish, popularity, created_at, updated_at").
 		ToSql()

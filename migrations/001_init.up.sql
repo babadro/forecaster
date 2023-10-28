@@ -19,7 +19,7 @@ CREATE TABLE forecaster.polls (
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     popularity INT NOT NULL DEFAULT 0,
-    status poll_status NOT NULL,
+    status forecaster.poll_status NOT NULL,
     FOREIGN KEY (series_id) REFERENCES forecaster.series(id) ON DELETE CASCADE
 );
 
