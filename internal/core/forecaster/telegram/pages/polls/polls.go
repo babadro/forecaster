@@ -70,7 +70,10 @@ func (s *Service) render(
 ) (tgbotapi.Chattable, string, error) {
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
 
-	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit, models.PollFilter{}, models.PollSort{})
+	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit, models.PollFilter{}, models.PollSort{
+		By:  models.PopularityPollSort,
+		Asc: false,
+	})
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}

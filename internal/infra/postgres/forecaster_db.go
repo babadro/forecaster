@@ -229,7 +229,7 @@ func (db *ForecasterDB) GetForecasts(
 		Join("forecaster.polls p ON o.poll_id = p.id").
 		Where("o.total_votes > 0").
 		Distinct().
-		OrderBy("p.created_at DESC").
+		OrderBy("p.popularity DESC").
 		Offset(offset).
 		Limit(limit).
 		ToSql()
