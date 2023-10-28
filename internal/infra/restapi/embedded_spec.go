@@ -743,6 +743,9 @@ func init() {
           "type": "string",
           "format": "date-time"
         },
+        "Status": {
+          "$ref": "#/definitions/PollStatus"
+        },
         "TelegramUserID": {
           "type": "integer",
           "format": "int64"
@@ -755,6 +758,16 @@ func init() {
           "format": "date-time"
         }
       }
+    },
+    "PollStatus": {
+      "type": "integer",
+      "format": "int32",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ]
     },
     "PollWithOptions": {
       "type": "object",
@@ -791,6 +804,9 @@ func init() {
         "Start": {
           "type": "string",
           "format": "date-time"
+        },
+        "Status": {
+          "$ref": "#/definitions/PollStatus"
         },
         "TelegramUserID": {
           "type": "integer",
@@ -866,6 +882,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-nullable": true
+        },
+        "Status": {
+          "x-nullable": true,
+          "$ref": "#/definitions/PollStatus"
         },
         "TelegramUserID": {
           "type": "integer",
@@ -1656,6 +1676,9 @@ func init() {
           "type": "string",
           "format": "date-time"
         },
+        "Status": {
+          "$ref": "#/definitions/PollStatus"
+        },
         "TelegramUserID": {
           "type": "integer",
           "format": "int64"
@@ -1668,6 +1691,16 @@ func init() {
           "format": "date-time"
         }
       }
+    },
+    "PollStatus": {
+      "type": "integer",
+      "format": "int32",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ]
     },
     "PollWithOptions": {
       "type": "object",
@@ -1704,6 +1737,9 @@ func init() {
         "Start": {
           "type": "string",
           "format": "date-time"
+        },
+        "Status": {
+          "$ref": "#/definitions/PollStatus"
         },
         "TelegramUserID": {
           "type": "integer",
@@ -1779,6 +1815,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-nullable": true
+        },
+        "Status": {
+          "x-nullable": true,
+          "$ref": "#/definitions/PollStatus"
         },
         "TelegramUserID": {
           "type": "integer",

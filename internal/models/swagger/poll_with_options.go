@@ -47,6 +47,9 @@ type PollWithOptions struct {
 	// Format: date-time
 	Start strfmt.DateTime `json:"Start,omitempty"`
 
+	// status
+	Status PollStatus `json:"Status,omitempty"`
+
 	// telegram user ID
 	TelegramUserID int64 `json:"TelegramUserID,omitempty"`
 
@@ -75,6 +78,10 @@ func (m *PollWithOptions) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStart(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -150,6 +157,23 @@ func (m *PollWithOptions) validateStart(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *PollWithOptions) validateStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("Status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("Status")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *PollWithOptions) validateUpdatedAt(formats strfmt.Registry) error {
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
@@ -167,6 +191,10 @@ func (m *PollWithOptions) ContextValidate(ctx context.Context, formats strfmt.Re
 	var res []error
 
 	if err := m.contextValidateOptions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -196,6 +224,24 @@ func (m *PollWithOptions) contextValidateOptions(ctx context.Context, formats st
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *PollWithOptions) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("Status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("Status")
+		}
+		return err
 	}
 
 	return nil

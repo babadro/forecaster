@@ -43,6 +43,9 @@ type Poll struct {
 	// Format: date-time
 	Start strfmt.DateTime `json:"Start,omitempty"`
 
+	// status
+	Status PollStatus `json:"Status,omitempty"`
+
 	// telegram user ID
 	TelegramUserID int64 `json:"TelegramUserID,omitempty"`
 
@@ -67,6 +70,10 @@ func (m *Poll) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStart(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -116,6 +123,23 @@ func (m *Poll) validateStart(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *Poll) validateStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("Status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("Status")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *Poll) validateUpdatedAt(formats strfmt.Registry) error {
 	if swag.IsZero(m.UpdatedAt) { // not required
 		return nil
@@ -128,8 +152,35 @@ func (m *Poll) validateUpdatedAt(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this poll based on context it is used
+// ContextValidate validate this poll based on the context it is used
 func (m *Poll) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Poll) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("Status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("Status")
+		}
+		return err
+	}
+
 	return nil
 }
 

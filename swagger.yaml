@@ -477,6 +477,9 @@ definitions:
         type: "string"
         format: "date-time"
         x-nullable: true
+      Status:
+        $ref: "#/definitions/PollStatus"
+        x-nullable: true
   Poll:
     type: "object"
     properties:
@@ -502,6 +505,8 @@ definitions:
       Popularity:
         type: "integer"
         format: "int32"
+      Status:
+        $ref: "#/definitions/PollStatus"
       CreatedAt:
         type: "string"
         format: "date-time"
@@ -533,6 +538,8 @@ definitions:
       Popularity:
         type: "integer"
         format: "int32"
+      Status:
+        $ref: "#/definitions/PollStatus"
       CreatedAt:
         type: "string"
         format: "date-time"
@@ -543,6 +550,14 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/Option"
+  PollStatus:
+    type: "integer"
+    format: "int32"
+    enum:
+      - 0 # Unknown
+      - 1 # Draft
+      - 2 # Active
+      - 3 # Finished
   CreateOption:
     type: "object"
     properties:

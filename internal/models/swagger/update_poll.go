@@ -33,6 +33,9 @@ type UpdatePoll struct {
 	// Format: date-time
 	Start *strfmt.DateTime `json:"Start,omitempty"`
 
+	// status
+	Status PollStatus `json:"Status,omitempty"`
+
 	// telegram user ID
 	TelegramUserID *int64 `json:"TelegramUserID,omitempty"`
 
@@ -49,6 +52,10 @@ func (m *UpdatePoll) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStart(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -82,8 +89,52 @@ func (m *UpdatePoll) validateStart(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this update poll based on context it is used
+func (m *UpdatePoll) validateStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("Status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("Status")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this update poll based on the context it is used
 func (m *UpdatePoll) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *UpdatePoll) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("Status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("Status")
+		}
+		return err
+	}
+
 	return nil
 }
 
