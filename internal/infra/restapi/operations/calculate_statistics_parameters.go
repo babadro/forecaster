@@ -15,7 +15,8 @@ import (
 )
 
 // NewCalculateStatisticsParams creates a new CalculateStatisticsParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewCalculateStatisticsParams() CalculateStatisticsParams {
 
 	return CalculateStatisticsParams{}
@@ -50,7 +51,6 @@ func (o *CalculateStatisticsParams) BindRequest(r *http.Request, route *middlewa
 	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}

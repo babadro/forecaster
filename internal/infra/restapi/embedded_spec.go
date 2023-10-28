@@ -731,6 +731,10 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "Popularity": {
+          "type": "integer",
+          "format": "int32"
+        },
         "SeriesID": {
           "type": "integer",
           "format": "int32"
@@ -775,6 +779,10 @@ func init() {
           "items": {
             "$ref": "#/definitions/Option"
           }
+        },
+        "Popularity": {
+          "type": "integer",
+          "format": "int32"
         },
         "SeriesID": {
           "type": "integer",
@@ -1636,6 +1644,10 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "Popularity": {
+          "type": "integer",
+          "format": "int32"
+        },
         "SeriesID": {
           "type": "integer",
           "format": "int32"
@@ -1680,6 +1692,10 @@ func init() {
           "items": {
             "$ref": "#/definitions/Option"
           }
+        },
+        "Popularity": {
+          "type": "integer",
+          "format": "int32"
         },
         "SeriesID": {
           "type": "integer",

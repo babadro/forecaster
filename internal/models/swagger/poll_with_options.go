@@ -37,6 +37,9 @@ type PollWithOptions struct {
 	// options
 	Options []*Option `json:"Options"`
 
+	// popularity
+	Popularity int32 `json:"Popularity,omitempty"`
+
 	// series ID
 	SeriesID int32 `json:"SeriesID,omitempty"`
 
@@ -123,6 +126,8 @@ func (m *PollWithOptions) validateOptions(formats strfmt.Registry) error {
 			if err := m.Options[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("Options" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Options" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -176,9 +181,16 @@ func (m *PollWithOptions) contextValidateOptions(ctx context.Context, formats st
 	for i := 0; i < len(m.Options); i++ {
 
 		if m.Options[i] != nil {
+
+			if swag.IsZero(m.Options[i]) { // not required
+				return nil
+			}
+
 			if err := m.Options[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("Options" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Options" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

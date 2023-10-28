@@ -499,6 +499,9 @@ definitions:
       Finish:
         type: "string"
         format: "date-time"
+      Popularity:
+        type: "integer"
+        format: "int32"
       CreatedAt:
         type: "string"
         format: "date-time"
@@ -527,6 +530,9 @@ definitions:
       Finish:
         type: "string"
         format: "date-time"
+      Popularity:
+        type: "integer"
+        format: "int32"
       CreatedAt:
         type: "string"
         format: "date-time"

@@ -30,7 +30,7 @@ func NewUpdatePoll(ctx *middleware.Context, handler UpdatePollHandler) *UpdatePo
 }
 
 /*
-UpdatePoll swagger:route PUT /polls/{pollId} updatePoll
+	UpdatePoll swagger:route PUT /polls/{pollId} updatePoll
 
 Update an existing Poll
 */
@@ -42,17 +42,15 @@ type UpdatePoll struct {
 func (o *UpdatePoll) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewUpdatePollParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

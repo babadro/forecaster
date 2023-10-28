@@ -33,6 +33,9 @@ type Poll struct {
 	// ID
 	ID int32 `json:"ID,omitempty"`
 
+	// popularity
+	Popularity int32 `json:"Popularity,omitempty"`
+
 	// series ID
 	SeriesID int32 `json:"SeriesID,omitempty"`
 
