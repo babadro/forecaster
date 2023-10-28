@@ -334,7 +334,8 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 		Columns("series_id", "telegram_user_id", "title", "description", "start", "finish",
 			"created_at", "updated_at").
 		Values(poll.SeriesID, poll.TelegramUserID, poll.Title, poll.Description, poll.Start, poll.Finish, now, now).
-		Suffix("RETURNING id, series_id, telegram_user_id, title, description, start, finish, popularity, created_at, updated_at").
+		Suffix("RETURNING id, series_id, telegram_user_id, title, " +
+			"description, start, finish, popularity, created_at, updated_at").
 		ToSql()
 
 	if err != nil {
@@ -450,7 +451,8 @@ func (db *ForecasterDB) UpdatePoll(
 	b := db.q.Update("forecaster.polls").
 		Set("updated_at", now).
 		Where(sq.Eq{"id": id}).
-		Suffix("RETURNING id, series_id, telegram_user_id, title, description, start, finish, popularity, updated_at, created_at")
+		Suffix("RETURNING id, series_id, telegram_user_id, title, description, " +
+			"start, finish, popularity, updated_at, created_at")
 
 	if in.SeriesID != nil {
 		b = b.Set("series_id", in.SeriesID)

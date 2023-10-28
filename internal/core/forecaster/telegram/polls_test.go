@@ -1,11 +1,12 @@
 package telegram_test
 
 import (
-	"github.com/babadro/forecaster/internal/models/swagger"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/babadro/forecaster/internal/models/swagger"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // create several polls, go to the last page, and then go back to the first page
