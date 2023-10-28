@@ -6,6 +6,8 @@ CREATE TABLE forecaster.series (
     updated_at timestamp with time zone NOT NULL
 );
 
+CREATE TYPE forecaster.poll_status AS ENUM ('unknown', 'draft', 'active', 'finished');
+
 CREATE TABLE forecaster.polls (
     id SERIAL PRIMARY KEY,
     series_id INT NOT NULL DEFAULT 0,
@@ -17,6 +19,7 @@ CREATE TABLE forecaster.polls (
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     popularity INT NOT NULL DEFAULT 0,
+    status poll_status NOT NULL,
     FOREIGN KEY (series_id) REFERENCES forecaster.series(id) ON DELETE CASCADE
 );
 
