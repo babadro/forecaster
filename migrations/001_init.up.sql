@@ -16,8 +16,11 @@ CREATE TABLE forecaster.polls (
     finish timestamp with time zone NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
+    popularity INT NOT NULL DEFAULT 0,
     FOREIGN KEY (series_id) REFERENCES forecaster.series(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_polls_popularity ON forecaster.polls(popularity);
 
 CREATE TABLE forecaster.options (
     id SMALLINT NOT NULL,

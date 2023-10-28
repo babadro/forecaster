@@ -90,6 +90,11 @@ func (s *TelegramServiceSuite) createPollWithRandomOptions(in createPollInput) s
 		op, err = s.db.CreateOption(ctx, optionInput, time.Now())
 		s.Require().NoError(err)
 
+		popularity := randomPositiveInt32()
+
+		_, err = s.testDB.DB.Exec(ctx, "UPDATE forecaster.polls SET popularity = $1 WHERE id = $2", popularity, poll.ID)
+		s.Require().NoError(err)
+
 		createdOptions[i] = &op
 	}
 

@@ -1,6 +1,8 @@
 package polls_test
 
 import (
+	"context"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -120,4 +122,34 @@ func (s *APITestSuite) TestPolls_Series() {
 	poll := create[swagger.CreatePoll, swagger.Poll](s.T(), pollInput, s.url("polls"))
 
 	require.Equal(s.T(), series.ID, poll.SeriesID)
+}
+
+// check that popularity is in returning poll and in updated poll model...
+func (s *APITestSuite) TestPolls_popularity() {
+	createInput := randomModel[swagger.CreatePoll](s.T())
+	createInput.SeriesID = 0
+
+	poll := create[swagger.CreatePoll, swagger.Poll](
+		s.T(), createInput, s.url("polls"),
+	)
+
+	ctx := context.Background()
+
+	popularity := rand.Int31()
+
+	_, err := s.testDB.DB.Exec(ctx, "UPDATE forecaster.polls SET popularity = $1 WHERE id = $2", popularity, poll.ID)
+	require.NoError(s.T(), err)
+
+	gotPoll := read[swagger.PollWithOptions](s.T(), urlWithID(s.apiAddr, "polls", poll.ID))
+
+	s.Require().Equal(popularity, gotPoll.Popularity)
+
+	updateInput := randomModel[swagger.UpdatePoll](s.T())
+	updateInput.SeriesID = helpers.Ptr[int32](0)
+
+	gotUpdateResult := update[swagger.UpdatePoll, swagger.Poll](
+		s.T(), updateInput, urlWithID(s.apiAddr, "polls", poll.ID),
+	)
+
+	s.Require().Equal(popularity, gotUpdateResult.Popularity)
 }

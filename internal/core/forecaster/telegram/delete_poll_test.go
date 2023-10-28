@@ -21,7 +21,7 @@ func (s *TelegramServiceSuite) TestDeletePoll() {
 
 	s.sendCallback(deleteButton, userID)
 
-	pollsArr, _, err := s.db.GetPolls(context.Background(), 0, 1, models.PollFilter{})
+	pollsArr, _, err := s.db.GetPolls(context.Background(), 0, 1, models.PollFilter{}, models.PollSort{})
 	s.Require().NoError(err)
 	s.Require().Len(pollsArr, 1)
 	p := pollsArr[0]

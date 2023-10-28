@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -18,9 +17,9 @@ func (s *TelegramServiceSuite) TestPolls_pagination() {
 	s.mockTelegramSender(&sentMsg)
 
 	polls := s.createRandomPolls(24)
-	// polls should be sorted by created_at desc
+	// polls should be sorted by popularity desc
 	sort.Slice(polls, func(i, j int) bool {
-		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
+		return polls[i].Popularity > polls[j].Popularity
 	})
 
 	// send /start showpolls_1 command
@@ -140,9 +139,9 @@ func (s *TelegramServiceSuite) TestPolls_chose_poll() {
 	s.mockTelegramSender(&sentMsg)
 
 	polls := s.createRandomPolls(2)
-	// polls should be sorted by created_at desc
+	// polls should be sorted by popularity desc
 	sort.Slice(polls, func(i, j int) bool {
-		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
+		return polls[i].Popularity > polls[j].Popularity
 	})
 
 	// send /start showpolls_1 command

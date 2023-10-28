@@ -6,7 +6,6 @@ package operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"io"
 	"net/http"
 
@@ -21,7 +20,8 @@ import (
 )
 
 // NewUpdateOptionParams creates a new UpdateOptionParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewUpdateOptionParams() UpdateOptionParams {
 
 	return UpdateOptionParams{}
@@ -77,7 +77,7 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 				res = append(res, err)
 			}
 
-			ctx := validate.WithOperationRequest(context.Background())
+			ctx := validate.WithOperationRequest(r.Context())
 			if err := body.ContextValidate(ctx, route.Formats); err != nil {
 				res = append(res, err)
 			}
@@ -89,6 +89,7 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 	} else {
 		res = append(res, errors.Required("option", "body", ""))
 	}
+
 	rOptionID, rhkOptionID, _ := route.Params.GetOK("optionId")
 	if err := o.bindOptionID(rOptionID, rhkOptionID, route.Formats); err != nil {
 		res = append(res, err)
@@ -98,7 +99,6 @@ func (o *UpdateOptionParams) BindRequest(r *http.Request, route *middleware.Matc
 	if err := o.bindPollID(rPollID, rhkPollID, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}

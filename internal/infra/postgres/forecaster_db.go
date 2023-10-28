@@ -59,7 +59,8 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 
 func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error) {
 	pollSQL, args, err := db.q.Select(
-		"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "created_at", "updated_at",
+		"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "popularity",
+		"created_at", "updated_at",
 	).From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select poll", err)
@@ -70,7 +71,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 		QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &poll.CreatedAt, &poll.UpdatedAt,
 		)
 
 	selectPoll := "select poll"
@@ -118,7 +119,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 }
 
 func (db *ForecasterDB) GetPolls(
-	ctx context.Context, offset, limit uint64, filter models3.PollFilter,
+	ctx context.Context, offset, limit uint64, filter models3.PollFilter, sort models3.PollSort,
 ) ([]models.Poll, int32, error) {
 	var rowsCount sql.NullInt32
 
@@ -133,11 +134,17 @@ func (db *ForecasterDB) GetPolls(
 		return nil, 0, nil
 	}
 
+	orderBy, err := pollOrderBy(sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	b := db.q.
 		Select(
-			"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "created_at", "updated_at",
+			"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "popularity",
+			"created_at", "updated_at",
 		).
-		From("forecaster.polls").OrderBy("created_at DESC").
+		From("forecaster.polls").OrderBy(orderBy).
 		Limit(limit).Offset(offset)
 
 	if filter.TelegramUserID.Defined {
@@ -164,7 +171,7 @@ func (db *ForecasterDB) GetPolls(
 
 		err = rows.Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &poll.CreatedAt, &poll.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, scanFailed("select polls", err)
@@ -178,6 +185,25 @@ func (db *ForecasterDB) GetPolls(
 	}
 
 	return polls, rowsCount.Int32, nil
+}
+
+func pollOrderBy(sort models3.PollSort) (string, error) {
+	switch sort.By {
+	case models3.PopularityPollSort:
+		if sort.Asc {
+			return "popularity ASC", nil
+		}
+
+		return "popularity DESC", nil
+	case models3.CreatedAtPollSort, models3.DefaultPollSort:
+		if sort.Asc {
+			return "created_at ASC", nil
+		}
+
+		return "created_at DESC", nil
+	default:
+		return "", fmt.Errorf("unknown sort type: %d", sort.By)
+	}
 }
 
 func (db *ForecasterDB) GetForecasts(
@@ -200,12 +226,12 @@ func (db *ForecasterDB) GetForecasts(
 	}
 
 	forecastsSQL, args, err := db.q.
-		Select("o.poll_id, p.title, created_at").
+		Select("o.poll_id, p.title, popularity").
 		From("forecaster.options o").
 		Join("forecaster.polls p ON o.poll_id = p.id").
 		Where("o.total_votes > 0").
 		Distinct().
-		OrderBy("p.created_at DESC").
+		OrderBy("p.popularity DESC").
 		Offset(offset).
 		Limit(limit).
 		ToSql()
@@ -305,9 +331,11 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries,
 func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error) {
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
-		Columns("series_id", "telegram_user_id", "title", "description", "start", "finish", "created_at", "updated_at").
+		Columns("series_id", "telegram_user_id", "title", "description", "start", "finish",
+			"created_at", "updated_at").
 		Values(poll.SeriesID, poll.TelegramUserID, poll.Title, poll.Description, poll.Start, poll.Finish, now, now).
-		Suffix("RETURNING id, series_id, telegram_user_id, title, description, start, finish, created_at, updated_at").
+		Suffix("RETURNING id, series_id, telegram_user_id, title, " +
+			"description, start, finish, popularity, created_at, updated_at").
 		ToSql()
 
 	if err != nil {
@@ -318,7 +346,7 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
-			&res.Description, &res.Start, &res.Finish, &res.CreatedAt, &res.UpdatedAt)
+			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
 		return models.Poll{}, scanFailed("insert poll", err)
 	}
@@ -423,7 +451,8 @@ func (db *ForecasterDB) UpdatePoll(
 	b := db.q.Update("forecaster.polls").
 		Set("updated_at", now).
 		Where(sq.Eq{"id": id}).
-		Suffix("RETURNING id, series_id, telegram_user_id, title, description, start, finish, updated_at, created_at")
+		Suffix("RETURNING id, series_id, telegram_user_id, title, description, " +
+			"start, finish, popularity, updated_at, created_at")
 
 	if in.SeriesID != nil {
 		b = b.Set("series_id", in.SeriesID)
@@ -460,7 +489,7 @@ func (db *ForecasterDB) UpdatePoll(
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
-			&res.Description, &res.Start, &res.Finish, &res.UpdatedAt, &res.CreatedAt,
+			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.UpdatedAt, &res.CreatedAt,
 		)
 	if err != nil {
 		return models.Poll{}, scanFailed("update poll", err)
