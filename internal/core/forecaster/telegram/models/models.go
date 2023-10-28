@@ -24,7 +24,7 @@ type DB interface {
 	GetSeriesByID(ctx context.Context, id int32) (swModels.Series, error)
 	GetPollByID(ctx context.Context, id int32) (swModels.PollWithOptions, error)
 	GetUserVote(ctx context.Context, userID int64, pollID int32) (swModels.Vote, error)
-	GetPolls(ctx context.Context, offset, limit uint64, filter PollFilter) ([]swModels.Poll, int32, error)
+	GetPolls(ctx context.Context, offset, limit uint64, filter PollFilter, sort PollSort) ([]swModels.Poll, int32, error)
 	GetForecasts(ctx context.Context, offset, limit uint64) ([]models.Forecast, int32, error)
 
 	CreateSeries(ctx context.Context, s swModels.CreateSeries, now time.Time) (swModels.Series, error)
@@ -78,4 +78,17 @@ func (f PollFilter) WithTelegramUserID(id int64) PollFilter {
 	f.TelegramUserID = NewNullable(id)
 
 	return f
+}
+
+type PollSortType byte
+
+const (
+	DefaultPollSort PollSortType = iota
+	CreatedAtPollSort
+	PopularityPollSort
+)
+
+type PollSort struct {
+	By  PollSortType
+	Asc bool
 }

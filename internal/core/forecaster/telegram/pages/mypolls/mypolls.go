@@ -48,7 +48,12 @@ func (s *Service) RenderCallback(
 
 	userID := upd.CallbackQuery.From.ID
 
-	pollArr, totalCount, err := s.db.GetPolls(ctx, offset, limit, models.NewPollFilter().WithTelegramUserID(userID))
+	pollArr, totalCount, err := s.db.GetPolls(
+		ctx, offset, limit, models.NewPollFilter().WithTelegramUserID(userID), models.PollSort{
+			By:  models.CreatedAtPollSort,
+			Asc: false,
+		},
+	)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}

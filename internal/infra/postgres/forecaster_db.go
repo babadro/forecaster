@@ -118,7 +118,7 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollW
 }
 
 func (db *ForecasterDB) GetPolls(
-	ctx context.Context, offset, limit uint64, filter models3.PollFilter,
+	ctx context.Context, offset, limit uint64, filter models3.PollFilter, sort models3.PollSort,
 ) ([]models.Poll, int32, error) {
 	var rowsCount sql.NullInt32
 
@@ -133,11 +133,16 @@ func (db *ForecasterDB) GetPolls(
 		return nil, 0, nil
 	}
 
+	orderBy, err := pollOrderBy(sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	b := db.q.
 		Select(
 			"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "created_at", "updated_at",
 		).
-		From("forecaster.polls").OrderBy("created_at DESC").
+		From("forecaster.polls").OrderBy(orderBy).
 		Limit(limit).Offset(offset)
 
 	if filter.TelegramUserID.Defined {
@@ -178,6 +183,25 @@ func (db *ForecasterDB) GetPolls(
 	}
 
 	return polls, rowsCount.Int32, nil
+}
+
+func pollOrderBy(sort models3.PollSort) (string, error) {
+	switch sort.By {
+	case models3.PopularityPollSort:
+		if sort.Asc {
+			return "popularity ASC", nil
+		}
+
+		return "popularity DESC", nil
+	case models3.CreatedAtPollSort, models3.DefaultPollSort:
+		if sort.Asc {
+			return "created_at ASC", nil
+		}
+
+		return "created_at DESC", nil
+	default:
+		return "", fmt.Errorf("unknown sort type: %d", sort.By)
+	}
 }
 
 func (db *ForecasterDB) GetForecasts(
