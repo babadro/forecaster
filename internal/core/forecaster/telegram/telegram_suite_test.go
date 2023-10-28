@@ -102,6 +102,10 @@ func randomPositiveInt64() int64 {
 	return int64(gofakeit.IntRange(1, math.MaxInt64))
 }
 
+func randomPositiveInt32() int32 {
+	return int32(gofakeit.IntRange(1, math.MaxInt32))
+}
+
 func randomSentence() string {
 	return gofakeit.Generate("{sentence:3}")
 }

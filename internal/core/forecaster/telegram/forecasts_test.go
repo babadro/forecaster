@@ -386,9 +386,9 @@ func (s *TelegramServiceSuite) createForecasts(count int) []swagger.PollWithOpti
 	s.T().Helper()
 
 	polls := s.createRandomPolls(count)
-	// polls should be sorted by created_at desc
+	// polls should be sorted by popularity desc
 	sort.Slice(polls, func(i, j int) bool {
-		return time.Time(polls[i].CreatedAt).Unix() > (time.Time(polls[j].CreatedAt).Unix())
+		return polls[i].Popularity > polls[j].Popularity
 	})
 
 	ctx := context.Background()
