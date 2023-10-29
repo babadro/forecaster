@@ -97,12 +97,15 @@ func (db *ForecasterDB) GetPollWithOptionsByID(ctx context.Context, id int32) (m
 	}
 
 	var poll models.PollWithOptions
+	var pollStatus models2.PollStatus
 	err = db.db.
 		QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.Popularity, &poll.Status, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &pollStatus, &poll.CreatedAt, &poll.UpdatedAt,
 		)
+
+	poll.Status = models.PollStatus(pollStatus)
 
 	selectPoll := "select poll"
 
@@ -195,14 +198,17 @@ func (db *ForecasterDB) GetPolls(
 
 	for rows.Next() {
 		var poll models.Poll
+		var pollStatus models2.PollStatus
 
 		err = rows.Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.Popularity, &poll.Status, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &pollStatus, &poll.CreatedAt, &poll.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, scanFailed("select polls", err)
 		}
+
+		poll.Status = models.PollStatus(pollStatus)
 
 		polls = append(polls, poll)
 	}
@@ -372,13 +378,16 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 	}
 
 	var res models.Poll
+	var pollStatus models2.PollStatus
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
-			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.Status, &res.CreatedAt, &res.UpdatedAt)
+			&res.Description, &res.Start, &res.Finish, &res.Popularity, &pollStatus, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
 		return models.Poll{}, scanFailed("insert poll", err)
 	}
+
+	res.Status = models.PollStatus(pollStatus)
 
 	return res, nil
 }
@@ -506,6 +515,10 @@ func (db *ForecasterDB) UpdatePoll(
 		b = b.Set("finish", in.Finish)
 	}
 
+	if in.Status.Validate() != nil {
+		b = b.Set("status", in.Status)
+	}
+
 	pollSQL, args, err := b.ToSql()
 
 	if err != nil {
@@ -513,15 +526,18 @@ func (db *ForecasterDB) UpdatePoll(
 	}
 
 	var res models.Poll
+	var pollStatus models2.PollStatus
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
-			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.Status, &res.UpdatedAt, &res.CreatedAt,
+			&res.Description, &res.Start, &res.Finish, &res.Popularity, &pollStatus, &res.UpdatedAt, &res.CreatedAt,
 		)
 	if err != nil {
 		return models.Poll{}, scanFailed("update poll", err)
 	}
+
+	res.Status = models.PollStatus(pollStatus)
 
 	return res, nil
 }
