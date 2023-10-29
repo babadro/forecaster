@@ -515,7 +515,7 @@ func (db *ForecasterDB) UpdatePoll(
 		b = b.Set("finish", in.Finish)
 	}
 
-	if in.Status.Validate() != nil {
+	if in.Status != 0 {
 		b = b.Set("status", in.Status)
 	}
 

@@ -479,7 +479,6 @@ definitions:
         x-nullable: true
       Status:
         $ref: "#/definitions/PollStatus"
-        x-nullable: true
   Poll:
     type: "object"
     properties:

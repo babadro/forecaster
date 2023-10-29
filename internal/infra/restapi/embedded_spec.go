@@ -884,7 +884,6 @@ func init() {
           "x-nullable": true
         },
         "Status": {
-          "x-nullable": true,
           "$ref": "#/definitions/PollStatus"
         },
         "TelegramUserID": {
@@ -1817,7 +1816,6 @@ func init() {
           "x-nullable": true
         },
         "Status": {
-          "x-nullable": true,
           "$ref": "#/definitions/PollStatus"
         },
         "TelegramUserID": {
