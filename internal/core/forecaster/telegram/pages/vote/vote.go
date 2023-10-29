@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	models2 "github.com/babadro/forecaster/internal/models"
 	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
@@ -45,6 +46,12 @@ func (s *Service) RenderCallback(
 		return nil,
 			"Sorry, this poll is expired",
 			fmt.Errorf("vote: poll is expired")
+	}
+
+	if models2.PollStatus(poll.Status) != models2.ActivePollStatus {
+		return nil,
+			"Sorry, this poll is not active anymore",
+			fmt.Errorf("vote: poll is not active")
 	}
 
 	chatID, messageID := upd.CallbackQuery.Message.Chat.ID, upd.CallbackQuery.Message.MessageID
