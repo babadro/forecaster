@@ -57,7 +57,7 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 	return series, nil
 }
 
-const pollColumns = "id, series_id, telegram_user_id, title, description, start, finish, popularity, " +
+const pollColumns = "id, series_id, telegram_user_id, title, description, start, finish, popularity, status, " +
 	"created_at, updated_at"
 
 func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.Poll, error) {
@@ -67,12 +67,15 @@ func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.Poll,
 	}
 
 	var poll models.Poll
+	var pollStatus models2.PollStatus
 	err = db.db.
 		QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.Popularity, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &pollStatus, &poll.CreatedAt, &poll.UpdatedAt,
 		)
+
+	poll.Status = models.PollStatus(pollStatus)
 
 	selectPoll := "select poll"
 
@@ -98,7 +101,7 @@ func (db *ForecasterDB) GetPollWithOptionsByID(ctx context.Context, id int32) (m
 		QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.Popularity, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &poll.Status, &poll.CreatedAt, &poll.UpdatedAt,
 		)
 
 	selectPoll := "select poll"
@@ -167,10 +170,7 @@ func (db *ForecasterDB) GetPolls(
 	}
 
 	b := db.q.
-		Select(
-			"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "popularity",
-			"created_at", "updated_at",
-		).
+		Select(pollColumns).
 		From("forecaster.polls").OrderBy(orderBy).
 		Limit(limit).Offset(offset)
 
@@ -198,7 +198,7 @@ func (db *ForecasterDB) GetPolls(
 
 		err = rows.Scan(
 			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
-			&poll.Start, &poll.Finish, &poll.Popularity, &poll.CreatedAt, &poll.UpdatedAt,
+			&poll.Start, &poll.Finish, &poll.Popularity, &poll.Status, &poll.CreatedAt, &poll.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, scanFailed("select polls", err)
@@ -355,6 +355,8 @@ func (db *ForecasterDB) CreateSeries(ctx context.Context, s models.CreateSeries,
 	return res, nil
 }
 
+const returningPollColumns = "RETURNING " + pollColumns
+
 func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error) {
 	pollSQL, args, err := db.q.
 		Insert("forecaster.polls").
@@ -362,8 +364,7 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 			"created_at", "updated_at").
 		Values(poll.SeriesID, poll.TelegramUserID, poll.Title, poll.Description, poll.Start, poll.Finish, "draft",
 			now, now).
-		Suffix("RETURNING id, series_id, telegram_user_id, title, " +
-			"description, start, finish, popularity, created_at, updated_at").
+		Suffix(returningPollColumns).
 		ToSql()
 
 	if err != nil {
@@ -374,7 +375,7 @@ func (db *ForecasterDB) CreatePoll(ctx context.Context, poll models.CreatePoll, 
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
-			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.CreatedAt, &res.UpdatedAt)
+			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.Status, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
 		return models.Poll{}, scanFailed("insert poll", err)
 	}
@@ -479,8 +480,7 @@ func (db *ForecasterDB) UpdatePoll(
 	b := db.q.Update("forecaster.polls").
 		Set("updated_at", now).
 		Where(sq.Eq{"id": id}).
-		Suffix("RETURNING id, series_id, telegram_user_id, title, description, " +
-			"start, finish, popularity, updated_at, created_at")
+		Suffix(returningPollColumns)
 
 	if in.SeriesID != nil {
 		b = b.Set("series_id", in.SeriesID)
@@ -517,7 +517,7 @@ func (db *ForecasterDB) UpdatePoll(
 	err = db.db.QueryRow(ctx, pollSQL, args...).
 		Scan(
 			&res.ID, &res.SeriesID, &res.TelegramUserID, &res.Title,
-			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.UpdatedAt, &res.CreatedAt,
+			&res.Description, &res.Start, &res.Finish, &res.Popularity, &res.Status, &res.UpdatedAt, &res.CreatedAt,
 		)
 	if err != nil {
 		return models.Poll{}, scanFailed("update poll", err)

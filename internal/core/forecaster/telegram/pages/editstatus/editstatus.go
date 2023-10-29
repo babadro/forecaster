@@ -9,7 +9,6 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/deletepoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editstatus"
 	"github.com/babadro/forecaster/internal/helpers"
@@ -53,10 +52,6 @@ func (s *Service) RenderCallback(
 	chatID := upd.CallbackQuery.Message.Chat.ID
 	messageID := upd.CallbackQuery.Message.MessageID
 
-	if req.GetNeedConfirmation() {
-		return s.confirmation(pollID, req.ReferrerMyPollsPage, chatID, messageID)
-	}
-
 	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
@@ -69,6 +64,10 @@ func (s *Service) RenderCallback(
 	status, err := proto.PollStatusFromProto(newStatus)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to convert proto status to status: %s", err.Error())
+	}
+
+	if req.GetNeedConfirmation() {
+		return s.confirmation(p, req.ReferrerMyPollsPage, chatID, messageID, newStatus)
 	}
 
 	if _, err = s.db.UpdatePoll(ctx, pollID, swagger.UpdatePoll{
@@ -114,9 +113,9 @@ func successUpdateStatus(
 }
 
 func (s *Service) confirmation(
-	p swagger.Poll, referrerMyPollsPage *int32, chatID int64, messageID int,
+	p swagger.Poll, referrerMyPollsPage *int32, chatID int64, messageID int, newStatus editstatus.Status,
 ) (tgbotapi.Chattable, string, error) {
-	keyboard, err := confirmationKeyboard(p.ID, referrerMyPollsPage)
+	keyboard, err := confirmationKeyboard(p.ID, referrerMyPollsPage, newStatus)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create confirmation keyboard: %s", err.Error())
 	}
@@ -151,19 +150,19 @@ func confirmationTxt(p swagger.Poll, newStatus models2.PollStatus) (string, erro
 	return sb.String(), nil
 }
 
-func confirmationKeyboard(pollID int32, referrerMyPollsPage *int32) (tgbotapi.InlineKeyboardMarkup, error) {
+func confirmationKeyboard(pollID int32, referrerMyPollsPage *int32, newStatus editstatus.Status) (tgbotapi.InlineKeyboardMarkup, error) {
 	pollIDPtr := helpers.Ptr(pollID)
 
-	deleteData, err := proto2.MarshalCallbackData(models.DeletePollRoute, &deletepoll.DeletePoll{
+	editStatusData, err := proto.MarshalCallbackData(models.EditStatusRoute, &editstatus.EditStatus{
 		PollId:              pollIDPtr,
+		Status:              helpers.Ptr(newStatus),
 		ReferrerMyPollsPage: referrerMyPollsPage,
-		NeedConfirmation:    helpers.Ptr(false),
 	})
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal delete callback data: %s", err.Error())
 	}
 
-	backData, err := proto2.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
+	backData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
 		PollId:              pollIDPtr,
 		ReferrerMyPollsPage: referrerMyPollsPage,
 	})
@@ -171,9 +170,22 @@ func confirmationKeyboard(pollID int32, referrerMyPollsPage *int32) (tgbotapi.In
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal go back callback data: %s", err.Error())
 	}
 
+	statusButtonText := ""
+
+	switch newStatus {
+	case editstatus.Status_ACTIVE:
+		statusButtonText = "Activate poll"
+	case editstatus.Status_FINISHED:
+		statusButtonText = "Finish poll"
+	case editstatus.Status_UNKNOWN, editstatus.Status_DRAFT:
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("not allowed status %s", newStatus.String())
+	default:
+		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unknown status %d", newStatus)
+	}
+
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.InlineKeyboardButton{Text: "Delete", CallbackData: deleteData},
+			tgbotapi.InlineKeyboardButton{Text: statusButtonText, CallbackData: editStatusData},
 			tgbotapi.InlineKeyboardButton{Text: "Go back", CallbackData: backData},
 		),
 	), nil

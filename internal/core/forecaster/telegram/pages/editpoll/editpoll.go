@@ -329,8 +329,9 @@ const (
 	fieldsMaxCountInRow  = 3
 	addOptionButtonWidth = 3
 
-	goBackButton = 1
-	deleteButton = 1
+	goBackButton     = 1
+	deleteButton     = 1
+	editStatusButton = 1
 )
 
 func pollKeyboardMarkup(pollID, myPollsPage int32, currentPollStatus models2.PollStatus, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
@@ -341,7 +342,7 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, currentPollStatus models2.Pol
 		{Text: "Finish date", Field: editpollfield.Field_FINISH_DATE},
 	}
 
-	buttonsCount := len(editButtons) + goBackButton + deleteButton
+	buttonsCount := len(editButtons) + goBackButton + deleteButton + editStatusButton
 
 	fieldsKeyboardBuilder := render.NewKeyboardBuilder(fieldsMaxCountInRow, buttonsCount)
 
