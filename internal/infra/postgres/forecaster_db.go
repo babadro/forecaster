@@ -516,7 +516,8 @@ func (db *ForecasterDB) UpdatePoll(
 	}
 
 	if in.Status != 0 {
-		b = b.Set("status", in.Status)
+		status := models2.PollStatus(in.Status)
+		b = b.Set("status", status.String())
 	}
 
 	pollSQL, args, err := b.ToSql()
