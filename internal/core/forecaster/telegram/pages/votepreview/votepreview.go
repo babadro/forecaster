@@ -33,7 +33,7 @@ func (s *Service) NewRequest() (proto.Message, *votepreview2.VotePreview) {
 func (s *Service) RenderCallback(
 	ctx context.Context, votePreview *votepreview2.VotePreview, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
-	p, err := s.db.GetPollByID(ctx, *votePreview.PollId)
+	p, err := s.db.GetPollWithOptionsByID(ctx, *votePreview.PollId)
 	if err != nil {
 		return nil,
 			fmt.Sprintf("oops, can't find poll with id %d", *votePreview.PollId),

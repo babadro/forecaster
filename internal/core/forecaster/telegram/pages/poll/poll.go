@@ -80,7 +80,7 @@ const (
 func (s *Service) render(
 	ctx context.Context, pollID, referrerForecastsPage int32, userID int64, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}

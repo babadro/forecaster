@@ -50,7 +50,7 @@ func (s *Service) RenderCallback(
 	chatID := upd.CallbackQuery.Message.Chat.ID
 	messageID := upd.CallbackQuery.Message.MessageID
 
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}

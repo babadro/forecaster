@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package editstatus;
+
+option go_package = "./editstatus";
+
+enum Status {
+  UNKNOWN = 0;
+  DRAFT = 1;
+  ACTIVE = 3;
+  FINISHED = 4;
+}
+
+message EditStatus {
+  required int32 poll_id = 1;
+  required Status status = 2;
+  optional bool need_confirmation = 3;
+  optional int32 referrer_my_polls_page = 4;
+}

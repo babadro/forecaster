@@ -41,7 +41,7 @@ func (s *Service) RenderCallback(
 	}
 
 	var (
-		p      swagger.PollWithOptions
+		p      swagger.Poll
 		errMsg string
 		err    error
 	)
@@ -78,7 +78,7 @@ func (s *Service) RenderCallback(
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-func txtMsg(p swagger.PollWithOptions, field editpollfield.Field, referrerMyPollsPage int32) (string, error) {
+func txtMsg(p swagger.Poll, field editpollfield.Field, referrerMyPollsPage int32) (string, error) {
 	var sb render.StringBuilder
 
 	sb.Printf("%s %d %s %d\n", models.EditPollCommand, p.ID, field.String(), referrerMyPollsPage)

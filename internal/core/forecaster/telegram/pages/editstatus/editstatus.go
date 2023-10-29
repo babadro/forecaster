@@ -1,20 +1,22 @@
-package deletepoll
+package editstatus
 
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/dbwrapper"
-	proto2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/deletepoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
-	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editstatus"
 	"github.com/babadro/forecaster/internal/helpers"
+	models2 "github.com/babadro/forecaster/internal/models"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"google.golang.org/protobuf/proto"
+	proto2 "google.golang.org/protobuf/proto"
 )
 
 type Service struct {
@@ -28,15 +30,20 @@ func New(db models.DB) *Service {
 	}
 }
 
-func (s *Service) NewRequest() (proto.Message, *deletepoll.DeletePoll) {
-	v := new(deletepoll.DeletePoll)
+func (s *Service) NewRequest() (proto2.Message, *editstatus.EditStatus) {
+	v := new(editstatus.EditStatus)
 
 	return v, v
 }
 
 func (s *Service) RenderCallback(
-	ctx context.Context, req *deletepoll.DeletePoll, upd tgbotapi.Update,
+	ctx context.Context, req *editstatus.EditStatus, upd tgbotapi.Update,
 ) (tgbotapi.Chattable, string, error) {
+	newStatus := req.GetStatus()
+	if newStatus != editstatus.Status_ACTIVE && newStatus != editstatus.Status_FINISHED {
+		return nil, "", fmt.Errorf("only active and finished statuses are allowed")
+	}
+
 	pollID := req.GetPollId()
 	if pollID == 0 {
 		return nil, "", fmt.Errorf("poll id is undefined %v", req.PollId)
@@ -46,7 +53,11 @@ func (s *Service) RenderCallback(
 	chatID := upd.CallbackQuery.Message.Chat.ID
 	messageID := upd.CallbackQuery.Message.MessageID
 
-	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
+	if req.GetNeedConfirmation() {
+		return s.confirmation(pollID, req.ReferrerMyPollsPage, chatID, messageID)
+	}
+
+	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}
@@ -55,22 +66,26 @@ func (s *Service) RenderCallback(
 		return nil, "forbidden", fmt.Errorf("user %d is not owner of poll %d", userID, pollID)
 	}
 
-	if req.GetNeedConfirmation() {
-		return s.confirmation(p, req.ReferrerMyPollsPage, chatID, messageID)
+	status, err := proto.PollStatusFromProto(newStatus)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to convert proto status to status: %s", err.Error())
 	}
 
-	if err = s.db.DeletePoll(ctx, pollID); err != nil {
-		return nil, "", fmt.Errorf("unable to delete poll: %s", err.Error())
+	if _, err = s.db.UpdatePoll(ctx, pollID, swagger.UpdatePoll{
+		Status: swagger.PollStatus(status),
+	}, time.Now()); err != nil {
+		return nil, "", fmt.Errorf("unable to update poll: %s", err.Error())
 	}
 
-	return successDeletion(p.Title, req.GetReferrerMyPollsPage(), chatID, messageID)
+	return successUpdateStatus(p, req.ReferrerMyPollsPage, chatID, messageID, status)
 }
 
-func successDeletion(
-	pollTitle string, referrerMyPollsPage int32, chatID int64, messageID int,
+func successUpdateStatus(
+	p swagger.Poll, referrerMyPollsPage *int32, chatID int64, messageID int, newStatus models2.PollStatus,
 ) (tgbotapi.Chattable, string, error) {
-	backData, err := proto2.MarshalCallbackData(models.MyPollsRoute, &mypolls.MyPolls{
-		CurrentPage: helpers.OneIfZero(referrerMyPollsPage),
+	backData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
+		PollId:              helpers.Ptr(p.ID),
+		ReferrerMyPollsPage: referrerMyPollsPage,
 	})
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to marshal go back callback data: %s", err.Error())
@@ -84,41 +99,56 @@ func successDeletion(
 
 	var sb render.StringBuilder
 
-	sb.WriteString("<b>Poll was successfully deleted!</b>\n\n")
-
-	sb.Printf("<b>%s</b>\n", pollTitle)
+	switch newStatus {
+	case models2.ActivePollStatus:
+		sb.Printf("Poll <b>%s</b> is active now", p.Title)
+	case models2.FinishedPollStatus:
+		sb.Printf("Poll <b>%s</b> is finished now", p.Title)
+	case models2.UnknownPollStatus, models2.DraftPollStatus:
+		return nil, "", fmt.Errorf("not allowed status %s", newStatus.String())
+	default:
+		return nil, "", fmt.Errorf("unknown status %d", newStatus)
+	}
 
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, sb.String(), keyboard), "", nil
 }
 
 func (s *Service) confirmation(
-	p swagger.PollWithOptions, referrerMyPollsPage *int32, chatID int64, messageID int,
+	p swagger.Poll, referrerMyPollsPage *int32, chatID int64, messageID int,
 ) (tgbotapi.Chattable, string, error) {
 	keyboard, err := confirmationKeyboard(p.ID, referrerMyPollsPage)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create confirmation keyboard: %s", err.Error())
 	}
 
-	return render.NewEditMessageTextWithKeyboard(chatID, messageID, confirmationTxt(p), keyboard), "", nil
+	txt, err := confirmationTxt(p, models2.ActivePollStatus)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create confirmation text: %s", err.Error())
+	}
+
+	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-func confirmationTxt(p swagger.PollWithOptions) string {
+func confirmationTxt(p swagger.Poll, newStatus models2.PollStatus) (string, error) {
 	var sb render.StringBuilder
 
-	sb.WriteString("<b>Are you sure you want to delete this poll?</b>\n\n")
+	switch newStatus {
+	case models2.ActivePollStatus:
+		sb.WriteString("<b>Are you sure you want to activate this poll?</b>\n\n")
+	case models2.FinishedPollStatus:
+		sb.WriteString("<b>Are you sure you want to finish this poll?</b>\n\n")
+	case models2.UnknownPollStatus, models2.DraftPollStatus:
+		return "", fmt.Errorf("not allowed status %s", newStatus.String())
+	default:
+		return "", fmt.Errorf("unknown status %d", newStatus)
+	}
 
 	sb.Printf("<b>%s</b>\n", p.Title)
-
-	sb.WriteString("<b>Options:</b>\n")
-
-	for _, o := range p.Options {
-		sb.WriteString(fmt.Sprintf("%s\n", o.Title))
-	}
 
 	sb.Printf("<i>Start Date: %s</i>\n", render.FormatTime(p.Start))
 	sb.Printf("<i>End Date: %s</i>\n", render.FormatTime(p.Finish))
 
-	return sb.String()
+	return sb.String(), nil
 }
 
 func confirmationKeyboard(pollID int32, referrerMyPollsPage *int32) (tgbotapi.InlineKeyboardMarkup, error) {

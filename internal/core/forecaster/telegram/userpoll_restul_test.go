@@ -174,7 +174,7 @@ func (s *TelegramServiceSuite) setupForUserPollResultTest(
 
 	s.Require().NoError(s.db.CalculateStatistics(ctx, p.ID))
 
-	p, err = s.db.GetPollByID(ctx, p.ID)
+	p, err = s.db.GetPollWithOptionsByID(ctx, p.ID)
 	s.Require().NoError(err)
 
 	return p, targetUserID, votes

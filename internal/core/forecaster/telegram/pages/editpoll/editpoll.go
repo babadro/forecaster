@@ -15,8 +15,10 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editoption"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpoll"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editpollfield"
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editstatus"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/mypolls"
 	"github.com/babadro/forecaster/internal/helpers"
+	models2 "github.com/babadro/forecaster/internal/models"
 	"github.com/babadro/forecaster/internal/models/swagger"
 	"github.com/go-openapi/strfmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -234,7 +236,7 @@ func (s *Service) editPollDialog(
 	updateModel swagger.UpdatePoll, doUpdate bool,
 	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}
@@ -253,7 +255,7 @@ func (s *Service) editPollDialog(
 		p = swagger.MergePolls(p, updatedPoll)
 	}
 
-	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage, p.Options)
+	keyboard, err := pollKeyboardMarkup(pollID, myPollsPage, models2.PollStatus(p.Status), p.Options)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for editPollDialog page: %s", err.Error())
 	}
@@ -292,7 +294,7 @@ func (s *Service) createPollDialog(
 	validationErrMsg string, myPollsPage int32, messageID int, chatID int64,
 	editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	keyboard, err := pollKeyboardMarkup(0, myPollsPage, nil)
+	keyboard, err := pollKeyboardMarkup(0, myPollsPage, models2.UnknownPollStatus, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create keyboard for createPollDialog page: %s", err.Error())
 	}
@@ -331,7 +333,7 @@ const (
 	deleteButton = 1
 )
 
-func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
+func pollKeyboardMarkup(pollID, myPollsPage int32, currentPollStatus models2.PollStatus, options []*swagger.Option) (tgbotapi.InlineKeyboardMarkup, error) {
 	editButtons := []models.EditButton[editpollfield.Field]{
 		{Text: "Title", Field: editpollfield.Field_TITLE},
 		{Text: "Description", Field: editpollfield.Field_DESCRIPTION},
@@ -359,6 +361,12 @@ func pollKeyboardMarkup(pollID, myPollsPage int32, options []*swagger.Option) (t
 	if err != nil {
 		return tgbotapi.InlineKeyboardMarkup{},
 			fmt.Errorf("unable to marshal callback data for go back button: %s", err.Error())
+	}
+
+	fieldsKeyboardBuilder, err = addEditStatusButton(fieldsKeyboardBuilder, pollIDPtr, myPollsPagePtr, currentPollStatus)
+	if err != nil {
+		return tgbotapi.InlineKeyboardMarkup{},
+			fmt.Errorf("unable to add edit status button: %s", err.Error())
 	}
 
 	fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
@@ -445,6 +453,43 @@ func addEditButtons(fieldsKeyboardBuilder render.KeyboardBuilder,
 			CallbackData: callbackData,
 		})
 	}
+
+	return fieldsKeyboardBuilder, nil
+}
+
+func addEditStatusButton(
+	fieldsKeyboardBuilder render.KeyboardBuilder,
+	pollIDPtr, myPollsPagePtr *int32, currentStatus models2.PollStatus,
+) (render.KeyboardBuilder, error) {
+	newStatus, text := editstatus.Status_UNKNOWN, ""
+
+	switch currentStatus {
+	case models2.UnknownPollStatus, models2.FinishedPollStatus:
+		return fieldsKeyboardBuilder, nil
+	case models2.DraftPollStatus:
+		newStatus, text = editstatus.Status_ACTIVE, "Activate poll"
+	case models2.ActivePollStatus:
+		newStatus, text = editstatus.Status_FINISHED, "Finish poll"
+	default:
+		return fieldsKeyboardBuilder, fmt.Errorf("unknown poll status %d", currentStatus)
+	}
+
+	callbackData, err := proto.MarshalCallbackData(models.EditStatusRoute, &editstatus.EditStatus{
+		PollId:              pollIDPtr,
+		Status:              helpers.Ptr(newStatus),
+		NeedConfirmation:    helpers.Ptr(true),
+		ReferrerMyPollsPage: myPollsPagePtr,
+	})
+
+	if err != nil {
+		return render.KeyboardBuilder{},
+			fmt.Errorf("unable to marshal callback data for change status button: %s", err.Error())
+	}
+
+	fieldsKeyboardBuilder.AddButton(tgbotapi.InlineKeyboardButton{
+		Text:         text,
+		CallbackData: callbackData,
+	})
 
 	return fieldsKeyboardBuilder, nil
 }

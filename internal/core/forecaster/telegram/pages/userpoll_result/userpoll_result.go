@@ -91,7 +91,7 @@ func (s *Service) render(
 	userName string,
 	isCallback bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}

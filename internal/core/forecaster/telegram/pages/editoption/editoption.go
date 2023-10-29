@@ -225,7 +225,7 @@ func (s *Service) editOptionDialog(
 	updateModel swagger.UpdateOption, doUpdate bool,
 	messageID int, chatID, userID int64, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}

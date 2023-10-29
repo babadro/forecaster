@@ -98,7 +98,7 @@ func (s *TelegramServiceSuite) createPollWithRandomOptions(in createPollInput) s
 		createdOptions[i] = &op
 	}
 
-	pollWithOptions, err := s.db.GetPollByID(ctx, poll.ID)
+	pollWithOptions, err := s.db.GetPollWithOptionsByID(ctx, poll.ID)
 	s.Require().NoError(err)
 
 	return pollWithOptions

@@ -76,7 +76,7 @@ func (s *Service) RenderCallback(
 func (s *Service) render(
 	ctx context.Context, pollID, referrerForecastsPage int32, userID, chatID int64, messageID int, editMessage bool,
 ) (tgbotapi.Chattable, string, error) {
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}

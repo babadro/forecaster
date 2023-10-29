@@ -57,11 +57,38 @@ func (db *ForecasterDB) GetSeriesByID(ctx context.Context, id int32) (models.Ser
 	return series, nil
 }
 
-func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error) {
-	pollSQL, args, err := db.q.Select(
-		"id", "series_id", "telegram_user_id", "title", "description", "start", "finish", "popularity",
-		"created_at", "updated_at",
-	).From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
+const pollColumns = "id, series_id, telegram_user_id, title, description, start, finish, popularity, " +
+	"created_at, updated_at"
+
+func (db *ForecasterDB) GetPollByID(ctx context.Context, id int32) (models.Poll, error) {
+	pollSQL, args, err := db.q.Select(pollColumns).From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
+	if err != nil {
+		return models.Poll{}, buildingQueryFailed("select poll", err)
+	}
+
+	var poll models.Poll
+	err = db.db.
+		QueryRow(ctx, pollSQL, args...).
+		Scan(
+			&poll.ID, &poll.SeriesID, &poll.TelegramUserID, &poll.Title, &poll.Description,
+			&poll.Start, &poll.Finish, &poll.Popularity, &poll.CreatedAt, &poll.UpdatedAt,
+		)
+
+	selectPoll := "select poll"
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Poll{}, errNotFound(selectPoll, err)
+		}
+
+		return models.Poll{}, scanFailed(selectPoll, err)
+	}
+
+	return poll, nil
+}
+
+func (db *ForecasterDB) GetPollWithOptionsByID(ctx context.Context, id int32) (models.PollWithOptions, error) {
+	pollSQL, args, err := db.q.Select(pollColumns).From("forecaster.polls").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
 		return models.PollWithOptions{}, buildingQueryFailed("select poll", err)
 	}

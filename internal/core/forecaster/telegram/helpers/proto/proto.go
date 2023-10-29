@@ -5,7 +5,9 @@ import (
 
 	"encoding/base64"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/editstatus"
 	"github.com/babadro/forecaster/internal/helpers"
+	models2 "github.com/babadro/forecaster/internal/models"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -38,4 +40,19 @@ func UnmarshalCallbackData(data string, m proto.Message) error {
 	}
 
 	return nil
+}
+
+func PollStatusFromProto(in editstatus.Status) (models2.PollStatus, error) {
+	switch in {
+	case editstatus.Status_UNKNOWN:
+		return models2.UnknownPollStatus, nil
+	case editstatus.Status_DRAFT:
+		return models2.DraftPollStatus, nil
+	case editstatus.Status_ACTIVE:
+		return models2.ActivePollStatus, nil
+	case editstatus.Status_FINISHED:
+		return models2.FinishedPollStatus, nil
+	default:
+		return models2.UnknownPollStatus, fmt.Errorf("unknown poll status %d", in)
+	}
 }

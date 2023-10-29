@@ -17,7 +17,7 @@ func NewService(db db) *Service {
 
 type db interface {
 	GetSeriesByID(ctx context.Context, id int32) (models.Series, error)
-	GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error)
+	GetPollWithOptionsByID(ctx context.Context, id int32) (models.PollWithOptions, error)
 
 	CreateSeries(ctx context.Context, s models.CreateSeries, now time.Time) (models.Series, error)
 	CreatePoll(ctx context.Context, poll models.CreatePoll, now time.Time) (models.Poll, error)
@@ -41,7 +41,7 @@ func (s *Service) GetSeriesByID(ctx context.Context, id int32) (models.Series, e
 }
 
 func (s *Service) GetPollByID(ctx context.Context, id int32) (models.PollWithOptions, error) {
-	return s.db.GetPollByID(ctx, id)
+	return s.db.GetPollWithOptionsByID(ctx, id)
 }
 
 func (s *Service) CreateSeries(ctx context.Context, series models.CreateSeries) (models.Series, error) {

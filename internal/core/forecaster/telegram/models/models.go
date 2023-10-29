@@ -22,7 +22,8 @@ const (
 
 type DB interface {
 	GetSeriesByID(ctx context.Context, id int32) (swModels.Series, error)
-	GetPollByID(ctx context.Context, id int32) (swModels.PollWithOptions, error)
+	GetPollByID(ctx context.Context, id int32) (swModels.Poll, error)
+	GetPollWithOptionsByID(ctx context.Context, id int32) (swModels.PollWithOptions, error)
 	GetUserVote(ctx context.Context, userID int64, pollID int32) (swModels.Vote, error)
 	GetPolls(ctx context.Context, offset, limit uint64, filter PollFilter, sort PollSort) ([]swModels.Poll, int32, error)
 	GetForecasts(ctx context.Context, offset, limit uint64) ([]models.Forecast, int32, error)

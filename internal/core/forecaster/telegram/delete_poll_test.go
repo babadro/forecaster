@@ -31,7 +31,7 @@ func (s *TelegramServiceSuite) TestDeletePoll() {
 	s.Require().Contains(deleteConfirmation.Text, p.Title)
 
 	// verify that poll was not deleted yet
-	_, err = s.db.GetPollByID(context.Background(), p.ID)
+	_, err = s.db.GetPollWithOptionsByID(context.Background(), p.ID)
 	s.Require().NoError(err)
 
 	deleteButton = s.findButtonByLowerText("delete", deleteConfirmation.ReplyMarkup)
@@ -39,6 +39,6 @@ func (s *TelegramServiceSuite) TestDeletePoll() {
 	s.sendCallback(deleteButton, userID)
 
 	// check that poll was deleted this time
-	_, err = s.db.GetPollByID(context.Background(), p.ID)
+	_, err = s.db.GetPollWithOptionsByID(context.Background(), p.ID)
 	s.Require().ErrorIs(err, domain.ErrNotFound)
 }
