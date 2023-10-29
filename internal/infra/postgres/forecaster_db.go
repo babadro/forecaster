@@ -181,6 +181,10 @@ func (db *ForecasterDB) GetPolls(
 		b = b.Where(sq.Eq{"telegram_user_id": filter.TelegramUserID.Value})
 	}
 
+	if filter.Status.Defined {
+		b = b.Where(sq.Eq{"status": filter.Status.Value.String()})
+	}
+
 	pollsSQL, args, err := b.ToSql()
 
 	if err != nil {

@@ -69,6 +69,7 @@ func NewNullable[T any](value T) Nullable[T] {
 
 type PollFilter struct {
 	TelegramUserID Nullable[int64]
+	Status         Nullable[models.PollStatus]
 }
 
 func NewPollFilter() PollFilter {
@@ -77,6 +78,12 @@ func NewPollFilter() PollFilter {
 
 func (f PollFilter) WithTelegramUserID(id int64) PollFilter {
 	f.TelegramUserID = NewNullable(id)
+
+	return f
+}
+
+func (f PollFilter) WithStatus(status models.PollStatus) PollFilter {
+	f.Status = NewNullable(status)
 
 	return f
 }

@@ -3,6 +3,7 @@ package polls
 import (
 	"context"
 	"fmt"
+	models3 "github.com/babadro/forecaster/internal/models"
 	"strconv"
 
 	models2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/models"
@@ -70,10 +71,12 @@ func (s *Service) render(
 ) (tgbotapi.Chattable, string, error) {
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
 
-	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit, models.PollFilter{}, models.PollSort{
-		By:  models.PopularityPollSort,
-		Asc: false,
-	})
+	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit,
+		models.NewPollFilter().WithStatus(models3.ActivePollStatus),
+		models.PollSort{
+			By:  models.PopularityPollSort,
+			Asc: false,
+		})
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}
