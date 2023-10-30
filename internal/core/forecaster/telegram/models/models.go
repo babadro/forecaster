@@ -100,3 +100,9 @@ type PollSort struct {
 	By  PollSortType
 	Asc bool
 }
+
+type PollsFlags int32
+
+const (
+	AllPolls PollsFlags = 1 << iota
+	ActivePolls

@@ -3,8 +3,9 @@ package polls
 import (
 	"context"
 	"fmt"
-	models3 "github.com/babadro/forecaster/internal/models"
 	"strconv"
+
+	models3 "github.com/babadro/forecaster/internal/models"
 
 	models2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/poll"
@@ -52,7 +53,7 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 		return nil, "", fmt.Errorf("unable to parse current page: %s", err.Error())
 	}
 
-	return s.render(ctx, int32(currentPage), upd.Message.Chat.ID, upd.Message.MessageID, false)
+	return s.render(ctx, int32(currentPage), upd.Message.Chat.ID, upd.Message.MessageID, false, false)
 }
 
 func (s *Service) RenderCallback(
@@ -61,18 +62,23 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	return s.render(ctx, req.GetCurrentPage(), chat.ID, message.MessageID, true)
+	return s.render(ctx, req.GetCurrentPage(), chat.ID, message.MessageID, true, false)
 }
 
 const pageSize = 10
 
 func (s *Service) render(
-	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
+	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool, filterFinished bool,
 ) (tgbotapi.Chattable, string, error) {
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
 
+	status := models3.ActivePollStatus
+	if filterFinished {
+		status = models3.FinishedPollStatus
+	}
+
 	pollsArr, totalCount, err := s.db.GetPolls(ctx, offset, limit,
-		models.NewPollFilter().WithStatus(models3.ActivePollStatus),
+		models.NewPollFilter().WithStatus(status),
 		models.PollSort{
 			By:  models.PopularityPollSort,
 			Asc: false,
