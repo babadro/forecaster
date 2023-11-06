@@ -104,5 +104,9 @@ type PollSort struct {
 type PollsFlags int32
 
 const (
-	AllPolls PollsFlags = 1 << iota
-	ActivePolls
+	FilterFinishedStatus PollsFlags = 1 << iota
+)
+
+func (f PollsFlags) IsSet(flag PollsFlags) bool {
+	return f&flag != 0
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	models3 "github.com/babadro/forecaster/internal/models"
 
 	models2 "github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/models"
@@ -62,7 +63,9 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	return s.render(ctx, req.GetCurrentPage(), chat.ID, message.MessageID, true, false)
+	filterFinished := models.PollsFlags(req.GetFlags()).IsSet(models.FilterFinishedStatus)
+
+	return s.render(ctx, req.GetCurrentPage(), chat.ID, message.MessageID, true, filterFinished)
 }
 
 const pageSize = 10
@@ -87,15 +90,21 @@ func (s *Service) render(
 		return nil, "", fmt.Errorf("unable to get polls: %s", err.Error())
 	}
 
+	filterBtn, err := filterButton(!filterFinished)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create filter button: %s", err.Error())
+	}
+
 	keyboardIn := render.ManyItemsKeyboardInput{
-		IDs:                    models2.PollsIDs(pollsArr),
-		CurrentPage:            currentPage,
-		Prev:                   currentPage > 1,
-		Next:                   currentPage*pageSize < totalCount,
-		AllItemsRoute:          models.PollsRoute,
-		SingleItemRoute:        models.PollRoute,
-		AllItemsProtoMessage:   s.allPolls,
-		SingleItemProtoMessage: s.singlePoll,
+		IDs:                       models2.PollsIDs(pollsArr),
+		CurrentPage:               currentPage,
+		Prev:                      currentPage > 1,
+		Next:                      currentPage*pageSize < totalCount,
+		AllItemsRoute:             models.PollsRoute,
+		SingleItemRoute:           models.PollRoute,
+		AllItemsProtoMessage:      s.allPolls,
+		SingleItemProtoMessage:    s.singlePoll,
+		FirstRowAdditionalButtons: []tgbotapi.InlineKeyboardButton{filterBtn},
 	}
 
 	keyboard, err := render.ManyItemsKeyboardMarkup(keyboardIn)
@@ -122,4 +131,24 @@ func txtMsg(pollsArr []swagger.Poll) string {
 	}
 
 	return sb.String()
+}
+
+func filterButton(filterFinished bool) (tgbotapi.InlineKeyboardButton, error) {
+	btnText, flags := "Show active", int32(0)
+	if filterFinished {
+		btnText, flags = "Show finished", int32(models.FilterFinishedStatus)
+	}
+
+	data, err := proto.MarshalCallbackData(models.PollsRoute, &polls.Polls{
+		CurrentPage: helpers.Ptr[int32](1),
+		Flags:       helpers.Ptr(flags),
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardButton{}, fmt.Errorf("unable to marshal callback data: %s", err.Error())
+	}
+
+	return tgbotapi.InlineKeyboardButton{
+		Text:         btnText,
+		CallbackData: data,
+	}, nil
 }
