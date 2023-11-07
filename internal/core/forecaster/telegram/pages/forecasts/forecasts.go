@@ -6,12 +6,14 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/proto"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/helpers/render"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecast"
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
 	"github.com/babadro/forecaster/internal/helpers"
 	models2 "github.com/babadro/forecaster/internal/models"
+	models3 "github.com/babadro/forecaster/internal/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
@@ -51,7 +53,7 @@ func (s *Service) RenderStartCommand(ctx context.Context, upd tgbotapi.Update) (
 		return nil, "", fmt.Errorf("unable to parse current page: %s", err.Error())
 	}
 
-	return s.render(ctx, int32(currentPage), upd.Message.Chat.ID, upd.Message.MessageID, false)
+	return s.render(ctx, int32(currentPage), upd.Message.Chat.ID, upd.Message.MessageID, false, false)
 }
 
 func (s *Service) RenderCallback(
@@ -60,30 +62,48 @@ func (s *Service) RenderCallback(
 	chat := upd.CallbackQuery.Message.Chat
 	message := upd.CallbackQuery.Message
 
-	return s.render(ctx, req.GetCurrentPage(), chat.ID, message.MessageID, true)
+	filterFinished := models.ForecastsFlags(req.GetFlags()).IsSet(models.FilterFinishedForecasts)
+
+	return s.render(ctx, req.GetCurrentPage(), chat.ID, message.MessageID, true, filterFinished)
 }
 
 const pageSize = 10
 
 func (s *Service) render(
-	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage bool,
+	ctx context.Context, currentPage int32, chatID int64, messageID int, editMessage, filterFinished bool,
 ) (tgbotapi.Chattable, string, error) {
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
 
-	forecastArr, totalCount, err := s.db.GetForecasts(ctx, offset, limit)
+	status := models3.ActivePollStatus
+	if filterFinished {
+		status = models3.FinishedPollStatus
+	}
+
+	forecastArr, totalCount, err := s.db.GetForecasts(ctx, offset, limit,
+		models.NewPollFilter().WithStatus(status),
+		models.PollSort{
+			By:  models.PopularityPollSort,
+			Asc: false,
+		})
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to get forecasts: %s", err.Error())
 	}
 
+	filterBtn, err := filterButton(!filterFinished)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create filter button: %s", err.Error())
+	}
+
 	keyboardIn := render.ManyItemsKeyboardInput{
-		IDs:                    forecastIDs(forecastArr),
-		CurrentPage:            currentPage,
-		Prev:                   currentPage > 1,
-		Next:                   currentPage*pageSize < totalCount,
-		AllItemsRoute:          models.ForecastsRoute,
-		SingleItemRoute:        models.ForecastRoute,
-		AllItemsProtoMessage:   s.allForecasts,
-		SingleItemProtoMessage: s.singleForecast,
+		IDs:                       forecastIDs(forecastArr),
+		CurrentPage:               currentPage,
+		Prev:                      currentPage > 1,
+		Next:                      currentPage*pageSize < totalCount,
+		AllItemsRoute:             models.ForecastsRoute,
+		SingleItemRoute:           models.ForecastRoute,
+		AllItemsProtoMessage:      s.allForecasts,
+		SingleItemProtoMessage:    s.singleForecast,
+		FirstRowAdditionalButtons: []tgbotapi.InlineKeyboardButton{filterBtn},
 	}
 
 	keyboard, err := render.ManyItemsKeyboardMarkup(keyboardIn)
@@ -167,4 +187,24 @@ func forecastIDs(forecastArr []models2.Forecast) []int32 {
 	}
 
 	return res
+}
+
+func filterButton(filterFinished bool) (tgbotapi.InlineKeyboardButton, error) {
+	btnText, flags := "Show active", int32(0)
+	if filterFinished {
+		btnText, flags = "Show finished", int32(models.FilterFinishedStatus)
+	}
+
+	data, err := proto.MarshalCallbackData(models.ForecastRoute, &forecasts.Forecasts{
+		CurrentPage: helpers.Ptr[int32](1),
+		Flags:       helpers.Ptr(flags),
+	})
+	if err != nil {
+		return tgbotapi.InlineKeyboardButton{}, fmt.Errorf("unable to marshal callback data: %s", err.Error())
+	}
+
+	return tgbotapi.InlineKeyboardButton{
+		Text:         btnText,
+		CallbackData: data,
+	}, nil
 }

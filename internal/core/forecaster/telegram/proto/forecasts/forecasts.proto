@@ -6,4 +6,5 @@ option go_package = "./forecasts";
 
 message Forecasts {
   required int32 current_page = 1;
+  optional int32 flags = 2;
 }

@@ -244,7 +244,7 @@ func pollOrderBy(sort models3.PollSort) (string, error) {
 }
 
 func (db *ForecasterDB) GetForecasts(
-	ctx context.Context, offset, limit uint64,
+	ctx context.Context, offset, limit uint64, filter models3.PollFilter, sort models3.PollSort,
 ) ([]models2.Forecast, int32, error) {
 	var rowsCount sql.NullInt32
 
@@ -531,6 +531,7 @@ func (db *ForecasterDB) UpdatePoll(
 	}
 
 	var res models.Poll
+
 	var pollStatus models2.PollStatus
 
 	err = db.db.QueryRow(ctx, pollSQL, args...).

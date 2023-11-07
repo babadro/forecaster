@@ -14,10 +14,12 @@ const (
 	FinishedPollStatus
 )
 
+const unknown = "unknown"
+
 func (u *PollStatus) String() string {
 	switch *u {
 	case UnknownPollStatus:
-		return "unknown"
+		return unknown
 	case DraftPollStatus:
 		return "draft"
 	case ActivePollStatus:
@@ -25,19 +27,18 @@ func (u *PollStatus) String() string {
 	case FinishedPollStatus:
 		return "finished"
 	default:
-		return "unknown"
+		return unknown
 	}
 }
 
-// Implement the sql.Scanner interface for PollStatus
 func (u *PollStatus) Scan(value interface{}) error {
 	str, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("Failed to unmarshal PollStatus value: %v", value)
+		return fmt.Errorf("failed to unmarshal PollStatus value: %v", value)
 	}
 
 	switch str {
-	case "unknown":
+	case unknown:
 		*u = UnknownPollStatus
 	case "draft":
 		*u = DraftPollStatus
@@ -52,7 +53,6 @@ func (u *PollStatus) Scan(value interface{}) error {
 	return nil
 }
 
-// Implement the driver.Valuer interface for PollStatus
 func (u *PollStatus) Value() (driver.Value, error) {
 	return u.String(), nil
 }

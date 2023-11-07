@@ -170,7 +170,7 @@ func confirmationKeyboard(pollID int32, referrerMyPollsPage *int32, newStatus ed
 		return tgbotapi.InlineKeyboardMarkup{}, fmt.Errorf("unable to marshal go back callback data: %s", err.Error())
 	}
 
-	statusButtonText := ""
+	var statusButtonText string
 
 	switch newStatus {
 	case editstatus.Status_ACTIVE:
