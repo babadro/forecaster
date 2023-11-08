@@ -178,10 +178,6 @@ func validateStartFinish(sb *render.StringBuilder, start, finish time.Time) {
 		sb.Printf("Finish date is not defined\n")
 	}
 
-	if start.Before(finish) {
-		sb.Printf("Start date is after finish date\n")
-	}
-
 	if finish.Before(start.Add(time.Hour)) {
 		sb.Printf("Finish date is less than 1 hour after start date\n")
 	}
