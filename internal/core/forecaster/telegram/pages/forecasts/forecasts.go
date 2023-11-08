@@ -13,7 +13,6 @@ import (
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/proto/forecasts"
 	"github.com/babadro/forecaster/internal/helpers"
 	models2 "github.com/babadro/forecaster/internal/models"
-	models3 "github.com/babadro/forecaster/internal/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	proto2 "google.golang.org/protobuf/proto"
 )
@@ -74,9 +73,9 @@ func (s *Service) render(
 ) (tgbotapi.Chattable, string, error) {
 	offset, limit := uint64((currentPage-1)*pageSize), uint64(pageSize)
 
-	status := models3.ActivePollStatus
+	status := models2.ActivePollStatus
 	if filterFinished {
-		status = models3.FinishedPollStatus
+		status = models2.FinishedPollStatus
 	}
 
 	forecastArr, totalCount, err := s.db.GetForecasts(ctx, offset, limit,

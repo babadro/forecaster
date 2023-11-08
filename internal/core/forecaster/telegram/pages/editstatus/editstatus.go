@@ -52,7 +52,7 @@ func (s *Service) RenderCallback(
 	chatID := upd.CallbackQuery.Message.Chat.ID
 	messageID := upd.CallbackQuery.Message.MessageID
 
-	p, errMsg, err := s.w.GetPollByID(ctx, pollID)
+	p, errMsg, err := s.w.GetPollWithOptionsByID(ctx, pollID)
 	if err != nil {
 		return nil, errMsg, err
 	}
@@ -70,6 +70,12 @@ func (s *Service) RenderCallback(
 		return s.confirmation(p, req.ReferrerMyPollsPage, chatID, messageID, newStatus)
 	}
 
+	if status == models2.ActivePollStatus {
+		if validationErrTxt := validate(p); validationErrTxt != "" {
+			return validationErrMessage(validationErrTxt, p, req.ReferrerMyPollsPage, chatID, messageID)
+		}
+	}
+
 	if _, err = s.db.UpdatePoll(ctx, pollID, swagger.UpdatePoll{
 		Status: swagger.PollStatus(status),
 	}, time.Now()); err != nil {
@@ -80,7 +86,7 @@ func (s *Service) RenderCallback(
 }
 
 func successUpdateStatus(
-	p swagger.Poll, referrerMyPollsPage *int32, chatID int64, messageID int, newStatus models2.PollStatus,
+	p swagger.PollWithOptions, referrerMyPollsPage *int32, chatID int64, messageID int, newStatus models2.PollStatus,
 ) (tgbotapi.Chattable, string, error) {
 	backData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
 		PollId:              helpers.Ptr(p.ID),
@@ -113,7 +119,7 @@ func successUpdateStatus(
 }
 
 func (s *Service) confirmation(
-	p swagger.Poll, referrerMyPollsPage *int32, chatID int64, messageID int, newStatus editstatus.Status,
+	p swagger.PollWithOptions, referrerMyPollsPage *int32, chatID int64, messageID int, newStatus editstatus.Status,
 ) (tgbotapi.Chattable, string, error) {
 	keyboard, err := confirmationKeyboard(p.ID, referrerMyPollsPage, newStatus)
 	if err != nil {
@@ -128,7 +134,76 @@ func (s *Service) confirmation(
 	return render.NewEditMessageTextWithKeyboard(chatID, messageID, txt, keyboard), "", nil
 }
 
-func confirmationTxt(p swagger.Poll, newStatus models2.PollStatus) (string, error) {
+func validationErrMessage(
+	validationErrTxt string, p swagger.PollWithOptions, referrerMyPollsPage *int32, chatID int64, messageID int,
+) (tgbotapi.Chattable, string, error) {
+	backData, err := proto.MarshalCallbackData(models.EditPollRoute, &editpoll.EditPoll{
+		PollId:              helpers.Ptr(p.ID),
+		ReferrerMyPollsPage: referrerMyPollsPage,
+	})
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to marshal go back callback data: %s", err.Error())
+	}
+
+	keyboard := tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+			{tgbotapi.InlineKeyboardButton{
+				Text:         "Go back",
+				CallbackData: backData,
+			}},
+		},
+	}
+
+	validationErrTxt = "<b>Can't change status to active, due to validation errors:</b>\n\n" + validationErrTxt
+
+	return render.NewEditMessageTextWithKeyboard(chatID, messageID, validationErrTxt, keyboard), "", nil
+}
+
+func validate(p swagger.PollWithOptions) string {
+	var sb render.StringBuilder
+
+	validateStartFinish(&sb, time.Time(p.Start), time.Time(p.Finish))
+
+	validateOptions(&sb, p.Options)
+
+	return sb.String()
+}
+
+func validateStartFinish(sb *render.StringBuilder, start, finish time.Time) {
+	if start.IsZero() {
+		sb.Printf("Start date is not defined\n")
+	}
+
+	if finish.IsZero() {
+		sb.Printf("Finish date is not defined\n")
+	}
+
+	if start.Before(finish) {
+		sb.Printf("Start date is after finish date\n")
+	}
+
+	if start.Before(time.Now()) {
+		sb.Printf("Start date is before now\n")
+	}
+}
+
+func validateOptions(sb *render.StringBuilder, options []*swagger.Option) {
+	if len(options) < 2 {
+		sb.Printf("Poll must have at least 2 options, but has %d\n", len(options))
+	}
+
+	for i, o := range options {
+		if o.Title == "" {
+			sb.Printf("Option %d has empty title\n", i+1)
+		}
+
+		if o.Description == "" {
+			sb.Printf("Option %d has empty description\n", i+1)
+		}
+	}
+}
+
+func confirmationTxt(p swagger.PollWithOptions, newStatus models2.PollStatus) (string, error) {
 	var sb render.StringBuilder
 
 	switch newStatus {
