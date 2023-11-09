@@ -133,3 +133,54 @@ func (s *TelegramServiceSuite) TestCreatePoll_error_title_should_be_created_firs
 
 	s.Require().Contains(editPage.Text, "First create Title, please, and then you can create other fields")
 }
+
+func (s *TelegramServiceSuite) TestEditPollStatus_validation_error() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	userID := randomPositiveInt64()
+
+	// create poll with only title, that is not enough to activate poll
+	// for activation poll should have all fields and at least 2 options
+	pollKeyboard := s.createPollWithTitleOnlyAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
+
+	activateButton := s.findButtonByContainsLowerText("activate", pollKeyboard)
+
+	s.sendCallback(activateButton, userID)
+
+	confirmationPageKeyboard := s.asEditMessage(sentMsg).ReplyMarkup
+
+	activateButton = s.findButtonByContainsLowerText("activate", confirmationPageKeyboard)
+
+	s.sendCallback(activateButton, userID)
+
+	validationErrorMessage := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(validationErrorMessage.Text, "Can't change status to active, due to validation errors")
+}
+
+func (s *TelegramServiceSuite) TestEditPollStatus_success() {
+	var sentMsg interface{}
+
+	s.mockTelegramSender(&sentMsg)
+
+	userID := randomPositiveInt64()
+
+	editPollPage, p := s.createPollReadyForActivationAndGoToEditPollPage(userID, &sentMsg)
+
+	activateButton := s.findButtonByContainsLowerText("activate", editPollPage.ReplyMarkup)
+
+	s.sendCallback(activateButton, userID)
+
+	confirmationPageKeyboard := s.asEditMessage(sentMsg).ReplyMarkup
+
+	activateButton = s.findButtonByContainsLowerText("activate", confirmationPageKeyboard)
+
+	s.sendCallback(activateButton, userID)
+
+	successPage := s.asEditMessage(sentMsg)
+
+	s.Require().Contains(successPage.Text, p.Title)
+	s.Require().Contains(successPage.Text, "is active now")
+}

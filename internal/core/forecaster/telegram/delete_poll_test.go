@@ -15,7 +15,7 @@ func (s *TelegramServiceSuite) TestDeletePoll() {
 
 	s.mockTelegramSender(&sentMsg)
 
-	editPoll := s.createPollAndGoToEditPollPage(userID, &sentMsg)
+	editPoll := s.createPollWithTitleOnlyAndGoToEditPollPage(userID, &sentMsg)
 
 	deleteButton := s.findButtonByLowerText("delete poll", editPoll.ReplyMarkup)
 

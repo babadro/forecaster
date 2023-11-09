@@ -73,7 +73,7 @@ func (s *TelegramServiceSuite) createPollAndOptionAndGoToToEditOptionPage(
 ) (tgbotapi.MessageConfig, string) {
 	s.T().Helper()
 
-	pollKeyboard := s.createPollAndGoToEditPollPage(userID, sentMsg).ReplyMarkup
+	pollKeyboard := s.createPollWithTitleOnlyAndGoToEditPollPage(userID, sentMsg).ReplyMarkup
 
 	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
 

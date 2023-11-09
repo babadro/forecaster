@@ -33,6 +33,18 @@ func withTelegramUserID(id int64) func(in *createPollInput) {
 	}
 }
 
+func withStartDate(startDate time.Time) func(in *createPollInput) {
+	return func(in *createPollInput) {
+		in.pollModel.Start = strfmt.DateTime(startDate)
+	}
+}
+
+func withFinishDate(finishDate time.Time) func(in *createPollInput) {
+	return func(in *createPollInput) {
+		in.pollModel.Finish = strfmt.DateTime(finishDate)
+	}
+}
+
 type creationOption func(input *createPollInput)
 
 func (s *TelegramServiceSuite) createRandomPolls(count int, opts ...creationOption) []swagger.PollWithOptions {

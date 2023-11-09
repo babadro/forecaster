@@ -2,8 +2,10 @@ package telegram_test
 
 import (
 	"strings"
+	"time"
 
 	"github.com/babadro/forecaster/internal/core/forecaster/telegram/models"
+	"github.com/babadro/forecaster/internal/models/swagger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -14,7 +16,7 @@ func (s *TelegramServiceSuite) TestEditOptionBackButton() {
 
 	userID := randomPositiveInt64()
 
-	pollKeyboard := s.createPollAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
+	pollKeyboard := s.createPollWithTitleOnlyAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
 
 	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
 
@@ -47,7 +49,7 @@ func (s *TelegramServiceSuite) TestCreateOption() {
 
 	userID := randomPositiveInt64()
 
-	pollKeyboard := s.createPollAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
+	pollKeyboard := s.createPollWithTitleOnlyAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
 
 	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
 
@@ -99,7 +101,7 @@ func (s *TelegramServiceSuite) TestCreateOption() {
 	}
 }
 
-func (s *TelegramServiceSuite) createPollAndGoToEditPollPage(
+func (s *TelegramServiceSuite) createPollWithTitleOnlyAndGoToEditPollPage(
 	userID int64, sentMsg *interface{},
 ) tgbotapi.MessageConfig {
 	s.T().Helper()
@@ -120,6 +122,23 @@ func (s *TelegramServiceSuite) createPollAndGoToEditPollPage(
 	return s.asMessage(*sentMsg)
 }
 
+func (s *TelegramServiceSuite) createPollReadyForActivationAndGoToEditPollPage(
+	userID int64, sentMsg *interface{}) (tgbotapi.EditMessageTextConfig, swagger.PollWithOptions) {
+	s.T().Helper()
+
+	start, finish := time.Now().Add(time.Hour), time.Now().Add(time.Hour*2)
+
+	p := s.createRandomPoll(withTelegramUserID(userID), withStartDate(start), withFinishDate(finish))
+
+	myPollsPage := s.goToMyPollsPage(userID, sentMsg)
+
+	firstPoll := s.findButtonByLowerText("1", myPollsPage.ReplyMarkup)
+
+	s.sendCallback(firstPoll, userID)
+
+	return s.asEditMessage(*sentMsg), p
+}
+
 func (s *TelegramServiceSuite) TestCreateOption_error_title_should_be_created_first() {
 	var sentMsg interface{}
 
@@ -127,7 +146,7 @@ func (s *TelegramServiceSuite) TestCreateOption_error_title_should_be_created_fi
 
 	userID := randomPositiveInt64()
 
-	pollKeyboard := s.createPollAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
+	pollKeyboard := s.createPollWithTitleOnlyAndGoToEditPollPage(userID, &sentMsg).ReplyMarkup
 
 	createOptionButton := s.findButtonByLowerText("add option", pollKeyboard)
 
